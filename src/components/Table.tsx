@@ -91,7 +91,7 @@ export function Table<T>({
     <div className="w-full flex flex-col gap-2">
       {/* Header */}
       <div
-        className="grid items-center bg-white border border-stone-200 rounded-xl px-3 py-2.5 shadow-1"
+        className="grid items-center bg-white  rounded-xl px-3 py-2.5 shadow-1"
         style={{ gridTemplateColumns: colWidths }}
       >
         {selectable && (
@@ -108,13 +108,13 @@ export function Table<T>({
             {col.sortable ? (
               <button
                 onClick={() => handleSort(col.key as string)}
-                className="flex items-center gap-1 text-xs font-semibold text-stone-500 uppercase tracking-wider hover:text-stone-800 transition-colors group"
+                className="flex items-center gap-1 text-xs font-medium text-stone-500 uppercase tracking-wider hover:text-stone-800 transition-colors group"
               >
                 {col.header}
                 <SortIcon sortKey={col.key as string} sort={sort} />
               </button>
             ) : (
-              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
+              <span className="text-xs font-medium text-stone-500 uppercase tracking-wider">
                 {col.header}
               </span>
             )}

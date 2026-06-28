@@ -30,6 +30,14 @@ export default defineConfig({
         vite: {
           build: {
             outDir: path.resolve(__dirname, 'dist-electron'),
+            lib: false,
+            rollupOptions: {
+              input: path.resolve(__dirname, 'electron/preload.ts'),
+              output: {
+                format: 'cjs',
+                entryFileNames: '[name].js',
+              },
+            },
           },
         },
       },

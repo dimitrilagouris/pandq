@@ -1,0 +1,212 @@
+import React, { useState, useCallback } from 'react';
+import { TbArrowUp, TbArrowDown, TbArrowsUpDown, TbMinus } from 'react-icons/tb';
+
+export interface ColumnDef<T> {
+  key: keyof T | string;
+  header: string;
+  render?: (row: T) => React.ReactNode;
+  width?: string;
+  /** Whether this column can be sorted. Requires `key` to be a primitive field. */
+  sortable?: boolean;
+}
+
+type SortDir = 'asc' | 'desc';
+
+interface SortState {
+  key: string;
+  dir: SortDir;
+}
+
+interface TableProps<T> {
+  columns: ColumnDef<T>[];
+  data: T[];
+  onRowClick?: (row: T) => void;
+  emptyMessage?: string;
+  keyExtractor: (row: T) => string | number;
+  /** When provided, selection checkboxes are rendered and this is called when selection changes. */
+  onSelectionChange?: (selected: Set<string | number>) => void;
+}
+
+/**
+ * Generic table with sortable columns and multi-row checkbox selection.
+ */
+export function Table<T>({
+  columns,
+  data,
+  onRowClick,
+  emptyMessage = 'No data found.',
+  keyExtractor,
+  onSelectionChange,
+}: TableProps<T>): React.JSX.Element {
+  const [sort, setSort] = useState<SortState | null>(null);
+  const [selected, setSelected] = useState<Set<string | number>>(new Set());
+
+  const selectable = Boolean(onSelectionChange);
+
+  /* ── Sorting ── */
+  const sorted = React.useMemo((): T[] => {
+    if (!sort) return data;
+    return [...data].sort((a, b) => {
+      const av = (a as Record<string, unknown>)[sort.key];
+      const bv = (b as Record<string, unknown>)[sort.key];
+      const cmp = String(av ?? '').localeCompare(String(bv ?? ''), undefined, { numeric: true, sensitivity: 'base' });
+      return sort.dir === 'asc' ? cmp : -cmp;
+    });
+  }, [data, sort]);
+
+  const handleSort = useCallback((key: string): void => {
+    setSort(prev => {
+      if (prev?.key === key) {
+        return prev.dir === 'asc' ? { key, dir: 'desc' } : null;
+      }
+      return { key, dir: 'asc' };
+    });
+  }, []);
+
+  /* ── Selection ── */
+  const allKeys = sorted.map(keyExtractor);
+  const allSelected = allKeys.length > 0 && allKeys.every(k => selected.has(k));
+  const someSelected = !allSelected && allKeys.some(k => selected.has(k));
+
+  const toggleAll = (): void => {
+    const next = allSelected ? new Set<string | number>() : new Set(allKeys);
+    setSelected(next);
+    onSelectionChange?.(next);
+  };
+
+  const toggleRow = (key: string | number): void => {
+    const next = new Set(selected);
+    next.has(key) ? next.delete(key) : next.add(key);
+    setSelected(next);
+    onSelectionChange?.(next);
+  };
+
+  /* ── Grid template ── */
+  const colWidths = [
+    ...(selectable ? ['40px'] : []),
+    ...columns.map(c => c.width ?? '1fr'),
+  ].join(' ');
+
+  return (
+    <div className="w-full overflow-hidden rounded-xl bg-white border border-stone-200">
+      {/* Header */}
+      <div
+        className="grid items-center border-b border-stone-200 bg-stone-50 px-3 py-2"
+        style={{ gridTemplateColumns: colWidths }}
+      >
+        {selectable && (
+          <div className="flex items-center justify-center">
+            <Checkbox
+              checked={allSelected}
+              indeterminate={someSelected}
+              onChange={toggleAll}
+            />
+          </div>
+        )}
+        {columns.map((col) => (
+          <div key={String(col.key)} className="flex items-center gap-1 pr-3">
+            {col.sortable ? (
+              <button
+                onClick={() => handleSort(col.key as string)}
+                className="flex items-center gap-1 text-xs font-medium text-stone-500 uppercase tracking-wider hover:text-stone-800 transition-colors group"
+              >
+                {col.header}
+                <SortIcon sortKey={col.key as string} sort={sort} />
+              </button>
+            ) : (
+              <span className="text-xs font-medium text-stone-500 uppercase tracking-wider">
+                {col.header}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Rows */}
+      {sorted.length === 0 ? (
+        <div className="px-4 py-12 text-center">
+          <p className="text-sm text-stone-400">{emptyMessage}</p>
+        </div>
+      ) : (
+        <div className="divide-y divide-stone-100">
+          {sorted.map((row) => {
+            const key = keyExtractor(row);
+            const isSelected = selected.has(key);
+            return (
+              <div
+                key={key}
+                onClick={() => onRowClick?.(row)}
+                className={`grid items-center px-3 py-2.5 transition-colors duration-100
+                  ${onRowClick ? 'cursor-pointer' : ''}
+                  ${isSelected ? 'bg-stone-100' : 'hover:bg-stone-50'}
+                `}
+                style={{ gridTemplateColumns: colWidths }}
+              >
+                {selectable && (
+                  <div
+                    className="flex items-center justify-center"
+                    onClick={(e) => { e.stopPropagation(); toggleRow(key); }}
+                  >
+                    <Checkbox checked={isSelected} onChange={() => toggleRow(key)} />
+                  </div>
+                )}
+                {columns.map((col) => (
+                  <div key={String(col.key)} className="text-sm text-stone-700 truncate pr-3">
+                    {col.render
+                      ? col.render(row)
+                      : String((row as Record<string, unknown>)[col.key as string] ?? '—')}
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Sub-components ── */
+
+interface CheckboxProps {
+  checked: boolean;
+  indeterminate?: boolean;
+  onChange: () => void;
+}
+
+const Checkbox: React.FC<CheckboxProps> = ({ checked, indeterminate, onChange }) => {
+  const ref = React.useRef<HTMLButtonElement>(null);
+
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onClick={(e) => { e.stopPropagation(); onChange(); }}
+      className={`w-[18px] h-[18px] flex-shrink-0 flex items-center justify-center rounded-md border transition-colors duration-150
+        ${checked || indeterminate
+          ? 'bg-stone-800 border-stone-800 text-white'
+          : 'bg-white border-stone-300 hover:border-stone-500'
+        }`}
+    >
+      {indeterminate && !checked
+        ? <TbMinus className="w-3 h-3" strokeWidth={3} />
+        : checked
+          ? <svg viewBox="0 0 10 8" className="w-2.5 h-2.5 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 4 7 9 1" /></svg>
+          : null}
+    </button>
+  );
+};
+
+interface SortIconProps {
+  sortKey: string;
+  sort: SortState | null;
+}
+
+const SortIcon: React.FC<SortIconProps> = ({ sortKey, sort }) => {
+  if (sort?.key !== sortKey) {
+    return <TbArrowsUpDown className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />;
+  }
+  return sort.dir === 'asc'
+    ? <TbArrowUp className="w-3 h-3 text-stone-700" />
+    : <TbArrowDown className="w-3 h-3 text-stone-700" />;
+};

@@ -1,30 +1,35 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
+import ClientsPage from './pages/ClientsPage';
+
+export type Page = 'dashboard' | 'invoices' | 'clients' | 'activities' | 'settings';
 
 /**
- * Main application component.
+ * Main application component — manages active page and layout.
  */
 export default function App(): React.JSX.Element {
+  const [activePage, setActivePage] = useState<Page>('clients');
+
+  const renderPage = (): React.ReactNode => {
+    switch (activePage) {
+      case 'clients':
+        return <ClientsPage />;
+      default:
+        return (
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-stone-400 text-sm">This page is coming soon.</p>
+          </div>
+        );
+    }
+  };
+
   return (
     <div className="flex h-screen w-full bg-stone-50 overflow-hidden font-sans">
-      <Sidebar />
-      
-      <main className="flex-1 overflow-auto p-4 flex flex-col items-center">
-        <div className="w-full max-w-xl bg-white p-8 shadow-sm border border-stone-200 rounded-[12px] mt-8">
-          <header className="mb-8">
-            <h1 className="text-2xl font-bold tracking-tight text-stone-900">
-              Invoices Dashboard
-            </h1>
-            <p className="text-stone-500 text-sm mt-1">
-              Select a page from the sidebar to get started.
-            </p>
-          </header>
-          
-          <div className="text-center py-6 border border-dashed border-stone-200 rounded-[8px]">
-            <p className="text-stone-500 text-sm">Dashboard content will appear here.</p>
-          </div>
-        </div>
+      <Sidebar activePage={activePage} onNavigate={setActivePage} />
+      <main className="flex-1 overflow-auto">
+        {renderPage()}
       </main>
     </div>
   );
 }
+

@@ -27,6 +27,7 @@ function initDatabase(): void {
     CREATE TABLE IF NOT EXISTS clients (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT,
+      business_name TEXT,
       email TEXT,
       phone TEXT,
       address TEXT
@@ -99,7 +100,22 @@ app.whenReady().then(() => {
   // Register database IPC handlers
   ipcMain.handle('db-get-clients', (): unknown[] => {
     if (!db) throw new Error('Database not initialised');
-    return db.prepare('SELECT * FROM clients ORDER BY id DESC').all();
+    return db.prepare('SELECT * FROM clients ORDER BY name ASC').all();
+  });
+
+  ipcMain.handle('db-create-client', (_event, name: string, businessName: string, email: string, phone: string, address: string): unknown => {
+    if (!db) throw new Error('Database not initialised');
+    return db.prepare('INSERT INTO clients (name, business_name, email, phone, address) VALUES (?, ?, ?, ?, ?)').run(name, businessName, email, phone, address);
+  });
+
+  ipcMain.handle('db-update-client', (_event, id: number, name: string, businessName: string, email: string, phone: string, address: string): unknown => {
+    if (!db) throw new Error('Database not initialised');
+    return db.prepare('UPDATE clients SET name = ?, business_name = ?, email = ?, phone = ?, address = ? WHERE id = ?').run(name, businessName, email, phone, address, id);
+  });
+
+  ipcMain.handle('db-delete-client', (_event, id: number): unknown => {
+    if (!db) throw new Error('Database not initialised');
+    return db.prepare('DELETE FROM clients WHERE id = ?').run(id);
   });
 
   ipcMain.handle('db-get-invoices', (): unknown[] => {

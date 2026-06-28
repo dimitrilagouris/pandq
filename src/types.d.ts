@@ -1,6 +1,7 @@
 export interface Client {
   id: number;
   name: string;
+  business_name: string;
   email: string;
   phone: string;
   address: string;
@@ -37,6 +38,9 @@ export interface Discount {
 
 export interface ElectronAPI {
   getClients: () => Promise<Client[]>;
+  createClient: (name: string, businessName: string, email: string, phone: string, address: string) => Promise<unknown>;
+  updateClient: (id: number, name: string, businessName: string, email: string, phone: string, address: string) => Promise<unknown>;
+  deleteClient: (id: number) => Promise<unknown>;
   getInvoices: () => Promise<Invoice[]>;
 }
 

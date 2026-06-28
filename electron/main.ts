@@ -22,14 +22,48 @@ function initDatabase(): void {
   // Enforce foreign key constraints
   db.pragma('foreign_keys = ON');
 
-  // Create a sample table
-  db.prepare(`
-    CREATE TABLE IF NOT EXISTS items (
+  // Create schema tables
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS clients (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `).run();
+      name TEXT,
+      email TEXT,
+      phone TEXT,
+      address TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS invoices (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      client_id INTEGER,
+      invoice_number TEXT,
+      date TEXT,
+      due_date TEXT,
+      status TEXT,
+      price REAL,
+      gst_added BOOLEAN,
+      FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS invoice_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      invoice_id INTEGER,
+      type TEXT,
+      description TEXT,
+      hours REAL,
+      rate REAL,
+      quantity REAL,
+      FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS discounts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      invoice_id INTEGER,
+      description TEXT,
+      amount REAL,
+      type TEXT,
+      FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
+    );
+  `);
 }
 
 /**
@@ -63,18 +97,14 @@ app.whenReady().then(() => {
   createWindow();
 
   // Register database IPC handlers
-  ipcMain.handle('db-get-items', (): unknown[] => {
-    if (!db) {
-      throw new Error('Database not initialised');
-    }
-    return db.prepare('SELECT * FROM items ORDER BY created_at DESC').all();
+  ipcMain.handle('db-get-clients', (): unknown[] => {
+    if (!db) throw new Error('Database not initialised');
+    return db.prepare('SELECT * FROM clients ORDER BY id DESC').all();
   });
 
-  ipcMain.handle('db-add-item', (_event: unknown, name: string): unknown => {
-    if (!db) {
-      throw new Error('Database not initialised');
-    }
-    return db.prepare('INSERT INTO items (name) VALUES (?)').run(name);
+  ipcMain.handle('db-get-invoices', (): unknown[] => {
+    if (!db) throw new Error('Database not initialised');
+    return db.prepare('SELECT * FROM invoices ORDER BY id DESC').all();
   });
 
   app.on('activate', () => {

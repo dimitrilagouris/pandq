@@ -1,12 +1,43 @@
-export interface Item {
+export interface Client {
   id: number;
   name: string;
-  created_at: string;
+  email: string;
+  phone: string;
+  address: string;
+}
+
+export interface Invoice {
+  id: number;
+  client_id: number;
+  invoice_number: string;
+  date: string;
+  due_date: string;
+  status: string;
+  price: number;
+  gst_added: boolean;
+}
+
+export interface InvoiceItem {
+  id: number;
+  invoice_id: number;
+  type: string;
+  description: string;
+  hours: number | null;
+  rate: number;
+  quantity: number;
+}
+
+export interface Discount {
+  id: number;
+  invoice_id: number;
+  description: string;
+  amount: number;
+  type: string;
 }
 
 export interface ElectronAPI {
-  getItems: () => Promise<Item[]>;
-  addItem: (name: string) => Promise<{ changes: number; lastInsertRowid: number }>;
+  getClients: () => Promise<Client[]>;
+  getInvoices: () => Promise<Invoice[]>;
 }
 
 declare global {

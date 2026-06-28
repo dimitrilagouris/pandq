@@ -88,10 +88,10 @@ export function Table<T>({
   ].join(' ');
 
   return (
-    <div className="w-full overflow-hidden rounded-xl bg-white border border-stone-200">
+    <div className="w-full flex flex-col gap-2">
       {/* Header */}
       <div
-        className="grid items-center border-b border-stone-200 bg-stone-50 px-3 py-2"
+        className="grid items-center bg-white border border-stone-200 rounded-xl px-3 py-2.5 shadow-1"
         style={{ gridTemplateColumns: colWidths }}
       >
         {selectable && (
@@ -108,13 +108,13 @@ export function Table<T>({
             {col.sortable ? (
               <button
                 onClick={() => handleSort(col.key as string)}
-                className="flex items-center gap-1 text-xs font-medium text-stone-500 uppercase tracking-wider hover:text-stone-800 transition-colors group"
+                className="flex items-center gap-1 text-xs font-semibold text-stone-500 uppercase tracking-wider hover:text-stone-800 transition-colors group"
               >
                 {col.header}
                 <SortIcon sortKey={col.key as string} sort={sort} />
               </button>
             ) : (
-              <span className="text-xs font-medium text-stone-500 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
                 {col.header}
               </span>
             )}
@@ -124,11 +124,11 @@ export function Table<T>({
 
       {/* Rows */}
       {sorted.length === 0 ? (
-        <div className="px-4 py-12 text-center">
+        <div className="px-4 py-12 text-center bg-white border border-stone-200 rounded-xl shadow-sm">
           <p className="text-sm text-stone-400">{emptyMessage}</p>
         </div>
       ) : (
-        <div className="divide-y divide-stone-100">
+        <div className="flex flex-col divide-y divide-stone-200 border-b border-stone-200/80">
           {sorted.map((row) => {
             const key = keyExtractor(row);
             const isSelected = selected.has(key);
@@ -136,9 +136,9 @@ export function Table<T>({
               <div
                 key={key}
                 onClick={() => onRowClick?.(row)}
-                className={`grid items-center px-3 py-2.5 transition-colors duration-100
+                className={`grid items-center px-3 py-3 transition-colors duration-100
                   ${onRowClick ? 'cursor-pointer' : ''}
-                  ${isSelected ? 'bg-stone-100' : 'hover:bg-stone-50'}
+                  ${isSelected ? 'bg-stone-200/40' : 'bg-transparent hover:bg-stone-200/10'}
                 `}
                 style={{ gridTemplateColumns: colWidths }}
               >

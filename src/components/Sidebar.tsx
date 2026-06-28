@@ -105,11 +105,11 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, active }) => {
   return (
     <a 
       href="#" 
-      className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors text-sm font-medium
+      className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 ease-in-out text-sm font-medium
         ${active ? 'bg-stone-200 text-stone-900' : 'text-stone-600 hover:bg-stone-200 hover:text-stone-900'}
       `}
     >
-      <div className={`${active ? 'text-stone-900' : 'text-stone-400'} flex-shrink-0`}>
+      <div className={`${active ? 'text-stone-900' : 'text-stone-400'} flex-shrink-0 transition-colors duration-200`}>
         {icon}
       </div>
       <span>{label}</span>

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Client } from '../types';
+import { Input } from './Input';
+import { TbX, TbChevronDown } from 'react-icons/tb';
 
 interface ClientFormData {
   name: string;
   business_name: string;
   email: string;
-  phone: string;
   address: string;
 }
 
@@ -15,25 +16,59 @@ interface ClientModalProps {
   onSave: () => void;
 }
 
-const EMPTY_FORM: ClientFormData = { name: '', business_name: '', email: '', phone: '', address: '' };
+const EMPTY_FORM: ClientFormData = { name: '', business_name: '', email: '', address: '' };
 
 /**
  * Modal for creating or editing a client record.
  */
 export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSave }) => {
   const [form, setForm] = useState<ClientFormData>(EMPTY_FORM);
+  const [countryCode, setCountryCode] = useState<string>('+61');
+  const [rawPhone, setRawPhone] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
   const isEditing = client !== null;
 
   useEffect(() => {
-    setForm(client ? { name: client.name, business_name: client.business_name, email: client.email, phone: client.phone, address: client.address } : EMPTY_FORM);
+    if (client) {
+      setForm({
+        name: client.name,
+        business_name: client.business_name,
+        email: client.email,
+        address: client.address
+      });
+      // Parse phone number
+      const phoneStr = client.phone || '';
+      if (phoneStr.startsWith('+1 ')) {
+        setCountryCode('+1');
+        setRawPhone(phoneStr.slice(3));
+      } else if (phoneStr.startsWith('+61 ')) {
+        setCountryCode('+61');
+        setRawPhone(phoneStr.slice(4));
+      } else if (phoneStr.startsWith('+44 ')) {
+        setCountryCode('+44');
+        setRawPhone(phoneStr.slice(4));
+      } else if (phoneStr.startsWith('+64 ')) {
+        setCountryCode('+64');
+        setRawPhone(phoneStr.slice(4));
+      } else if (phoneStr.startsWith('+81 ')) {
+        setCountryCode('+81');
+        setRawPhone(phoneStr.slice(4));
+      } else {
+        setCountryCode('+61');
+        setRawPhone(phoneStr);
+      }
+    } else {
+      setForm(EMPTY_FORM);
+      setCountryCode('+61');
+      setRawPhone('');
+    }
     setError('');
   }, [client]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  const handleFieldChange = (key: keyof ClientFormData, val: string): void => {
+    setForm(prev => ({ ...prev, [key]: val }));
   };
 
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
@@ -42,12 +77,13 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
       setError('Name is required.');
       return;
     }
+    const formattedPhone = rawPhone.trim() ? `${countryCode} ${rawPhone.trim()}` : '';
     try {
       setIsSaving(true);
       if (isEditing && client) {
-        await window.electronAPI.updateClient(client.id, form.name, form.business_name, form.email, form.phone, form.address);
+        await window.electronAPI.updateClient(client.id, form.name, form.business_name, form.email, formattedPhone, form.address);
       } else {
-        await window.electronAPI.createClient(form.name, form.business_name, form.email, form.phone, form.address);
+        await window.electronAPI.createClient(form.name, form.business_name, form.email, formattedPhone, form.address);
       }
       onSave();
     } catch (err: unknown) {
@@ -59,30 +95,101 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
 
   return (
     /* Backdrop */
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/40 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="w-full max-w-md bg-white rounded-2xl shadow-22 p-6 mx-4"
+        className="w-full max-w-md bg-white rounded-2xl shadow-22 mx-4 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-base font-semibold text-stone-900 mb-5">
-          {isEditing ? 'Edit Client' : 'New Client'}
-        </h2>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
+          <h2 className="text-base font-semibold text-stone-900">
+            {isEditing ? 'Edit Client' : 'New Client'}
+          </h2>
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 transition-colors">
+            <TbX className="w-5 h-5" />
+          </button>
+        </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {error && (
-            <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-              {error}
-            </p>
-          )}
+        <form onSubmit={handleSubmit} className="flex flex-col">
+          {/* Body */}
+          <div className="p-6 flex flex-col gap-4">
+            {error && (
+              <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                {error}
+              </p>
+            )}
 
-          <Field label="Name" name="name" value={form.name} onChange={handleChange} required autoFocus />
-          <Field label="Business Name" name="business_name" value={form.business_name} onChange={handleChange} />
-          <Field label="Email" name="email" value={form.email} onChange={handleChange} type="email" />
-          <Field label="Phone" name="phone" value={form.phone} onChange={handleChange} type="tel" />
-          <Field label="Address" name="address" value={form.address} onChange={handleChange} />
+            <Input
+              label="Name"
+              name="name"
+              value={form.name}
+              onChange={(val) => handleFieldChange('name', val)}
+              required
+              autoFocus
+            />
 
-          <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors">
+            <Input
+              label="Business Name"
+              name="business_name"
+              value={form.business_name}
+              onChange={(val) => handleFieldChange('business_name', val)}
+            />
+
+            <div className="flex flex-col gap-1 w-full">
+              <label htmlFor="phone" className="text-xs font-medium text-stone-500 tracking-wide">
+                Phone
+              </label>
+              <div className="flex gap-2">
+                <div className="relative flex-shrink-0">
+                  <select
+                    value={countryCode}
+                    onChange={(e) => setCountryCode(e.target.value)}
+                    className="h-9 px-3 text-sm text-stone-900 bg-stone-50 border border-transparent rounded-xl shadow-1 focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-400 focus:ring-offset-1 appearance-none pr-8 cursor-pointer transition-all duration-150"
+                  >
+                    <option value="+61">🇦🇺 +61</option>
+                    <option value="+1">🇺🇸 +1</option>
+                    <option value="+44">🇬🇧 +44</option>
+                    <option value="+64">🇳🇿 +64</option>
+                    <option value="+81">🇯🇵 +81</option>
+                  </select>
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-stone-400">
+                    <TbChevronDown className="w-4 h-4" />
+                  </div>
+                </div>
+                <Input
+                  name="phone"
+                  value={rawPhone}
+                  onChange={setRawPhone}
+                  placeholder="412 345 678"
+                  type="tel"
+                  className="flex-1"
+                />
+              </div>
+            </div>
+
+            <Input
+              label="Email"
+              name="email"
+              type="email"
+              value={form.email}
+              onChange={(val) => handleFieldChange('email', val)}
+            />
+
+            <Input
+              label="Address"
+              name="address"
+              value={form.address}
+              onChange={(val) => handleFieldChange('address', val)}
+            />
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 bg-stone-50/60 border-t border-stone-100 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 rounded-xl transition-colors shadow-1"
+            >
               Cancel
             </button>
             <button
@@ -90,7 +197,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
               disabled={isSaving}
               className="px-5 py-2 text-sm font-medium text-stone-50 bg-stone-900 hover:bg-stone-950 rounded-xl transition-colors shadow-1 disabled:opacity-50"
             >
-              {isSaving ? 'Saving…' : isEditing ? 'Save Changes' : 'Create Client'}
+              {isSaving ? 'Saving…' : isEditing ? 'Save Changes' : 'Continue'}
             </button>
           </div>
         </form>
@@ -98,30 +205,3 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
     </div>
   );
 };
-
-interface FieldProps {
-  label: string;
-  name: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  type?: string;
-  required?: boolean;
-  autoFocus?: boolean;
-}
-
-const Field: React.FC<FieldProps> = ({ label, name, value, onChange, type = 'text', required, autoFocus }) => (
-  <div className="flex flex-col gap-1.5">
-    <label htmlFor={name} className="text-xs font-medium text-stone-500">
-      {label}{required && <span className="text-red-400 ml-0.5">*</span>}
-    </label>
-    <input
-      id={name}
-      name={name}
-      type={type}
-      value={value}
-      onChange={onChange}
-      autoFocus={autoFocus}
-      className="w-full px-3 py-2 text-sm text-stone-900 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-stone-400 transition-colors placeholder-stone-300"
-    />
-  </div>
-);

@@ -1,11 +1,14 @@
+@import '@fontsource-variable/tasa-orbiter';
+@import './shadows.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* Base variables using px values */
 :root {
-  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  --bg-main: #0f172a;
+  --font-family: 'TASA Orbiter', system-ui, -apple-system, sans-serif;
+  --bg-main: #FFFFFF;
   --border-radius: 12px;
   --spacing-small: 8px;
   --spacing-medium: 16px;

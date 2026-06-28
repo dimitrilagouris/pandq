@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base variables using px values */
+:root {
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --bg-main: #0f172a;
+  --border-radius: 12px;
+  --spacing-small: 8px;
+  --spacing-medium: 16px;
+  --spacing-large: 24px;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-main);
+  margin: 0px;
+}
+
+/* Glassmorphism card container custom styling */
+.glass-panel {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--border-radius);
+}

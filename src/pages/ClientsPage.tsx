@@ -4,6 +4,7 @@ import { Client } from '../types';
 import { Table, ColumnDef } from '../components/Table';
 import { Button } from '../components/Button';
 import { ClientModal } from '../components/ClientModal';
+import { Input } from '../components/Input';
 
 /**
  * Clients page — lists all clients with search, add, edit, delete actions.
@@ -114,16 +115,13 @@ export default function ClientsPage(): React.JSX.Element {
       </div>
 
       {/* Search */}
-      <div className="relative">
-        <TbSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
-        <input
-          type="text"
-          placeholder="Search clients…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-sm pl-9 pr-4 py-2 text-sm text-stone-900 bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-stone-400 transition-colors placeholder-stone-300"
-        />
-      </div>
+      <Input
+        value={search}
+        onChange={setSearch}
+        placeholder="Search clients…"
+        icon={<TbSearch className="w-4 h-4" />}
+        className="max-w-sm"
+      />
 
       {/* Error */}
       {error && (

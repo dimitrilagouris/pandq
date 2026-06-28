@@ -97,11 +97,11 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
     /* Backdrop */
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/40 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="w-full max-w-md bg-white rounded-2xl shadow-22 mx-4 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        className="w-full max-w-md bg-stone-100 border border-stone-200/80 rounded-2xl shadow-22 mx-4 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
+        <div className="flex items-center justify-between px-6 pt-6 pb-2">
           <h2 className="text-base font-semibold text-stone-900">
             {isEditing ? 'Edit Client' : 'New Client'}
           </h2>
@@ -184,11 +184,11 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 bg-stone-50/60 border-t border-stone-100 flex justify-end gap-3">
+          <div className="px-6 pb-6 pt-2 flex justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-stone-700 bg-white border border-stone-200 hover:bg-stone-50 rounded-xl transition-colors shadow-1"
+              className="px-4 py-2 text-sm font-medium text-stone-700 bg-stone-50 border border-stone-200/80 hover:bg-stone-200/50 rounded-xl transition-colors shadow-1"
             >
               Cancel
             </button>

@@ -3,6 +3,7 @@ import { Sidebar } from './components/Sidebar';
 import ClientsPage from './pages/ClientsPage';
 import InvoicePage from './pages/InvoicePage';
 import ProjectsPage from './pages/ProjectsPage';
+import SettingsPage from './pages/SettingsPage';
 
 export type Page = 'dashboard' | 'invoices' | 'clients' | 'activities' | 'settings' | 'projects';
 
@@ -19,6 +20,8 @@ export default function App(): React.JSX.Element {
         return <ClientsPage />;
       case 'invoices':
         return <InvoicePage onNavigate={setActivePage} invoiceId={editingInvoiceId} />;
+      case 'settings':
+        return <SettingsPage />;
       case 'projects':
         return (
           <ProjectsPage

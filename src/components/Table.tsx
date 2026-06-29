@@ -91,7 +91,7 @@ export function Table<T>({
     <div className="w-full flex flex-col gap-2">
       {/* Header */}
       <div
-        className="grid items-center bg-white  rounded-xl px-3 py-2.5 shadow-1"
+        className="grid items-center bg-stone-100  rounded-xl px-3 py-2.5 shadow-1"
         style={{ gridTemplateColumns: colWidths }}
       >
         {selectable && (

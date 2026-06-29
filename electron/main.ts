@@ -1,5 +1,6 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'node:url';
 import Database from 'better-sqlite3';
 
@@ -31,6 +32,16 @@ function initDatabase(): void {
       email TEXT,
       phone TEXT,
       address TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS projects (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      client_id INTEGER,
+      name TEXT NOT NULL,
+      description TEXT,
+      status TEXT,
+      start_date TEXT,
+      FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL
     );
 
     CREATE TABLE IF NOT EXISTS invoices (
@@ -120,7 +131,102 @@ app.whenReady().then(() => {
 
   ipcMain.handle('db-get-invoices', (): unknown[] => {
     if (!db) throw new Error('Database not initialised');
-    return db.prepare('SELECT * FROM invoices ORDER BY id DESC').all();
+    return db.prepare(`
+      SELECT i.*, c.name AS client_name, c.business_name AS client_business_name 
+      FROM invoices i 
+      LEFT JOIN clients c ON i.client_id = c.id 
+      ORDER BY i.id DESC
+    `).all();
+  });
+
+  ipcMain.handle('db-delete-invoice', (_event, id: number): unknown => {
+    if (!db) throw new Error('Database not initialised');
+    return db.prepare('DELETE FROM invoices WHERE id = ?').run(id);
+  });
+
+  ipcMain.handle('db-get-invoice-by-id', (_event, id: number): unknown => {
+    if (!db) throw new Error('Database not initialised');
+    const invoice = db.prepare('SELECT * FROM invoices WHERE id = ?').get(id) as any;
+    if (!invoice) return null;
+    const items = db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ?').all(id);
+    const discounts = db.prepare('SELECT * FROM discounts WHERE invoice_id = ?').all(id);
+    return { ...invoice, items, discounts };
+  });
+
+  ipcMain.handle('db-update-invoice', (
+    _event,
+    invoiceId: number,
+    clientId: number,
+    invoiceNumber: string,
+    date: string,
+    dueDate: string,
+    gstEnabled: boolean,
+    discount: number,
+    price: number,
+    items: Array<{ type: string; description: string; quantity: number; rate: number }>,
+    notes: string,
+  ): unknown => {
+    if (!db) throw new Error('Database not initialised');
+
+    const updateInvoice = db.prepare(
+      'UPDATE invoices SET client_id = ?, invoice_number = ?, date = ?, due_date = ?, price = ?, gst_added = ? WHERE id = ?'
+    );
+    const deleteItems = db.prepare('DELETE FROM invoice_items WHERE invoice_id = ?');
+    const insertItem = db.prepare(
+      'INSERT INTO invoice_items (invoice_id, type, description, hours, rate, quantity) VALUES (?, ?, ?, ?, ?, ?)'
+    );
+    const deleteDiscounts = db.prepare('DELETE FROM discounts WHERE invoice_id = ?');
+    const insertDiscount = db.prepare(
+      'INSERT INTO discounts (invoice_id, description, amount, type) VALUES (?, ?, ?, ?)'
+    );
+    const updateNoteStatus = db.prepare(
+      'UPDATE invoices SET status = ? WHERE id = ?'
+    );
+
+    const transaction = db.transaction(() => {
+      updateInvoice.run(clientId, invoiceNumber, date, dueDate, price, gstEnabled ? 1 : 0, invoiceId);
+      
+      deleteItems.run(invoiceId);
+      for (const item of items) {
+        insertItem.run(invoiceId, item.type, item.description, null, item.rate, item.quantity);
+      }
+
+      deleteDiscounts.run(invoiceId);
+      if (discount > 0) {
+        insertDiscount.run(invoiceId, 'Discount', discount, 'flat');
+      }
+
+      const notesVal = notes.trim() ? `draft|${notes.trim()}` : 'draft';
+      updateNoteStatus.run(notesVal, invoiceId);
+    });
+
+    transaction();
+    return true;
+  });
+
+  ipcMain.handle('db-get-projects', (): unknown[] => {
+    if (!db) throw new Error('Database not initialised');
+    return db.prepare(`
+      SELECT p.*, c.name AS client_name, c.business_name AS client_business_name 
+      FROM projects p 
+      LEFT JOIN clients c ON p.client_id = c.id 
+      ORDER BY p.name ASC
+    `).all();
+  });
+
+  ipcMain.handle('db-create-project', (_event, name: string, clientId: number | null, description: string, status: string, startDate: string): unknown => {
+    if (!db) throw new Error('Database not initialised');
+    return db.prepare('INSERT INTO projects (name, client_id, description, status, start_date) VALUES (?, ?, ?, ?, ?)').run(name, clientId, description, status, startDate);
+  });
+
+  ipcMain.handle('db-update-project', (_event, id: number, name: string, clientId: number | null, description: string, status: string, startDate: string): unknown => {
+    if (!db) throw new Error('Database not initialised');
+    return db.prepare('UPDATE projects SET name = ?, client_id = ?, description = ?, status = ?, start_date = ? WHERE id = ?').run(name, clientId, description, status, startDate, id);
+  });
+
+  ipcMain.handle('db-delete-project', (_event, id: number): unknown => {
+    if (!db) throw new Error('Database not initialised');
+    return db.prepare('DELETE FROM projects WHERE id = ?').run(id);
   });
 
   ipcMain.handle('db-create-invoice', (
@@ -172,6 +278,54 @@ app.whenReady().then(() => {
     });
 
     return transaction();
+  });
+
+  ipcMain.handle('print-to-pdf', async (_event, invoiceNumber: string, htmlContent: string): Promise<boolean> => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (!win) return false;
+
+    const { filePath } = await dialog.showSaveDialog(win, {
+      title: 'Save Invoice as PDF',
+      defaultPath: `Invoice-${invoiceNumber}.pdf`,
+      filters: [{ name: 'PDF Files', extensions: ['pdf'] }]
+    });
+
+    if (!filePath) return false;
+
+    const printWin = new BrowserWindow({
+      show: false,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true
+      }
+    });
+
+    const tempFilePath = path.join(app.getPath('temp'), `print-${Date.now()}.html`);
+    fs.writeFileSync(tempFilePath, htmlContent, 'utf-8');
+    
+    await printWin.loadFile(tempFilePath);
+
+    const pdfData = await printWin.webContents.printToPDF({
+      pageSize: 'A4',
+      margins: {
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0
+      },
+      printBackground: true
+    });
+
+    fs.writeFileSync(filePath, pdfData);
+    printWin.close();
+    
+    try {
+      fs.unlinkSync(tempFilePath);
+    } catch (e) {
+      console.error('Failed to delete temp file:', e);
+    }
+
+    return true;
   });
 
   app.on('activate', () => {

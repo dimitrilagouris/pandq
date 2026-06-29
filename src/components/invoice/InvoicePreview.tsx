@@ -40,7 +40,7 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({ form, client }) 
   return (
     <div className="h-full flex flex-col items-center py-8 px-6 overflow-y-auto">
       {/* Document card */}
-      <div className="w-full max-w-[620px] bg-white rounded-2xl shadow-22 overflow-hidden flex flex-col">
+      <div id="invoice-preview-card" className="w-full max-w-[620px] bg-white rounded-2xl shadow-22 overflow-hidden flex flex-col">
 
         {/* Document header band */}
         <div className="bg-stone-900 px-8 py-7 flex items-start justify-between">

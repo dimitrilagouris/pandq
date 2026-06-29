@@ -35,4 +35,47 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ): Promise<unknown> => {
     return ipcRenderer.invoke('db-create-invoice', clientId, invoiceNumber, date, dueDate, gstEnabled, discount, price, items, notes);
   },
+
+  deleteInvoice: (id: number): Promise<unknown> => {
+    return ipcRenderer.invoke('db-delete-invoice', id);
+  },
+
+  printToPDF: (invoiceNumber: string, htmlContent: string): Promise<boolean> => {
+    return ipcRenderer.invoke('print-to-pdf', invoiceNumber, htmlContent);
+  },
+
+  getInvoiceById: (id: number): Promise<any> => {
+    return ipcRenderer.invoke('db-get-invoice-by-id', id);
+  },
+
+  updateInvoice: (
+    invoiceId: number,
+    clientId: number,
+    invoiceNumber: string,
+    date: string,
+    dueDate: string,
+    gstEnabled: boolean,
+    discount: number,
+    price: number,
+    items: Array<{ type: string; description: string; quantity: number; rate: number }>,
+    notes: string,
+  ): Promise<unknown> => {
+    return ipcRenderer.invoke('db-update-invoice', invoiceId, clientId, invoiceNumber, date, dueDate, gstEnabled, discount, price, items, notes);
+  },
+
+  getProjects: (): Promise<any[]> => {
+    return ipcRenderer.invoke('db-get-projects');
+  },
+
+  createProject: (name: string, clientId: number | null, description: string, status: string, startDate: string): Promise<unknown> => {
+    return ipcRenderer.invoke('db-create-project', name, clientId, description, status, startDate);
+  },
+
+  updateProject: (id: number, name: string, clientId: number | null, description: string, status: string, startDate: string): Promise<unknown> => {
+    return ipcRenderer.invoke('db-update-project', id, name, clientId, description, status, startDate);
+  },
+
+  deleteProject: (id: number): Promise<unknown> => {
+    return ipcRenderer.invoke('db-delete-project', id);
+  },
 });

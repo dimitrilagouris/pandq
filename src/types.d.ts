@@ -36,6 +36,17 @@ export interface Discount {
   type: string;
 }
 
+export interface Project {
+  id: number;
+  client_id: number | null;
+  name: string;
+  description: string;
+  status: string;
+  start_date: string;
+  client_name?: string;
+  client_business_name?: string;
+}
+
 export interface ElectronAPI {
   getClients: () => Promise<Client[]>;
   createClient: (name: string, businessName: string, email: string, phone: string, address: string) => Promise<unknown>;
@@ -53,6 +64,25 @@ export interface ElectronAPI {
     items: Array<{ type: string; description: string; quantity: number; rate: number }>,
     notes: string,
   ) => Promise<unknown>;
+  deleteInvoice: (id: number) => Promise<unknown>;
+  printToPDF: (invoiceNumber: string, htmlContent: string) => Promise<boolean>;
+  getInvoiceById: (id: number) => Promise<any>;
+  updateInvoice: (
+    invoiceId: number,
+    clientId: number,
+    invoiceNumber: string,
+    date: string,
+    dueDate: string,
+    gstEnabled: boolean,
+    discount: number,
+    price: number,
+    items: Array<{ type: string; description: string; quantity: number; rate: number }>,
+    notes: string,
+  ) => Promise<unknown>;
+  getProjects: () => Promise<Project[]>;
+  createProject: (name: string, clientId: number | null, description: string, status: string, startDate: string) => Promise<unknown>;
+  updateProject: (id: number, name: string, clientId: number | null, description: string, status: string, startDate: string) => Promise<unknown>;
+  deleteProject: (id: number) => Promise<unknown>;
 }
 
 declare global {

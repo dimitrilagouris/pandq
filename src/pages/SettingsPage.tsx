@@ -9,6 +9,7 @@ import {
 } from 'react-icons/tb';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { TemplatedInput } from '../components/TemplatedInput';
 
 type SettingsTab = 'personalisation' | 'organisation' | 'invoice' | 'email' | 'payment';
 
@@ -232,13 +233,13 @@ export default function SettingsPage(): React.JSX.Element {
                 type="email"
               />
             </div>
-            <Input
+            <TemplatedInput
               label="Default Subject Template"
               value={emailSubject}
               onChange={setEmailSubject}
-              placeholder="Use {invoiceNumber} as placeholder"
+              placeholder="Use tags to dynamic prefill, e.g. Invoice {invoiceNumber}"
             />
-            <Input
+            <TemplatedInput
               label="Default Message Body"
               value={emailBody}
               onChange={setEmailBody}

@@ -88,4 +88,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   deleteProject: (id: number): Promise<unknown> => {
     return ipcRenderer.invoke('db-delete-project', id);
   },
+
+  getSettings: (): Promise<Record<string, string>> => {
+    return ipcRenderer.invoke('db-get-settings');
+  },
+
+  saveSettings: (settings: Record<string, string>): Promise<boolean> => {
+    return ipcRenderer.invoke('db-save-settings', settings);
+  },
 });

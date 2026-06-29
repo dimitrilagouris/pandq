@@ -48,68 +48,77 @@ export default function SettingsPage(): React.JSX.Element {
   const [accountNumber, setAccountNumber] = useState<string>('');
   const [paymentInstructions, setPaymentInstructions] = useState<string>('Please pay within terms.');
 
-  // Load all settings from localStorage on mount
+  // Load all settings from SQLite database on mount
   useEffect(() => {
-    // Org
-    setOrgName(localStorage.getItem('setting_org_name') || 'Your Business');
-    setOrgAbn(localStorage.getItem('setting_org_abn') || '');
-    setOrgAddress(localStorage.getItem('setting_org_address') || 'Your address here');
-    setOrgPhone(localStorage.getItem('setting_org_phone') || '');
-    setOrgEmail(localStorage.getItem('setting_org_email') || '');
+    window.electronAPI.getSettings().then((settings) => {
+      // Org
+      setOrgName(settings['setting_org_name'] || 'Your Business');
+      setOrgAbn(settings['setting_org_abn'] || '');
+      setOrgAddress(settings['setting_org_address'] || 'Your address here');
+      setOrgPhone(settings['setting_org_phone'] || '');
+      setOrgEmail(settings['setting_org_email'] || '');
 
-    // Personalisation
-    setLanguage(localStorage.getItem('setting_language') || 'en-AU');
+      // Personalisation
+      setLanguage(settings['setting_language'] || 'en-AU');
 
-    // Invoice
-    setDefaultDueDays(localStorage.getItem('setting_default_due_days') || '14');
-    setInvoicePrefix(localStorage.getItem('setting_invoice_prefix') || 'INV-');
-    setDefaultNotes(localStorage.getItem('setting_default_notes') || '');
-    setDefaultGstEnabled(localStorage.getItem('setting_default_gst_enabled') === 'true');
-    setDefaultDisplayDueDate(localStorage.getItem('setting_default_display_due_date') !== 'false');
+      // Invoice
+      setDefaultDueDays(settings['setting_default_due_days'] || '14');
+      setInvoicePrefix(settings['setting_invoice_prefix'] || 'INV-');
+      setDefaultNotes(settings['setting_default_notes'] || '');
+      setDefaultGstEnabled(settings['setting_default_gst_enabled'] === 'true');
+      setDefaultDisplayDueDate(settings['setting_default_display_due_date'] !== 'false');
 
-    // Email
-    setSenderName(localStorage.getItem('setting_sender_name') || '');
-    setEmailSubject(localStorage.getItem('setting_email_subject') || 'Invoice {invoiceNumber}');
-    setEmailBody(localStorage.getItem('setting_email_body') || 'Hi,\n\nPlease find attached invoice {invoiceNumber}.\n\nKind regards,\nYour Business');
+      // Email
+      setSenderName(settings['setting_sender_name'] || '');
+      setEmailSubject(settings['setting_email_subject'] || 'Invoice {invoiceNumber}');
+      setEmailBody(settings['setting_email_body'] || 'Hi,\n\nPlease find attached invoice {invoiceNumber}.\n\nKind regards,\nYour Business');
 
-    // Payment
-    setBankName(localStorage.getItem('setting_bank_name') || '');
-    setBsb(localStorage.getItem('setting_bsb') || '');
-    setAccountNumber(localStorage.getItem('setting_account_number') || '');
-    setPaymentInstructions(localStorage.getItem('setting_payment_instructions') || 'Please pay within terms.');
+      // Payment
+      setBankName(settings['setting_bank_name'] || '');
+      setBsb(settings['setting_bsb'] || '');
+      setAccountNumber(settings['setting_account_number'] || '');
+      setPaymentInstructions(settings['setting_payment_instructions'] || 'Please pay within terms.');
+    }).catch(console.error);
   }, []);
 
   /**
-   * Save the settings for the currently active tab to localStorage.
+   * Save the settings for the currently active tab to SQLite database.
    */
-  const handleSave = (): void => {
+  const handleSave = async (): Promise<void> => {
+    const toSave: Record<string, string> = {};
+
     if (activeTab === 'organisation') {
-      localStorage.setItem('setting_org_name', orgName);
-      localStorage.setItem('setting_org_abn', orgAbn);
-      localStorage.setItem('setting_org_address', orgAddress);
-      localStorage.setItem('setting_org_phone', orgPhone);
-      localStorage.setItem('setting_org_email', orgEmail);
+      toSave['setting_org_name'] = orgName;
+      toSave['setting_org_abn'] = orgAbn;
+      toSave['setting_org_address'] = orgAddress;
+      toSave['setting_org_phone'] = orgPhone;
+      toSave['setting_org_email'] = orgEmail;
     } else if (activeTab === 'personalisation') {
-      localStorage.setItem('setting_language', language);
+      toSave['setting_language'] = language;
     } else if (activeTab === 'invoice') {
-      localStorage.setItem('setting_default_due_days', defaultDueDays);
-      localStorage.setItem('setting_invoice_prefix', invoicePrefix);
-      localStorage.setItem('setting_default_notes', defaultNotes);
-      localStorage.setItem('setting_default_gst_enabled', String(defaultGstEnabled));
-      localStorage.setItem('setting_default_display_due_date', String(defaultDisplayDueDate));
+      toSave['setting_default_due_days'] = defaultDueDays;
+      toSave['setting_invoice_prefix'] = invoicePrefix;
+      toSave['setting_default_notes'] = defaultNotes;
+      toSave['setting_default_gst_enabled'] = String(defaultGstEnabled);
+      toSave['setting_default_display_due_date'] = String(defaultDisplayDueDate);
     } else if (activeTab === 'email') {
-      localStorage.setItem('setting_sender_name', senderName);
-      localStorage.setItem('setting_email_subject', emailSubject);
-      localStorage.setItem('setting_email_body', emailBody);
+      toSave['setting_sender_name'] = senderName;
+      toSave['setting_email_subject'] = emailSubject;
+      toSave['setting_email_body'] = emailBody;
     } else if (activeTab === 'payment') {
-      localStorage.setItem('setting_bank_name', bankName);
-      localStorage.setItem('setting_bsb', bsb);
-      localStorage.setItem('setting_account_number', accountNumber);
-      localStorage.setItem('setting_payment_instructions', paymentInstructions);
+      toSave['setting_bank_name'] = bankName;
+      toSave['setting_bsb'] = bsb;
+      toSave['setting_account_number'] = accountNumber;
+      toSave['setting_payment_instructions'] = paymentInstructions;
     }
 
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
+    try {
+      await window.electronAPI.saveSettings(toSave);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      console.error('Failed to save settings:', err);
+    }
   };
 
   /**

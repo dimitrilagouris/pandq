@@ -76,24 +76,32 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
         }
       }).catch(console.error);
     } else {
-      const defaultDueDays = localStorage.getItem('setting_default_due_days') || '14';
-      const days = parseInt(defaultDueDays, 10) || 14;
-      const d = new Date();
-      d.setDate(d.getDate() + days);
-      const computedDueDate = d.toISOString().slice(0, 10);
+      window.electronAPI.getSettings().then((settings) => {
+        const defaultDueDays = settings['setting_default_due_days'] || '14';
+        const days = parseInt(defaultDueDays, 10) || 14;
+        const d = new Date();
+        d.setDate(d.getDate() + days);
+        const computedDueDate = d.toISOString().slice(0, 10);
 
-      const prefix = localStorage.getItem('setting_invoice_prefix') || 'INV-';
-      const defaultNotes = localStorage.getItem('setting_default_notes') || '';
-      const defaultGst = localStorage.getItem('setting_default_gst_enabled') === 'true';
-      const defaultDisplayDue = localStorage.getItem('setting_default_display_due_date') !== 'false';
+        const prefix = settings['setting_invoice_prefix'] || 'INV-';
+        const defaultNotes = settings['setting_default_notes'] || '';
+        const defaultGst = settings['setting_default_gst_enabled'] === 'true';
+        const defaultDisplayDue = settings['setting_default_display_due_date'] !== 'false';
 
-      setForm({
-        ...INITIAL_FORM,
-        invoiceNumber: `${prefix}${String(Date.now()).slice(-5)}`,
-        dueDate: computedDueDate,
-        gstEnabled: defaultGst,
-        displayDueDate: defaultDisplayDue,
-        notes: defaultNotes,
+        setForm({
+          ...INITIAL_FORM,
+          invoiceNumber: `${prefix}${String(Date.now()).slice(-5)}`,
+          dueDate: computedDueDate,
+          gstEnabled: defaultGst,
+          displayDueDate: defaultDisplayDue,
+          notes: defaultNotes,
+        });
+      }).catch(err => {
+        console.error('Failed to load default settings:', err);
+        setForm({
+          ...INITIAL_FORM,
+          invoiceNumber: `INV-${String(Date.now()).slice(-5)}`,
+        });
       });
     }
     setError('');

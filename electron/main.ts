@@ -77,6 +77,11 @@ function initDatabase(): void {
       type TEXT,
       FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT
+    );
   `);
 
   // Run column migrations to add display_due_date column if not exists
@@ -121,6 +126,28 @@ app.whenReady().then(() => {
   ipcMain.handle('db-get-clients', (): unknown[] => {
     if (!db) throw new Error('Database not initialised');
     return db.prepare('SELECT * FROM clients ORDER BY name ASC').all();
+  });
+
+  ipcMain.handle('db-get-settings', (): Record<string, string> => {
+    if (!db) throw new Error('Database not initialised');
+    const rows = db.prepare('SELECT key, value FROM settings').all() as Array<{ key: string; value: string }>;
+    const settingsObj: Record<string, string> = {};
+    for (const row of rows) {
+      settingsObj[row.key] = row.value;
+    }
+    return settingsObj;
+  });
+
+  ipcMain.handle('db-save-settings', (_event, settings: Record<string, string>): boolean => {
+    if (!db) throw new Error('Database not initialised');
+    const insert = db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
+    const transaction = db.transaction(() => {
+      for (const [key, value] of Object.entries(settings)) {
+        insert.run(key, value);
+      }
+    });
+    transaction();
+    return true;
   });
 
   ipcMain.handle('db-create-client', (_event, name: string, businessName: string, email: string, phone: string, address: string): unknown => {

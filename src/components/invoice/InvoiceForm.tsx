@@ -94,6 +94,29 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
             icon={<TbCalendar className="w-4 h-4" />}
           />
         </div>
+        <div className="grid grid-cols-2 gap-3 mt-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-stone-500 tracking-wide">Display Due Date to client</label>
+            <div className="flex items-center h-10">
+              <button
+                type="button"
+                onClick={() => onChange({ displayDueDate: !form.displayDueDate })}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out shadow-3 ${
+                  form.displayDueDate ? 'bg-stone-800' : 'bg-stone-200'
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-1 ring-0 transition duration-200 ease-in-out ${
+                    form.displayDueDate ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+              <span className="text-sm font-medium text-stone-700 ml-3 select-none">
+                {form.displayDueDate ? 'Visible' : 'Hidden'}
+              </span>
+            </div>
+          </div>
+        </div>
       </Section>
 
       {/* ── Billed To ── */}
@@ -119,9 +142,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
             </div>
 
             {isOpen && (
-              <div className="absolute z-50 left-0 right-0 mt-1 border border-stone-200/80 rounded-xl shadow-22 max-h-60 overflow-y-auto">
+              <div className="absolute z-50 left-0 right-0 mt-1 bg-stone-600/95 backdrop-blur-md border border-white/5 rounded-2xl shadow-2xl max-h-60 overflow-y-auto p-1.5 flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-150">
                 {filteredClients.length > 0 ? (
-                  <div className="py-1">
+                  <div className="flex flex-col gap-0.5">
                     {filteredClients.map(c => {
                       const isSelected = c.id === form.clientId;
                       return (
@@ -132,20 +155,20 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
                             onChange({ clientId: c.id });
                             setIsOpen(false);
                           }}
-                          className={`w-full text-left px-4 py-2 text-sm transition-colors flex flex-col gap-0.5
-                            ${isSelected ? 'bg-stone-200/50 text-stone-950 font-medium' : 'text-stone-900 hover:bg-stone-200/30'}
+                          className={`w-full text-left px-3 py-1.5 rounded-xl transition-all duration-150 flex flex-col gap-0.5
+                            ${isSelected ? 'bg-white/10 text-white shadow-sm' : 'text-stone-200 hover:bg-white/5'}
                           `}
                         >
-                          <span className="font-medium">{c.name}</span>
+                          <span className="text-xs font-normal">{c.name}</span>
                           {c.business_name && (
-                            <span className="text-xs text-stone-500">{c.business_name}</span>
+                            <span className="text-[10px] text-stone-300/80 mt-0.5">{c.business_name}</span>
                           )}
                         </button>
                       );
                     })}
                   </div>
                 ) : (
-                  <p className="text-xs text-stone-400 py-3 text-center">No clients found</p>
+                  <p className="text-xs text-stone-300 py-3 text-center select-none">No clients found</p>
                 )}
               </div>
             )}

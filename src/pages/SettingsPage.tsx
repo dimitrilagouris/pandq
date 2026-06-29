@@ -28,18 +28,17 @@ export default function SettingsPage(): React.JSX.Element {
   const [orgEmail, setOrgEmail] = useState<string>('');
 
   // Personalisation State
-  const [theme, setTheme] = useState<string>('system');
   const [language, setLanguage] = useState<string>('en-AU');
-  const [dateFormat, setDateFormat] = useState<string>('DD/MM/YYYY');
 
   // Invoice Creation State
   const [defaultDueDays, setDefaultDueDays] = useState<string>('14');
   const [invoicePrefix, setInvoicePrefix] = useState<string>('INV-');
   const [defaultNotes, setDefaultNotes] = useState<string>('');
+  const [defaultGstEnabled, setDefaultGstEnabled] = useState<boolean>(false);
+  const [defaultDisplayDueDate, setDefaultDisplayDueDate] = useState<boolean>(true);
 
   // Email Preference State
   const [senderName, setSenderName] = useState<string>('');
-  const [replyTo, setReplyTo] = useState<string>('');
   const [emailSubject, setEmailSubject] = useState<string>('Invoice {invoiceNumber}');
   const [emailBody, setEmailBody] = useState<string>('Hi,\n\nPlease find attached invoice {invoiceNumber}.\n\nKind regards,\nYour Business');
 
@@ -59,18 +58,17 @@ export default function SettingsPage(): React.JSX.Element {
     setOrgEmail(localStorage.getItem('setting_org_email') || '');
 
     // Personalisation
-    setTheme(localStorage.getItem('setting_theme') || 'system');
     setLanguage(localStorage.getItem('setting_language') || 'en-AU');
-    setDateFormat(localStorage.getItem('setting_date_format') || 'DD/MM/YYYY');
 
     // Invoice
     setDefaultDueDays(localStorage.getItem('setting_default_due_days') || '14');
     setInvoicePrefix(localStorage.getItem('setting_invoice_prefix') || 'INV-');
     setDefaultNotes(localStorage.getItem('setting_default_notes') || '');
+    setDefaultGstEnabled(localStorage.getItem('setting_default_gst_enabled') === 'true');
+    setDefaultDisplayDueDate(localStorage.getItem('setting_default_display_due_date') !== 'false');
 
     // Email
     setSenderName(localStorage.getItem('setting_sender_name') || '');
-    setReplyTo(localStorage.getItem('setting_reply_to') || '');
     setEmailSubject(localStorage.getItem('setting_email_subject') || 'Invoice {invoiceNumber}');
     setEmailBody(localStorage.getItem('setting_email_body') || 'Hi,\n\nPlease find attached invoice {invoiceNumber}.\n\nKind regards,\nYour Business');
 
@@ -92,16 +90,15 @@ export default function SettingsPage(): React.JSX.Element {
       localStorage.setItem('setting_org_phone', orgPhone);
       localStorage.setItem('setting_org_email', orgEmail);
     } else if (activeTab === 'personalisation') {
-      localStorage.setItem('setting_theme', theme);
       localStorage.setItem('setting_language', language);
-      localStorage.setItem('setting_date_format', dateFormat);
     } else if (activeTab === 'invoice') {
       localStorage.setItem('setting_default_due_days', defaultDueDays);
       localStorage.setItem('setting_invoice_prefix', invoicePrefix);
       localStorage.setItem('setting_default_notes', defaultNotes);
+      localStorage.setItem('setting_default_gst_enabled', String(defaultGstEnabled));
+      localStorage.setItem('setting_default_display_due_date', String(defaultDisplayDueDate));
     } else if (activeTab === 'email') {
       localStorage.setItem('setting_sender_name', senderName);
-      localStorage.setItem('setting_reply_to', replyTo);
       localStorage.setItem('setting_email_subject', emailSubject);
       localStorage.setItem('setting_email_body', emailBody);
     } else if (activeTab === 'payment') {
@@ -123,29 +120,11 @@ export default function SettingsPage(): React.JSX.Element {
       case 'personalisation':
         return (
           <div className="flex flex-col gap-5 max-w-lg">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Appearance Mode</label>
-              <select
-                value={theme}
-                onChange={(e) => setTheme(e.target.value)}
-                className="w-full h-10 px-3 bg-white border border-stone-200 rounded-xl text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-400"
-              >
-                <option value="light">Light Mode</option>
-                <option value="dark">Dark Mode</option>
-                <option value="system">System Default</option>
-              </select>
-            </div>
             <Input
               label="Language"
               value={language}
               onChange={setLanguage}
               placeholder="e.g. en-AU"
-            />
-            <Input
-              label="Date Display Format"
-              value={dateFormat}
-              onChange={setDateFormat}
-              placeholder="e.g. DD/MM/YYYY"
             />
           </div>
         );
@@ -213,26 +192,61 @@ export default function SettingsPage(): React.JSX.Element {
               multiline
               rows={4}
             />
+
+            {/* Toggle: Default GST Enabled */}
+            <div className="flex items-center justify-between py-2.5 border-b border-stone-100">
+              <div className="flex flex-col gap-0.5 max-w-[80%]">
+                <span className="text-sm font-medium text-stone-700">Enable GST by default</span>
+                <span className="text-xs text-stone-400">Enable GST calculations automatically on all new invoices.</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDefaultGstEnabled(!defaultGstEnabled)}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-2
+                  ${defaultGstEnabled ? 'bg-stone-800' : 'bg-stone-200'}
+                `}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out
+                    ${defaultGstEnabled ? 'translate-x-5' : 'translate-x-0'}
+                  `}
+                />
+              </button>
+            </div>
+
+            {/* Toggle: Default Display Due Date */}
+            <div className="flex items-center justify-between py-2.5 border-b border-stone-100">
+              <div className="flex flex-col gap-0.5 max-w-[80%]">
+                <span className="text-sm font-medium text-stone-700">Display Due Date to client</span>
+                <span className="text-xs text-stone-400">Toggle whether the due date is visible on new client invoices.</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDefaultDisplayDueDate(!defaultDisplayDueDate)}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-2
+                  ${defaultDisplayDueDate ? 'bg-stone-800' : 'bg-stone-200'}
+                `}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out
+                    ${defaultDisplayDueDate ? 'translate-x-5' : 'translate-x-0'}
+                  `}
+                />
+              </button>
+            </div>
           </div>
         );
       case 'email':
         return (
           <div className="flex flex-col gap-5 max-w-lg">
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="Default Sender Name"
-                value={senderName}
-                onChange={setSenderName}
-                placeholder="e.g. Acme Billing"
-              />
-              <Input
-                label="Default Reply-To Email"
-                value={replyTo}
-                onChange={setReplyTo}
-                placeholder="e.g. hello@acme.com"
-                type="email"
-              />
-            </div>
+            <Input
+              label="Default Sender Name"
+              value={senderName}
+              onChange={setSenderName}
+              placeholder="e.g. Acme Billing"
+            />
             <TemplatedInput
               label="Default Subject Template"
               value={emailSubject}
@@ -308,15 +322,15 @@ export default function SettingsPage(): React.JSX.Element {
               <span>My Organisation</span>
             </button>
             <button
-              onClick={() => { setActiveTab('personalisation'); setSaveSuccess(false); }}
+              onClick={() => { setActiveTab('payment'); setSaveSuccess(false); }}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
-                ${activeTab === 'personalisation' 
+                ${activeTab === 'payment' 
                   ? 'bg-stone-100 text-stone-900' 
                   : 'text-stone-600 hover:bg-stone-100/50 hover:text-stone-900'}
               `}
             >
-              <TbPalette className={`w-4 h-4 flex-shrink-0 ${activeTab === 'personalisation' ? 'text-stone-900' : 'text-stone-400'}`} />
-              <span>Personalisation</span>
+              <TbCreditCard className={`w-4 h-4 flex-shrink-0 ${activeTab === 'payment' ? 'text-stone-900' : 'text-stone-400'}`} />
+              <span>Payment Details</span>
             </button>
           </nav>
         </div>
@@ -327,6 +341,17 @@ export default function SettingsPage(): React.JSX.Element {
             <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Preferences</span>
           </div>
           <nav className="flex flex-col gap-0.5">
+            <button
+              onClick={() => { setActiveTab('personalisation'); setSaveSuccess(false); }}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
+                ${activeTab === 'personalisation' 
+                  ? 'bg-stone-100 text-stone-900' 
+                  : 'text-stone-600 hover:bg-stone-100/50 hover:text-stone-900'}
+              `}
+            >
+              <TbPalette className={`w-4 h-4 flex-shrink-0 ${activeTab === 'personalisation' ? 'text-stone-900' : 'text-stone-400'}`} />
+              <span>Personalisation</span>
+            </button>
             <button
               onClick={() => { setActiveTab('invoice'); setSaveSuccess(false); }}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
@@ -348,17 +373,6 @@ export default function SettingsPage(): React.JSX.Element {
             >
               <TbMail className={`w-4 h-4 flex-shrink-0 ${activeTab === 'email' ? 'text-stone-900' : 'text-stone-400'}`} />
               <span>Email Preference</span>
-            </button>
-            <button
-              onClick={() => { setActiveTab('payment'); setSaveSuccess(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
-                ${activeTab === 'payment' 
-                  ? 'bg-stone-100 text-stone-900' 
-                  : 'text-stone-600 hover:bg-stone-100/50 hover:text-stone-900'}
-              `}
-            >
-              <TbCreditCard className={`w-4 h-4 flex-shrink-0 ${activeTab === 'payment' ? 'text-stone-900' : 'text-stone-400'}`} />
-              <span>Payment Details</span>
             </button>
           </nav>
         </div>

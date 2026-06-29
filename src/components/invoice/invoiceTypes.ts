@@ -16,6 +16,7 @@ export interface InvoiceFormState {
   clientId: number | null;
   items: LineItem[];
   gstEnabled: boolean;
+  displayDueDate: boolean;
   discount: number;
   notes: string;
 }

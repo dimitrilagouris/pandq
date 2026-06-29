@@ -16,6 +16,7 @@ export interface Invoice {
   status: string;
   price: number;
   gst_added: boolean;
+  display_due_date?: boolean;
   client_name?: string;
   client_business_name?: string;
   client_email?: string;
@@ -62,6 +63,7 @@ export interface ElectronAPI {
     date: string,
     dueDate: string,
     gstEnabled: boolean,
+    displayDueDate: boolean,
     discount: number,
     price: number,
     items: Array<{ type: string; description: string; quantity: number; rate: number }>,
@@ -79,6 +81,7 @@ export interface ElectronAPI {
     date: string,
     dueDate: string,
     gstEnabled: boolean,
+    displayDueDate: boolean,
     discount: number,
     price: number,
     items: Array<{ type: string; description: string; quantity: number; rate: number }>,

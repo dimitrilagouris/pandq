@@ -102,10 +102,12 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({ form, client }) 
               <p className="text-xs text-stone-400 mb-1">Date issued</p>
               <p className="text-sm font-semibold text-stone-900">{formatDate(form.dateIssued)}</p>
             </div>
-            <div>
-              <p className="text-xs text-stone-400 mb-1">Due date</p>
-              <p className="text-sm font-semibold text-stone-900">{formatDate(form.dueDate)}</p>
-            </div>
+            {form.displayDueDate && (
+              <div>
+                <p className="text-xs text-stone-400 mb-1">Due date</p>
+                <p className="text-sm font-semibold text-stone-900">{formatDate(form.dueDate)}</p>
+              </div>
+            )}
           </div>
 
           {/* Divider */}

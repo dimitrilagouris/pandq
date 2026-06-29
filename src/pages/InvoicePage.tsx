@@ -30,6 +30,7 @@ const INITIAL_FORM: InvoiceFormState = {
   clientId: null,
   items: [],
   gstEnabled: true,
+  displayDueDate: true,
   discount: 0,
   notes: '',
 };
@@ -68,15 +69,31 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
               unitPrice: item.rate,
             })),
             gstEnabled: Boolean(data.gst_added),
+            displayDueDate: data.display_due_date !== undefined ? Boolean(data.display_due_date) : true,
             discount: data.discounts && data.discounts[0] ? data.discounts[0].amount : 0,
             notes: notesStr,
           });
         }
       }).catch(console.error);
     } else {
+      const defaultDueDays = localStorage.getItem('setting_default_due_days') || '14';
+      const days = parseInt(defaultDueDays, 10) || 14;
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      const computedDueDate = d.toISOString().slice(0, 10);
+
+      const prefix = localStorage.getItem('setting_invoice_prefix') || 'INV-';
+      const defaultNotes = localStorage.getItem('setting_default_notes') || '';
+      const defaultGst = localStorage.getItem('setting_default_gst_enabled') === 'true';
+      const defaultDisplayDue = localStorage.getItem('setting_default_display_due_date') !== 'false';
+
       setForm({
         ...INITIAL_FORM,
-        invoiceNumber: `INV-${String(Date.now()).slice(-5)}`,
+        invoiceNumber: `${prefix}${String(Date.now()).slice(-5)}`,
+        dueDate: computedDueDate,
+        gstEnabled: defaultGst,
+        displayDueDate: defaultDisplayDue,
+        notes: defaultNotes,
       });
     }
     setError('');
@@ -116,6 +133,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
           form.dateIssued,
           form.dueDate,
           form.gstEnabled,
+          form.displayDueDate,
           form.discount,
           totals.grandTotal,
           items,
@@ -128,6 +146,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
           form.dateIssued,
           form.dueDate,
           form.gstEnabled,
+          form.displayDueDate,
           form.discount,
           totals.grandTotal,
           items,
@@ -179,6 +198,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
           form.dateIssued,
           form.dueDate,
           form.gstEnabled,
+          form.displayDueDate,
           form.discount,
           totals.grandTotal,
           items,
@@ -191,6 +211,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
           form.dateIssued,
           form.dueDate,
           form.gstEnabled,
+          form.displayDueDate,
           form.discount,
           totals.grandTotal,
           items,
@@ -290,6 +311,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
           form.dateIssued,
           form.dueDate,
           form.gstEnabled,
+          form.displayDueDate,
           form.discount,
           totals.grandTotal,
           items,
@@ -302,6 +324,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
           form.dateIssued,
           form.dueDate,
           form.gstEnabled,
+          form.displayDueDate,
           form.discount,
           totals.grandTotal,
           items,

@@ -54,6 +54,7 @@ function initDatabase(): void {
       status TEXT,
       price REAL,
       gst_added BOOLEAN,
+      display_due_date BOOLEAN DEFAULT 1,
       FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
     );
 
@@ -77,6 +78,13 @@ function initDatabase(): void {
       FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
     );
   `);
+
+  // Run column migrations to add display_due_date column if not exists
+  const tableInfo = db.prepare("PRAGMA table_info(invoices)").all() as Array<{ name: string }>;
+  const hasDisplayDueDate = tableInfo.some((col) => col.name === 'display_due_date');
+  if (!hasDisplayDueDate) {
+    db.exec("ALTER TABLE invoices ADD COLUMN display_due_date BOOLEAN DEFAULT 1");
+  }
 }
 
 /**
@@ -162,6 +170,7 @@ app.whenReady().then(() => {
     date: string,
     dueDate: string,
     gstEnabled: boolean,
+    displayDueDate: boolean,
     discount: number,
     price: number,
     items: Array<{ type: string; description: string; quantity: number; rate: number }>,
@@ -170,7 +179,7 @@ app.whenReady().then(() => {
     if (!db) throw new Error('Database not initialised');
 
     const updateInvoice = db.prepare(
-      'UPDATE invoices SET client_id = ?, invoice_number = ?, date = ?, due_date = ?, price = ?, gst_added = ? WHERE id = ?'
+      'UPDATE invoices SET client_id = ?, invoice_number = ?, date = ?, due_date = ?, price = ?, gst_added = ?, display_due_date = ? WHERE id = ?'
     );
     const deleteItems = db.prepare('DELETE FROM invoice_items WHERE invoice_id = ?');
     const insertItem = db.prepare(
@@ -185,7 +194,7 @@ app.whenReady().then(() => {
     );
 
     const transaction = db.transaction(() => {
-      updateInvoice.run(clientId, invoiceNumber, date, dueDate, price, gstEnabled ? 1 : 0, invoiceId);
+      updateInvoice.run(clientId, invoiceNumber, date, dueDate, price, gstEnabled ? 1 : 0, displayDueDate ? 1 : 0, invoiceId);
       
       deleteItems.run(invoiceId);
       for (const item of items) {
@@ -237,6 +246,7 @@ app.whenReady().then(() => {
     date: string,
     dueDate: string,
     gstEnabled: boolean,
+    displayDueDate: boolean,
     discount: number,
     price: number,
     items: Array<{ type: string; description: string; quantity: number; rate: number }>,
@@ -246,7 +256,7 @@ app.whenReady().then(() => {
 
     // Persist invoice, items, and optional discount atomically
     const insertInvoice = db.prepare(
-      'INSERT INTO invoices (client_id, invoice_number, date, due_date, status, price, gst_added) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO invoices (client_id, invoice_number, date, due_date, status, price, gst_added, display_due_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     );
     const insertItem = db.prepare(
       'INSERT INTO invoice_items (invoice_id, type, description, hours, rate, quantity) VALUES (?, ?, ?, ?, ?, ?)'
@@ -259,7 +269,7 @@ app.whenReady().then(() => {
     );
 
     const transaction = db.transaction(() => {
-      const result = insertInvoice.run(clientId, invoiceNumber, date, dueDate, 'draft', price, gstEnabled ? 1 : 0);
+      const result = insertInvoice.run(clientId, invoiceNumber, date, dueDate, 'draft', price, gstEnabled ? 1 : 0, displayDueDate ? 1 : 0);
       const invoiceId = result.lastInsertRowid as number;
 
       for (const item of items) {

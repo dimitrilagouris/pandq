@@ -28,12 +28,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     date: string,
     dueDate: string,
     gstEnabled: boolean,
+    displayDueDate: boolean,
     discount: number,
     price: number,
     items: Array<{ type: string; description: string; quantity: number; rate: number }>,
     notes: string,
   ): Promise<unknown> => {
-    return ipcRenderer.invoke('db-create-invoice', clientId, invoiceNumber, date, dueDate, gstEnabled, discount, price, items, notes);
+    return ipcRenderer.invoke('db-create-invoice', clientId, invoiceNumber, date, dueDate, gstEnabled, displayDueDate, discount, price, items, notes);
   },
 
   deleteInvoice: (id: number): Promise<unknown> => {
@@ -63,12 +64,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     date: string,
     dueDate: string,
     gstEnabled: boolean,
+    displayDueDate: boolean,
     discount: number,
     price: number,
     items: Array<{ type: string; description: string; quantity: number; rate: number }>,
     notes: string,
   ): Promise<unknown> => {
-    return ipcRenderer.invoke('db-update-invoice', invoiceId, clientId, invoiceNumber, date, dueDate, gstEnabled, discount, price, items, notes);
+    return ipcRenderer.invoke('db-update-invoice', invoiceId, clientId, invoiceNumber, date, dueDate, gstEnabled, displayDueDate, discount, price, items, notes);
   },
 
   getProjects: (): Promise<any[]> => {

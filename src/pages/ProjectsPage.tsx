@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { TbPlus, TbSearch, TbTrash, TbReceipt } from 'react-icons/tb';
+import { TbPlus, TbSearch, TbTrash, TbReceipt, TbMail } from 'react-icons/tb';
 import { Invoice } from '../types';
 import { Page } from '../App';
 import { Table, ColumnDef } from '../components/Table';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { buildInvoiceHtml } from '../utils/invoiceHtml';
 
 /** Format a date string YYYY-MM-DD into a nicer layout. */
 function formatDate(dateStr: string): string {
@@ -29,6 +30,7 @@ interface ProjectsPageProps {
 
 /**
  * Invoices page — lists all saved invoices with search, add, delete actions.
+ * Supports multi-select to batch-email invoices for the same client.
  */
 export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPageProps): React.JSX.Element {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -36,6 +38,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
+  const [isSending, setIsSending] = useState<boolean>(false);
 
   const loadInvoices = useCallback(async (): Promise<void> => {
     try {
@@ -59,6 +62,56 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
       await loadInvoices();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to delete invoice.');
+    }
+  };
+
+  /* ── Selection logic ── */
+  const selectedInvoices = invoices.filter(inv => selectedIds.has(inv.id));
+  const allSameClient = selectedInvoices.length > 0
+    && selectedInvoices.every(inv => inv.client_id === selectedInvoices[0].client_id);
+  const canSendBatch = selectedInvoices.length > 0 && allSameClient;
+
+  /** Fetch full data for each selected invoice, build HTML, and email as a batch. */
+  const handleSendSelected = async (): Promise<void> => {
+    if (!canSendBatch) return;
+    const recipientEmail = selectedInvoices[0].client_email || '';
+    setError('');
+    setIsSending(true);
+
+    try {
+      const entries: Array<{ invoiceNumber: string; htmlContent: string }> = [];
+
+      for (const inv of selectedInvoices) {
+        const fullData = await window.electronAPI.getInvoiceById(inv.id);
+        if (!fullData) continue;
+
+        const htmlContent = buildInvoiceHtml({
+          invoice_number: fullData.invoice_number,
+          date: fullData.date,
+          due_date: fullData.due_date,
+          gst_added: Boolean(fullData.gst_added),
+          client_name: inv.client_name,
+          client_business_name: inv.client_business_name,
+          client_email: inv.client_email,
+          client_address: (fullData as any).client_address || (inv as any).client_address,
+          items: fullData.items || [],
+          discounts: fullData.discounts || [],
+        });
+
+        entries.push({ invoiceNumber: fullData.invoice_number, htmlContent });
+      }
+
+      if (entries.length === 0) {
+        setError('No valid invoices to send.');
+        return;
+      }
+
+      await window.electronAPI.emailMultipleInvoices(entries, recipientEmail);
+      setSelectedIds(new Set());
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to send invoices.');
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -148,13 +201,28 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           <h1 className="text-xl font-semibold text-stone-900">Invoices</h1>
           <p className="text-sm text-stone-500 mt-0.5">{invoices.length} invoice{invoices.length !== 1 ? 's' : ''} total</p>
         </div>
-        <Button
-          variant="primary"
-          leftIcon={<TbPlus className="w-5 h-5" />}
-          onClick={() => onNavigate('invoices')}
-        >
-          New Invoice
-        </Button>
+        <div className="flex items-center gap-2">
+          {canSendBatch && (
+            <Button
+              variant="secondary"
+              leftIcon={<TbMail className="w-5 h-5" />}
+              onClick={handleSendSelected}
+              disabled={isSending}
+            >
+              {isSending ? 'Sending…' : `Send ${selectedInvoices.length} Invoice${selectedInvoices.length > 1 ? 's' : ''}`}
+            </Button>
+          )}
+          {selectedInvoices.length > 0 && !allSameClient && (
+            <span className="text-xs text-amber-600 mr-1">Select invoices for the same client</span>
+          )}
+          <Button
+            variant="primary"
+            leftIcon={<TbPlus className="w-5 h-5" />}
+            onClick={() => onNavigate('invoices')}
+          >
+            New Invoice
+          </Button>
+        </div>
       </div>
 
       {/* Search */}
@@ -189,3 +257,4 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
     </div>
   );
 }
+

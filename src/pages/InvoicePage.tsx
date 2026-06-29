@@ -253,6 +253,115 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
     }
   };
 
+  const handleSendEmail = async (): Promise<void> => {
+    if (!form.clientId) {
+      setError('Please select a client before sending.');
+      return;
+    }
+    if (form.items.length === 0) {
+      setError('Add at least one line item before sending.');
+      return;
+    }
+    
+    const cardEl = document.getElementById('invoice-preview-card');
+    if (!cardEl) {
+      setError('Could not find invoice preview card element.');
+      return;
+    }
+
+    setError('');
+    try {
+      setIsSaving(true);
+      
+      const totals = computeTotals(form);
+      const items = form.items.map(item => ({
+        type: item.type,
+        description: item.description,
+        quantity: item.quantity,
+        rate: item.unitPrice,
+      }));
+
+      // 1. Auto-save state to database first
+      if (invoiceId) {
+        await window.electronAPI.updateInvoice(
+          invoiceId,
+          form.clientId,
+          form.invoiceNumber,
+          form.dateIssued,
+          form.dueDate,
+          form.gstEnabled,
+          form.discount,
+          totals.grandTotal,
+          items,
+          form.notes,
+        );
+      } else {
+        await window.electronAPI.createInvoice(
+          form.clientId,
+          form.invoiceNumber,
+          form.dateIssued,
+          form.dueDate,
+          form.gstEnabled,
+          form.discount,
+          totals.grandTotal,
+          items,
+          form.notes,
+        );
+      }
+
+      // 2. Build high fidelity printable document with styling
+      const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+        .map(el => el.outerHTML)
+        .join('\n');
+      
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Invoice ${form.invoiceNumber}</title>
+            ${styles}
+            <style>
+              @page {
+                size: A4;
+                margin: 0;
+              }
+              body {
+                background: white !important;
+                margin: 0;
+                padding: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              #invoice-preview-card {
+                width: 210mm !important;
+                max-width: 210mm !important;
+                height: 297mm !important;
+                min-height: 297mm !important;
+                box-shadow: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+                padding: 10mm !important;
+                box-sizing: border-box !important;
+              }
+            </style>
+          </head>
+          <body>
+            ${cardEl.outerHTML}
+          </body>
+        </html>
+      `;
+
+      // 3. Trigger email creation with attachment
+      await window.electronAPI.emailInvoice(form.invoiceNumber, htmlContent, selectedClient?.email || '');
+      onNavigate('projects');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to send invoice.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
 
@@ -294,10 +403,10 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
             variant="primary"
             size="sm"
             leftIcon={<TbArrowUpRight className="w-4 h-4" />}
-            onClick={exportType === 'email' ? () => handleSave('sent') : handleExportPDF}
+            onClick={exportType === 'email' ? handleSendEmail : handleExportPDF}
             disabled={isSaving}
           >
-            {exportType === 'email' ? 'Send Invoices' : 'Save as PDF'}
+            {exportType === 'email' ? 'Send Invoice' : 'Save as PDF'}
           </Button>
         </div>
       </header>

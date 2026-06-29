@@ -16,6 +16,9 @@ export interface Invoice {
   status: string;
   price: number;
   gst_added: boolean;
+  client_name?: string;
+  client_business_name?: string;
+  client_email?: string;
 }
 
 export interface InvoiceItem {
@@ -66,6 +69,8 @@ export interface ElectronAPI {
   ) => Promise<unknown>;
   deleteInvoice: (id: number) => Promise<unknown>;
   printToPDF: (invoiceNumber: string, htmlContent: string) => Promise<boolean>;
+  emailInvoice: (invoiceNumber: string, htmlContent: string, recipientEmail: string) => Promise<boolean>;
+  emailMultipleInvoices: (invoiceEntries: Array<{ invoiceNumber: string; htmlContent: string }>, recipientEmail: string) => Promise<boolean>;
   getInvoiceById: (id: number) => Promise<any>;
   updateInvoice: (
     invoiceId: number,

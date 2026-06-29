@@ -1,6 +1,7 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import path from 'path';
 import fs from 'fs';
+import { exec } from 'child_process';
 import { fileURLToPath } from 'node:url';
 import Database from 'better-sqlite3';
 
@@ -132,7 +133,7 @@ app.whenReady().then(() => {
   ipcMain.handle('db-get-invoices', (): unknown[] => {
     if (!db) throw new Error('Database not initialised');
     return db.prepare(`
-      SELECT i.*, c.name AS client_name, c.business_name AS client_business_name 
+      SELECT i.*, c.name AS client_name, c.business_name AS client_business_name, c.email AS client_email, c.address AS client_address
       FROM invoices i 
       LEFT JOIN clients c ON i.client_id = c.id 
       ORDER BY i.id DESC
@@ -326,6 +327,142 @@ app.whenReady().then(() => {
     }
 
     return true;
+  });
+
+  ipcMain.handle('email-invoice', async (_event, invoiceNumber: string, htmlContent: string, recipientEmail: string): Promise<boolean> => {
+    const printWin = new BrowserWindow({
+      show: false,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true
+      }
+    });
+
+    const tempHtmlPath = path.join(app.getPath('temp'), `print-${Date.now()}.html`);
+    fs.writeFileSync(tempHtmlPath, htmlContent, 'utf-8');
+    
+    await printWin.loadFile(tempHtmlPath);
+
+    const pdfData = await printWin.webContents.printToPDF({
+      pageSize: 'A4',
+      margins: {
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0
+      },
+      printBackground: true
+    });
+
+    printWin.close();
+    
+    try {
+      fs.unlinkSync(tempHtmlPath);
+    } catch {}
+
+    const tempPdfPath = path.join(app.getPath('temp'), `Invoice-${invoiceNumber}.pdf`);
+    fs.writeFileSync(tempPdfPath, pdfData);
+
+    const subject = `Invoice ${invoiceNumber}`;
+    const body = `Hi,\n\nPlease find attached invoice ${invoiceNumber}.\n\nKind regards,\nYour Business`;
+
+    // Write AppleScript to a temp file to avoid shell escaping issues
+    const scriptContent = [
+      `set theAttachment to POSIX file "${tempPdfPath}" as alias`,
+      `tell application "Mail"`,
+      `  set newMsg to make new outgoing message with properties {subject:"${subject}", visible:true}`,
+      `  tell newMsg`,
+      `    set content to "${body.replace(/\n/g, '\\n')}"`,
+      `    make new to recipient at end of to recipients with properties {address:"${recipientEmail}"}`,
+      `    make new attachment with properties {file name:theAttachment} at after the last paragraph of content of newMsg`,
+      `  end tell`,
+      `  activate`,
+      `end tell`,
+    ].join('\n');
+
+    const tempScriptPath = path.join(app.getPath('temp'), `mail-${Date.now()}.scpt`);
+    fs.writeFileSync(tempScriptPath, scriptContent, 'utf-8');
+
+    return new Promise((resolve) => {
+      exec(`osascript "${tempScriptPath}"`, (error) => {
+        try { fs.unlinkSync(tempScriptPath); } catch {}
+        if (error) {
+          console.error('Failed to open Mail.app via AppleScript:', error);
+          shell.openExternal(`mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+          resolve(false);
+        } else {
+          resolve(true);
+        }
+      });
+    });
+  });
+
+  ipcMain.handle('email-multiple-invoices', async (
+    _event,
+    invoiceEntries: Array<{ invoiceNumber: string; htmlContent: string }>,
+    recipientEmail: string,
+  ): Promise<boolean> => {
+    const pdfPaths: string[] = [];
+
+    for (const entry of invoiceEntries) {
+      const printWin = new BrowserWindow({
+        show: false,
+        webPreferences: { nodeIntegration: false, contextIsolation: true }
+      });
+
+      const tempHtmlPath = path.join(app.getPath('temp'), `print-${Date.now()}-${Math.random().toString(36).slice(2)}.html`);
+      fs.writeFileSync(tempHtmlPath, entry.htmlContent, 'utf-8');
+      await printWin.loadFile(tempHtmlPath);
+
+      const pdfData = await printWin.webContents.printToPDF({
+        pageSize: 'A4',
+        margins: { top: 0, bottom: 0, left: 0, right: 0 },
+        printBackground: true
+      });
+
+      printWin.close();
+      try { fs.unlinkSync(tempHtmlPath); } catch {}
+
+      const pdfPath = path.join(app.getPath('temp'), `Invoice-${entry.invoiceNumber}.pdf`);
+      fs.writeFileSync(pdfPath, pdfData);
+      pdfPaths.push(pdfPath);
+    }
+
+    const invoiceNumbers = invoiceEntries.map(e => e.invoiceNumber).join(', ');
+    const subject = `Invoices: ${invoiceNumbers}`;
+    const body = `Hi,\n\nPlease find attached ${invoiceEntries.length} invoice${invoiceEntries.length > 1 ? 's' : ''}: ${invoiceNumbers}.\n\nKind regards,\nYour Business`;
+
+    const attachmentLines = pdfPaths.map(p =>
+      `    make new attachment with properties {file name:(POSIX file "${p}" as alias)} at after the last paragraph of content of newMsg`
+    ).join('\n');
+
+    const scriptContent = [
+      `tell application "Mail"`,
+      `  set newMsg to make new outgoing message with properties {subject:"${subject}", visible:true}`,
+      `  tell newMsg`,
+      `    set content to "${body.replace(/\n/g, '\\n')}"`,
+      `    make new to recipient at end of to recipients with properties {address:"${recipientEmail}"}`,
+      attachmentLines,
+      `  end tell`,
+      `  activate`,
+      `end tell`,
+    ].join('\n');
+
+    const tempScriptPath = path.join(app.getPath('temp'), `mail-batch-${Date.now()}.scpt`);
+    fs.writeFileSync(tempScriptPath, scriptContent, 'utf-8');
+
+    return new Promise((resolve) => {
+      exec(`osascript "${tempScriptPath}"`, (error) => {
+        try { fs.unlinkSync(tempScriptPath); } catch {}
+        if (error) {
+          console.error('Failed to open Mail.app via AppleScript:', error);
+          shell.openExternal(`mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+          resolve(false);
+        } else {
+          resolve(true);
+        }
+      });
+    });
   });
 
   app.on('activate', () => {

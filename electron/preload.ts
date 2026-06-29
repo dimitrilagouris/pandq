@@ -44,6 +44,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return ipcRenderer.invoke('print-to-pdf', invoiceNumber, htmlContent);
   },
 
+  emailInvoice: (invoiceNumber: string, htmlContent: string, recipientEmail: string): Promise<boolean> => {
+    return ipcRenderer.invoke('email-invoice', invoiceNumber, htmlContent, recipientEmail);
+  },
+
+  emailMultipleInvoices: (invoiceEntries: Array<{ invoiceNumber: string; htmlContent: string }>, recipientEmail: string): Promise<boolean> => {
+    return ipcRenderer.invoke('email-multiple-invoices', invoiceEntries, recipientEmail);
+  },
+
   getInvoiceById: (id: number): Promise<any> => {
     return ipcRenderer.invoke('db-get-invoice-by-id', id);
   },

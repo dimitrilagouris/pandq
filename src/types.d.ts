@@ -42,6 +42,17 @@ export interface ElectronAPI {
   updateClient: (id: number, name: string, businessName: string, email: string, phone: string, address: string) => Promise<unknown>;
   deleteClient: (id: number) => Promise<unknown>;
   getInvoices: () => Promise<Invoice[]>;
+  createInvoice: (
+    clientId: number,
+    invoiceNumber: string,
+    date: string,
+    dueDate: string,
+    gstEnabled: boolean,
+    discount: number,
+    price: number,
+    items: Array<{ type: string; description: string; quantity: number; rate: number }>,
+    notes: string,
+  ) => Promise<unknown>;
 }
 
 declare global {

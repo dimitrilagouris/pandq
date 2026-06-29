@@ -21,4 +21,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getInvoices: (): Promise<unknown[]> => {
     return ipcRenderer.invoke('db-get-invoices');
   },
+
+  createInvoice: (
+    clientId: number,
+    invoiceNumber: string,
+    date: string,
+    dueDate: string,
+    gstEnabled: boolean,
+    discount: number,
+    price: number,
+    items: Array<{ type: string; description: string; quantity: number; rate: number }>,
+    notes: string,
+  ): Promise<unknown> => {
+    return ipcRenderer.invoke('db-create-invoice', clientId, invoiceNumber, date, dueDate, gstEnabled, discount, price, items, notes);
+  },
 });

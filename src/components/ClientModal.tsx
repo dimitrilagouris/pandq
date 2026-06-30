@@ -68,6 +68,17 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
     setError('');
   }, [client]);
 
+  // Handle Escape key to close the modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const handleFieldChange = (key: keyof ClientFormData, val: string): void => {
     setForm(prev => ({ ...prev, [key]: val }));
   };
@@ -95,8 +106,8 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
   };
 
   return (
-    /* Backdrop */
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/40 backdrop-blur-sm" onClick={onClose}>
+    /* Backdrop (no blur, no click-outside close) */
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/40">
       <div
         className="w-full max-w-md bg-stone-100 border border-stone-200/80 rounded-2xl shadow-22 mx-4 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}

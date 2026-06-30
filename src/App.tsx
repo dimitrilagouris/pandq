@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Button } from './components/Button';
 import ClientsPage from './pages/ClientsPage';
@@ -17,6 +17,18 @@ export default function App(): React.JSX.Element {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [pendingPage, setPendingPage] = useState<Page | null>(null);
   const [showDiscardModal, setShowDiscardModal] = useState<boolean>(false);
+
+  // Handle Escape key to close the discard confirmation modal
+  useEffect(() => {
+    if (!showDiscardModal) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowDiscardModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showDiscardModal]);
 
   const handleNavigate = (page: Page, force = false) => {
     if (page === activePage) {
@@ -83,12 +95,9 @@ export default function App(): React.JSX.Element {
         {renderPage()}
       </main>
 
-      {/* Unsaved Changes Confirmation Modal */}
+      {/* Unsaved Changes Confirmation Modal (no blur, no click-outside close) */}
       {showDiscardModal && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/40 backdrop-blur-sm"
-          onClick={() => setShowDiscardModal(false)}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/40">
           <div
             className="w-full max-w-sm bg-stone-100 border border-stone-200/80 rounded-2xl shadow-22 mx-4 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}

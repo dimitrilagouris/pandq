@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { TbPlus, TbTrash, TbCalendar, TbUser, TbHash, TbChevronDown } from 'react-icons/tb';
 import { Client } from '../../types';
 import { Input } from '../Input';
+import { DatePicker } from '../DatePicker';
 import { Button } from '../Button';
 import { InvoiceFormState, LineItem } from './invoiceTypes';
 
@@ -77,21 +78,15 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
           placeholder="INV-001"
         />
         <div className="grid grid-cols-2 gap-3">
-          <Input
+          <DatePicker
             label="Date issued"
-            name="dateIssued"
-            type="date"
             value={form.dateIssued}
             onChange={(val) => onChange({ dateIssued: val })}
-            icon={<TbCalendar className="w-4 h-4" />}
           />
-          <Input
+          <DatePicker
             label="Due date"
-            name="dueDate"
-            type="date"
             value={form.dueDate}
             onChange={(val) => onChange({ dueDate: val })}
-            icon={<TbCalendar className="w-4 h-4" />}
           />
         </div>
         <div className="grid grid-cols-2 gap-3 mt-3">
@@ -120,7 +115,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
       </Section>
 
       {/* ── Billed To ── */}
-      <Section title="Billed To">
+      <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1 w-full" ref={dropdownRef}>
           <label className="text-xs font-medium text-stone-500 tracking-wide">Client</label>
           <div className="relative">
@@ -189,7 +184,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
             </div>
           )}
         </div>
-      </Section>
+      </div>
 
       {/* ── Labour Section ── */}
       <Section title="Labour">

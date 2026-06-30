@@ -27,10 +27,10 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({
   
   const variants = {
     primary: 'bg-stone-800 text-stone-50 hover:bg-stone-950 shadow-1 transition-all',
-    secondary: 'bg-stone-200 text-stone-900 hover:bg-stone-300 shadow-1',
+    secondary: 'bg-stone-200 text-stone-900 hover:bg-stone-300 border border-stone-200/80 shadow-1 ',
     outline: 'border border-stone-200 bg-transparent hover:bg-stone-100 text-stone-900 shadow-sm',
     ghost: 'bg-transparent hover:bg-stone-100 text-stone-900',
-    danger: 'bg-red-500 text-white hover:bg-red-600 shadow-1'
+    danger: 'bg-red-600 text-white hover:bg-red-700 shadow-1 '
   };
 
   const sizes = {

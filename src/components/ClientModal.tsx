@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Client } from '../types';
 import { Input } from './Input';
+import { Button } from './Button';
 import { TbX, TbChevronDown, TbUser, TbBuilding, TbPhone, TbMail, TbMapPin } from 'react-icons/tb';
 
 interface ClientFormData {
@@ -206,20 +207,20 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
 
           {/* Footer */}
           <div className="px-6 pb-6 pt-2 flex justify-end gap-3">
-            <button
+            <Button
+              variant="secondary"
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-stone-700 bg-stone-50 border border-stone-200/80 hover:bg-stone-200/50 rounded-xl transition-colors shadow-1"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
               type="submit"
               disabled={isSaving}
-              className="px-5 py-2 text-sm font-medium text-stone-50 bg-stone-900 hover:bg-stone-950 rounded-xl transition-colors shadow-1 disabled:opacity-50"
             >
               {isSaving ? 'Saving…' : isEditing ? 'Save Changes' : 'Continue'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

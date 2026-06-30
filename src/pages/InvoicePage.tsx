@@ -8,8 +8,9 @@ import { InvoiceFormState } from '../components/invoice/invoiceTypes';
 import { Page } from '../App';
 
 interface InvoicePageProps {
-  onNavigate: (page: Page) => void;
+  onNavigate: (page: Page, force?: boolean) => void;
   invoiceId: number | null;
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
 /** Derive today and 30-days-from-now as ISO date strings (YYYY-MM-DD). */
@@ -38,8 +39,9 @@ const INITIAL_FORM: InvoiceFormState = {
 /**
  * Two-panel invoice creation page — form on the left, live preview on the right.
  */
-const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
+const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirtyChange }) => {
   const [form, setForm] = useState<InvoiceFormState>(INITIAL_FORM);
+  const [initialFormState, setInitialFormState] = useState<InvoiceFormState | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [exportType, setExportType] = useState<'email' | 'pdf'>('email');
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -57,7 +59,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
           const statusStr = data.status || '';
           const notesStr = statusStr.includes('|') ? statusStr.split('|').slice(1).join('|') : '';
 
-          setForm({
+          const populatedForm = {
             invoiceNumber: data.invoice_number,
             dateIssued: data.date,
             dueDate: data.due_date,
@@ -73,7 +75,9 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
             displayDueDate: data.display_due_date !== undefined ? Boolean(data.display_due_date) : true,
             discount: data.discounts && data.discounts[0] ? data.discounts[0].amount : 0,
             notes: notesStr,
-          });
+          };
+          setForm(populatedForm);
+          setInitialFormState(populatedForm);
         }
       }).catch(console.error);
     } else {
@@ -89,24 +93,58 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
         const defaultGst = settings['setting_default_gst_enabled'] === 'true';
         const defaultDisplayDue = settings['setting_default_display_due_date'] !== 'false';
 
-        setForm({
+        const defaultForm = {
           ...INITIAL_FORM,
           invoiceNumber: `${prefix}${String(Date.now()).slice(-5)}`,
           dueDate: computedDueDate,
           gstEnabled: defaultGst,
           displayDueDate: defaultDisplayDue,
           notes: defaultNotes,
-        });
+        };
+        setForm(defaultForm);
+        setInitialFormState(defaultForm);
       }).catch(err => {
         console.error('Failed to load default settings:', err);
-        setForm({
+        const fallbackForm = {
           ...INITIAL_FORM,
           invoiceNumber: `INV-${String(Date.now()).slice(-5)}`,
-        });
+        };
+        setForm(fallbackForm);
+        setInitialFormState(fallbackForm);
       });
     }
     setError('');
   }, [invoiceId]);
+
+  // Deep comparison helper to check if the form is dirty
+  const isFormDirty = useCallback((current: InvoiceFormState, initial: InvoiceFormState | null): boolean => {
+    if (!initial) return false;
+    if (current.invoiceNumber !== initial.invoiceNumber) return true;
+    if (current.dateIssued !== initial.dateIssued) return true;
+    if (current.dueDate !== initial.dueDate) return true;
+    if (current.clientId !== initial.clientId) return true;
+    if (current.gstEnabled !== initial.gstEnabled) return true;
+    if (current.displayDueDate !== initial.displayDueDate) return true;
+    if (current.discount !== initial.discount) return true;
+    if (current.notes !== initial.notes) return true;
+    if (current.items.length !== initial.items.length) return true;
+    
+    for (let i = 0; i < current.items.length; i++) {
+      const c = current.items[i];
+      const init = initial.items[i];
+      if (!init) return true;
+      if (c.type !== init.type) return true;
+      if (c.description !== init.description) return true;
+      if (c.quantity !== init.quantity) return true;
+      if (c.unitPrice !== init.unitPrice) return true;
+    }
+    return false;
+  }, []);
+
+  // Update App's dirty state whenever form or initialFormState changes
+  useEffect(() => {
+    onDirtyChange?.(isFormDirty(form, initialFormState));
+  }, [form, initialFormState, onDirtyChange, isFormDirty]);
 
   const selectedClient = clients.find(c => c.id === form.clientId) ?? null;
 
@@ -162,7 +200,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
           form.notes,
         );
       }
-      onNavigate('projects');
+      onNavigate('projects', true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to save invoice.');
     } finally {
@@ -277,7 +315,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
       // 3. Trigger print to PDF dialog
       const success = await window.electronAPI.printToPDF(form.invoiceNumber, htmlContent);
       if (success) {
-        onNavigate('projects');
+        onNavigate('projects', true);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to export PDF.');
@@ -392,7 +430,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
 
       // 3. Trigger email creation with attachment
       await window.electronAPI.emailInvoice(form.invoiceNumber, htmlContent, selectedClient?.email || '');
-      onNavigate('projects');
+      onNavigate('projects', true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to send invoice.');
     } finally {

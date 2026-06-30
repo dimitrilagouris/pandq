@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
+import { Button } from './components/Button';
 import ClientsPage from './pages/ClientsPage';
 import InvoicePage from './pages/InvoicePage';
 import ProjectsPage from './pages/ProjectsPage';
@@ -13,13 +14,41 @@ export type Page = 'dashboard' | 'invoices' | 'clients' | 'activities' | 'settin
 export default function App(): React.JSX.Element {
   const [activePage, setActivePage] = useState<Page>('clients');
   const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
+  const [pendingPage, setPendingPage] = useState<Page | null>(null);
+  const [showDiscardModal, setShowDiscardModal] = useState<boolean>(false);
+
+  const handleNavigate = (page: Page, force = false) => {
+    if (page === activePage) {
+      if (page === 'invoices' && editingInvoiceId !== null) {
+        // transitioning from editing to new invoice
+      } else {
+        return;
+      }
+    }
+
+    if (hasUnsavedChanges && !force) {
+      setPendingPage(page);
+      setShowDiscardModal(true);
+    } else {
+      setHasUnsavedChanges(false);
+      if (page === 'invoices') setEditingInvoiceId(null);
+      setActivePage(page);
+    }
+  };
 
   const renderPage = (): React.ReactNode => {
     switch (activePage) {
       case 'clients':
         return <ClientsPage />;
       case 'invoices':
-        return <InvoicePage onNavigate={setActivePage} invoiceId={editingInvoiceId} />;
+        return (
+          <InvoicePage 
+            onNavigate={handleNavigate} 
+            invoiceId={editingInvoiceId} 
+            onDirtyChange={setHasUnsavedChanges} 
+          />
+        );
       case 'settings':
         return <SettingsPage />;
       case 'projects':
@@ -48,14 +77,54 @@ export default function App(): React.JSX.Element {
     <div className="flex h-screen w-full bg-stone-50 overflow-hidden font-sans">
       <Sidebar
         activePage={activePage}
-        onNavigate={(p) => {
-          if (p === 'invoices') setEditingInvoiceId(null);
-          setActivePage(p);
-        }}
+        onNavigate={handleNavigate}
       />
       <main className="flex-1 overflow-hidden h-full">
         {renderPage()}
       </main>
+
+      {/* Unsaved Changes Confirmation Modal */}
+      {showDiscardModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/40 backdrop-blur-sm"
+          onClick={() => setShowDiscardModal(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-stone-100 border border-stone-200/80 rounded-2xl shadow-22 mx-4 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 flex flex-col gap-2">
+              <h3 className="text-base font-semibold text-stone-900">Unsaved Changes</h3>
+              <p className="text-xs text-stone-500 leading-relaxed">
+                You have unsaved changes on this invoice. If you leave now, your changes will be discarded.
+              </p>
+            </div>
+            <div className="px-6 pb-6 pt-2 flex justify-end gap-3">
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={() => setShowDiscardModal(false)}
+              >
+                Keep Editing
+              </Button>
+              <Button
+                variant="danger"
+                type="button"
+                onClick={() => {
+                  setHasUnsavedChanges(false);
+                  setShowDiscardModal(false);
+                  if (pendingPage) {
+                    if (pendingPage === 'invoices') setEditingInvoiceId(null);
+                    setActivePage(pendingPage);
+                  }
+                }}
+              >
+                Discard & Leave
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

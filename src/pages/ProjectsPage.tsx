@@ -183,7 +183,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
         if (status === 'sent') {
           badgeClass = 'text-blue-700 bg-blue-100/80';
         } else if (status === 'paid') {
-          badgeClass = 'text-emerald-700 bg-emerald-100';
+          badgeClass = 'text-lime-700 bg-lime-100';
         } else if (status === 'cancelled') {
           badgeClass = 'text-red-700 bg-red-100';
         }
@@ -208,7 +208,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
             <button 
               onClick={handleStatusClick}
-              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full cursor-pointer hover:opacity-85 transition-all select-none border-0 ${badgeClass}`}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg cursor-pointer hover:opacity-85 transition-all select-none border-0 ${badgeClass}`}
             >
               <span>{status.charAt(0).toUpperCase() + status.slice(1)}</span>
               <TbChevronDown className="w-3 h-3 text-stone-500/80" />

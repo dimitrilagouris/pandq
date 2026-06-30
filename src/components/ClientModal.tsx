@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Client } from '../types';
 import { Input } from './Input';
-import { TbX, TbChevronDown } from 'react-icons/tb';
+import { TbX, TbChevronDown, TbUser, TbBuilding, TbPhone, TbMail, TbMapPin } from 'react-icons/tb';
 
 interface ClientFormData {
   name: string;
@@ -120,7 +120,12 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
             )}
 
             <Input
-              label="Name"
+              label={
+                <span className="inline-flex items-center gap-1.5">
+                  <TbUser className="w-3.5 h-3.5 text-stone-450" />
+                  <span>Name</span>
+                </span>
+              }
               name="name"
               value={form.name}
               onChange={(val) => handleFieldChange('name', val)}
@@ -129,15 +134,21 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
             />
 
             <Input
-              label="Business Name"
+              label={
+                <span className="inline-flex items-center gap-1.5">
+                  <TbBuilding className="w-3.5 h-3.5 text-stone-450" />
+                  <span>Business Name</span>
+                </span>
+              }
               name="business_name"
               value={form.business_name}
               onChange={(val) => handleFieldChange('business_name', val)}
             />
 
             <div className="flex flex-col gap-1 w-full">
-              <label htmlFor="phone" className="text-xs font-medium text-stone-500 tracking-wide">
-                Phone
+              <label htmlFor="phone" className="text-xs font-medium text-stone-500 tracking-wide inline-flex items-center gap-1.5">
+                <TbPhone className="w-3.5 h-3.5 text-stone-450" />
+                <span>Phone</span>
               </label>
               <div className="flex gap-2">
                 <div className="relative flex-shrink-0">
@@ -168,7 +179,12 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
             </div>
 
             <Input
-              label="Email"
+              label={
+                <span className="inline-flex items-center gap-1.5">
+                  <TbMail className="w-3.5 h-3.5 text-stone-450" />
+                  <span>Email</span>
+                </span>
+              }
               name="email"
               type="email"
               value={form.email}
@@ -176,7 +192,12 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
             />
 
             <Input
-              label="Address"
+              label={
+                <span className="inline-flex items-center gap-1.5">
+                  <TbMapPin className="w-3.5 h-3.5 text-stone-450" />
+                  <span>Address</span>
+                </span>
+              }
               name="address"
               value={form.address}
               onChange={(val) => handleFieldChange('address', val)}

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  TbPalette, 
-  TbBuilding, 
-  TbReceipt, 
-  TbMail, 
-  TbCreditCard, 
-  TbCheck 
+import {
+  TbPalette,
+  TbBuilding,
+  TbReceipt,
+  TbMail,
+  TbCreditCard,
+  TbCheck
 } from 'react-icons/tb';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
@@ -19,6 +19,7 @@ type SettingsTab = 'personalisation' | 'organisation' | 'invoice' | 'email' | 'p
 export default function SettingsPage(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<SettingsTab>('organisation');
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
   // My Organisation State
   const [orgName, setOrgName] = useState<string>('Your Business');
@@ -81,6 +82,18 @@ export default function SettingsPage(): React.JSX.Element {
     }).catch(console.error);
   }, []);
 
+  // Reset the "Saved" indicator whenever any form value changes
+  useEffect(() => {
+    if (saveSuccess) setSaveSuccess(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    orgName, orgAbn, orgAddress, orgPhone, orgEmail,
+    language,
+    defaultDueDays, invoicePrefix, defaultNotes, defaultGstEnabled, defaultDisplayDueDate,
+    senderName, emailSubject, emailBody,
+    bankName, bsb, accountNumber, paymentInstructions,
+  ]);
+
   /**
    * Save the settings for the currently active tab to SQLite database.
    */
@@ -113,10 +126,12 @@ export default function SettingsPage(): React.JSX.Element {
     }
 
     try {
+      setIsSaving(true);
       await window.electronAPI.saveSettings(toSave);
+      setIsSaving(false);
       setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
+      setIsSaving(false);
       console.error('Failed to save settings:', err);
     }
   };
@@ -310,20 +325,20 @@ export default function SettingsPage(): React.JSX.Element {
 
   return (
     <div className="flex h-full bg-transparent overflow-hidden">
-      
+
       {/* ── Sub Sidebar (Left side of page) ── */}
       <aside className="w-[240px] h-full flex flex-col pt-8 px-5 border-r border-stone-200 flex-shrink-0 select-none">
         {/* Category: Account & Data */}
         <div className="mb-6">
-          <div className="px-3 pb-2">
-            <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Account & Org</span>
+          <div className="px-2 pb-2">
+            <span className="text-xs font-medium text-stone-400 uppercase tracking-wider">Account & Org</span>
           </div>
           <nav className="flex flex-col gap-0.5">
             <button
               onClick={() => { setActiveTab('organisation'); setSaveSuccess(false); }}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
-                ${activeTab === 'organisation' 
-                  ? 'bg-stone-100 text-stone-900' 
+                ${activeTab === 'organisation'
+                  ? 'bg-stone-100 text-stone-900'
                   : 'text-stone-600 hover:bg-stone-100/50 hover:text-stone-900'}
               `}
             >
@@ -333,8 +348,8 @@ export default function SettingsPage(): React.JSX.Element {
             <button
               onClick={() => { setActiveTab('payment'); setSaveSuccess(false); }}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
-                ${activeTab === 'payment' 
-                  ? 'bg-stone-100 text-stone-900' 
+                ${activeTab === 'payment'
+                  ? 'bg-stone-100 text-stone-900'
                   : 'text-stone-600 hover:bg-stone-100/50 hover:text-stone-900'}
               `}
             >
@@ -346,15 +361,15 @@ export default function SettingsPage(): React.JSX.Element {
 
         {/* Category: Preferences */}
         <div className="mb-6">
-          <div className="px-3 pb-2">
-            <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest">Preferences</span>
+          <div className="px-2 pb-2">
+            <span className="text-xs font-medium text-stone-400 uppercase tracking-wider">Preferences</span>
           </div>
           <nav className="flex flex-col gap-0.5">
             <button
               onClick={() => { setActiveTab('personalisation'); setSaveSuccess(false); }}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
-                ${activeTab === 'personalisation' 
-                  ? 'bg-stone-100 text-stone-900' 
+                ${activeTab === 'personalisation'
+                  ? 'bg-stone-100 text-stone-900'
                   : 'text-stone-600 hover:bg-stone-100/50 hover:text-stone-900'}
               `}
             >
@@ -364,8 +379,8 @@ export default function SettingsPage(): React.JSX.Element {
             <button
               onClick={() => { setActiveTab('invoice'); setSaveSuccess(false); }}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
-                ${activeTab === 'invoice' 
-                  ? 'bg-stone-100 text-stone-900' 
+                ${activeTab === 'invoice'
+                  ? 'bg-stone-100 text-stone-900'
                   : 'text-stone-600 hover:bg-stone-100/50 hover:text-stone-900'}
               `}
             >
@@ -375,8 +390,8 @@ export default function SettingsPage(): React.JSX.Element {
             <button
               onClick={() => { setActiveTab('email'); setSaveSuccess(false); }}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
-                ${activeTab === 'email' 
-                  ? 'bg-stone-100 text-stone-900' 
+                ${activeTab === 'email'
+                  ? 'bg-stone-100 text-stone-900'
                   : 'text-stone-600 hover:bg-stone-100/50 hover:text-stone-900'}
               `}
             >
@@ -406,15 +421,29 @@ export default function SettingsPage(): React.JSX.Element {
               {activeTab === 'payment' && 'Maintain bank account coordinates and general payment guidelines.'}
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3">
+            {/* Animated slide-out "Settings saved" indicator */}
             {saveSuccess && (
-              <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium animate-fade-in select-none">
-                <TbCheck className="w-4 h-4" /> Saved successfully
-              </span>
+              <div className="flex items-center gap-2 animate-slide-out-right select-none">
+                <div className="w-5 h-5 rounded-full bg-lime-100 flex items-center justify-center flex-shrink-0 animate-pop-in">
+                  <svg className="w-3 h-3 text-lime-600" viewBox="0 0 12 10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="1.5 5 4.5 8 10.5 2" className="animate-draw-check" />
+                  </svg>
+                </div>
+                <span className="text-xs text-lime-600 font-medium">Settings saved</span>
+              </div>
             )}
-            <Button variant="primary" size="sm" onClick={handleSave}>
-              Save Changes
+            <Button
+              variant={saveSuccess ? 'secondary' : 'primary'}
+              size="sm"
+              onClick={handleSave}
+              disabled={isSaving}
+              className={`transition-all duration-300 ${
+                saveSuccess ? 'bg-lime-600 hover:bg-lime-700 text-white' : ''
+              }`}
+            >
+              {isSaving ? 'Saving…' : saveSuccess ? 'Saved' : 'Save Changes'}
             </Button>
           </div>
         </div>

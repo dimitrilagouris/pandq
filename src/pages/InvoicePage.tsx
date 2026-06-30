@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { TbMail, TbFileText, TbUpload, TbArrowUpRight, TbChevronRight } from 'react-icons/tb';
+import { TbMail, TbFileText, TbDeviceFloppy, TbArrowUpRight, TbChevronRight } from 'react-icons/tb';
 import { Client } from '../types';
 import { Button } from '../components/Button';
 import { InvoiceForm } from '../components/invoice/InvoiceForm';
@@ -424,7 +424,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
           <Button
             variant="secondary"
             size="sm"
-            leftIcon={<TbUpload className="w-4 h-4" />}
+            leftIcon={<TbDeviceFloppy className="w-4 h-4" />}
             onClick={() => handleSave('draft')}
             disabled={isSaving}
           >

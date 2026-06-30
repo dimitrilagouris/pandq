@@ -1,7 +1,7 @@
 import React, { forwardRef, useRef, useEffect, useImperativeHandle } from 'react';
 
 export interface InputProps {
-  label?: string;
+  label?: React.ReactNode;
   icon?: React.ReactNode;
   multiline?: boolean;
   autoGrow?: boolean;

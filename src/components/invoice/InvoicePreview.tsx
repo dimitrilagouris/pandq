@@ -28,19 +28,21 @@ export function computeTotals(form: InvoiceFormState): InvoiceTotals {
 interface InvoicePreviewProps {
   form: InvoiceFormState;
   client: Client | null;
+  zoom?: number;
 }
 
 /**
  * Right-panel live preview — renders the invoice document as it will appear when exported.
  */
-export const InvoicePreview: React.FC<InvoicePreviewProps> = ({ form, client }) => {
+export const InvoicePreview: React.FC<InvoicePreviewProps> = ({ form, client, zoom = 0.8 }) => {
   const totals = computeTotals(form);
   const hasItems = form.items.length > 0;
 
   return (
     <div className="h-full flex flex-col items-center py-8 px-6 overflow-y-auto">
-      {/* Document card */}
-      <div id="invoice-preview-card" className="w-full max-w-[620px] bg-white rounded-2xl shadow-22 overflow-hidden flex flex-col">
+      <div style={{ zoom }} className="origin-top flex flex-col items-center">
+        {/* Document card */}
+        <div id="invoice-preview-card" className="w-[210mm] min-h-[297mm] bg-white rounded-none shadow-22 overflow-hidden flex flex-col p-[10mm] box-border relative a4-page-breaks">
 
         {/* Document header band */}
         <div className="bg-stone-900 px-8 py-7 flex items-start justify-between">
@@ -208,7 +210,8 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({ form, client }) 
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 };
 
 /** Simple label + value row for the totals block. */

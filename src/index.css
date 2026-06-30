@@ -76,3 +76,27 @@ body {
 .animate-pop-in {
   animation: pop-in 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
+
+/* A4 Page Break guidelines for live preview */
+.a4-page-breaks {
+  position: relative;
+}
+
+.a4-page-breaks::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent calc(297mm - 1px),
+    #cbd5e1 calc(297mm - 1px),
+    #cbd5e1 297mm
+  );
+  background-size: 100% 297mm;
+  z-index: 20;
+}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { TbMail, TbFileText, TbDeviceFloppy, TbArrowUpRight, TbChevronRight } from 'react-icons/tb';
+import { TbMail, TbFileText, TbDeviceFloppy, TbArrowUpRight, TbChevronRight, TbPlus, TbMinus } from 'react-icons/tb';
 import { Client } from '../types';
 import { Button } from '../components/Button';
 import { InvoiceForm } from '../components/invoice/InvoiceForm';
@@ -44,6 +44,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
   const [exportType, setExportType] = useState<'email' | 'pdf'>('email');
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const [zoom, setZoom] = useState<number>(0.8);
 
   useEffect(() => {
     window.electronAPI.getClients().then(setClients).catch(console.error);
@@ -55,7 +56,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
         if (data) {
           const statusStr = data.status || '';
           const notesStr = statusStr.includes('|') ? statusStr.split('|').slice(1).join('|') : '';
-          
+
           setForm({
             invoiceNumber: data.invoice_number,
             dateIssued: data.date,
@@ -132,7 +133,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
         quantity: item.quantity,
         rate: item.unitPrice,
       }));
-      
+
       if (invoiceId) {
         await window.electronAPI.updateInvoice(
           invoiceId,
@@ -178,7 +179,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
       setError('Add at least one line item before exporting.');
       return;
     }
-    
+
     const cardEl = document.getElementById('invoice-preview-card');
     if (!cardEl) {
       setError('Could not find invoice preview card element.');
@@ -188,7 +189,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
     setError('');
     try {
       setIsSaving(true);
-      
+
       const totals = computeTotals(form);
       const items = form.items.map(item => ({
         type: item.type,
@@ -231,7 +232,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
       const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
         .map(el => el.outerHTML)
         .join('\n');
-      
+
       const htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -254,13 +255,16 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
               #invoice-preview-card {
                 width: 210mm !important;
                 max-width: 210mm !important;
-                height: 297mm !important;
                 min-height: 297mm !important;
                 box-shadow: none !important;
                 border: none !important;
                 border-radius: 0 !important;
                 padding: 10mm !important;
                 box-sizing: border-box !important;
+              }
+              .a4-page-breaks::before {
+                display: none !important;
+                background-image: none !important;
               }
             </style>
           </head>
@@ -291,7 +295,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
       setError('Add at least one line item before sending.');
       return;
     }
-    
+
     const cardEl = document.getElementById('invoice-preview-card');
     if (!cardEl) {
       setError('Could not find invoice preview card element.');
@@ -301,7 +305,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
     setError('');
     try {
       setIsSaving(true);
-      
+
       const totals = computeTotals(form);
       const items = form.items.map(item => ({
         type: item.type,
@@ -344,7 +348,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
       const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
         .map(el => el.outerHTML)
         .join('\n');
-      
+
       const htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -367,13 +371,16 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
               #invoice-preview-card {
                 width: 210mm !important;
                 max-width: 210mm !important;
-                height: 297mm !important;
                 min-height: 297mm !important;
                 box-shadow: none !important;
                 border: none !important;
                 border-radius: 0 !important;
                 padding: 10mm !important;
                 box-sizing: border-box !important;
+              }
+              .a4-page-breaks::before {
+                display: none !important;
+                background-image: none !important;
               }
             </style>
           </head>
@@ -443,7 +450,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
       </header>
 
       {/* ── Split Panels Layout ── */}
-      <div className="flex-1 flex overflow-hidden px-6 py-6">
+      <div className="flex-1 flex overflow-hidden px-6 py-6 gap-5">
         {/* Left Form Panel */}
         <div className="w-[480px] flex-shrink-0 flex flex-col h-full border-stone-200/80 rounded-2xl shadow-1">
           <div className="flex-1 overflow-y-auto px-6 py-6">
@@ -452,45 +459,74 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
         </div>
 
         {/* Right Preview Panel */}
-        <div className="flex-1 overflow-hidden flex flex-col h-full">
-          {/* Preview header with type toggle */}
+        <div className="flex-1 overflow-hidden flex flex-col h-full shadow-1 rounded-xl bg-stone-100">
+          {/* Preview header with type toggle and zoom */}
           <div className="flex items-center justify-between px-6 pt-4 pb-2 flex-shrink-0">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-stone-900">Preview</span>
-              <span className="text-xs text-stone-400">— updates as you type</span>
             </div>
 
-            {/* Email / PDF Toggle selector */}
-            <div className="flex bg-stone-200/60 p-0.5 rounded-xl shadow-1 text-xs font-medium">
-              <button
-                type="button"
-                onClick={() => setExportType('email')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 ${
-                  exportType === 'email'
-                    ? 'bg-white text-stone-900 shadow-1'
-                    : 'text-stone-500 hover:text-stone-900'
-                }`}
-              >
-                <TbMail className="w-3.5 h-3.5" />
-                <span>Email</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setExportType('pdf')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 ${
-                  exportType === 'pdf'
-                    ? 'bg-white text-stone-900 shadow-1'
-                    : 'text-stone-500 hover:text-stone-900'
-                }`}
-              >
-                <TbFileText className="w-3.5 h-3.5" />
-                <span>PDF</span>
-              </button>
+            <div className="flex items-center gap-3">
+              {/* Zoom Controls */}
+              <div className="flex items-center bg-stone-200/60 p-0.5 rounded-xl shadow-1 text-xs font-medium">
+                <button
+                  type="button"
+                  onClick={() => setZoom(z => Math.max(0.4, z - 0.05))}
+                  className="px-2 py-1.5 text-stone-600 hover:text-stone-900 transition-colors"
+                  title="Zoom Out"
+                >
+                  <TbMinus className="w-3.5 h-3.5" />
+                </button>
+                <span className="w-12 text-center text-xs text-stone-700 select-none font-medium">
+                  {Math.round(zoom * 100)}%
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setZoom(z => Math.min(1.5, z + 0.05))}
+                  className="px-2 py-1.5 text-stone-600 hover:text-stone-900 transition-colors"
+                  title="Zoom In"
+                >
+                  <TbPlus className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setZoom(0.8)}
+                  className="px-3 py-1.5 text-xs text-stone-600 hover:text-stone-900 border-l border-stone-300 transition-colors font-medium"
+                >
+                  Reset
+                </button>
+              </div>
+
+              {/* Email / PDF Toggle selector */}
+              <div className="flex bg-stone-200/60 p-0.5 rounded-xl shadow-1 text-xs font-medium">
+                <button
+                  type="button"
+                  onClick={() => setExportType('email')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 ${exportType === 'email'
+                      ? 'bg-white text-stone-900 shadow-1'
+                      : 'text-stone-500 hover:text-stone-900'
+                    }`}
+                >
+                  <TbMail className="w-3.5 h-3.5" />
+                  <span>Email</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExportType('pdf')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 ${exportType === 'pdf'
+                      ? 'bg-white text-stone-900 shadow-1'
+                      : 'text-stone-500 hover:text-stone-900'
+                    }`}
+                >
+                  <TbFileText className="w-3.5 h-3.5" />
+                  <span>PDF</span>
+                </button>
+              </div>
             </div>
           </div>
 
           <div className="flex-1 overflow-hidden">
-            <InvoicePreview form={form} client={selectedClient} />
+            <InvoicePreview form={form} client={selectedClient} zoom={zoom} />
           </div>
         </div>
       </div>

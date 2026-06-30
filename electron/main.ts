@@ -99,12 +99,16 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 700,
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
   });
+
+  mainWindow.maximize();
+  mainWindow.show();
 
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
@@ -178,6 +182,11 @@ app.whenReady().then(() => {
   ipcMain.handle('db-delete-invoice', (_event, id: number): unknown => {
     if (!db) throw new Error('Database not initialised');
     return db.prepare('DELETE FROM invoices WHERE id = ?').run(id);
+  });
+
+  ipcMain.handle('db-update-invoice-status', (_event, id: number, status: string): unknown => {
+    if (!db) throw new Error('Database not initialised');
+    return db.prepare('UPDATE invoices SET status = ? WHERE id = ?').run(status, id);
   });
 
   ipcMain.handle('db-get-invoice-by-id', (_event, id: number): unknown => {

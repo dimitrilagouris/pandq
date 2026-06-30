@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { TbArrowLeft, TbMail, TbFileText, TbUpload, TbArrowUpRight, TbChevronRight } from 'react-icons/tb';
+import { TbMail, TbFileText, TbUpload, TbArrowUpRight, TbChevronRight } from 'react-icons/tb';
 import { Client } from '../types';
 import { Button } from '../components/Button';
 import { InvoiceForm } from '../components/invoice/InvoiceForm';
@@ -113,7 +113,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId }) => {
     setForm(prev => ({ ...prev, ...patch }));
   }, []);
 
-  const handleSave = async (status: 'draft' | 'sent'): Promise<void> => {
+  const handleSave = async (_status: 'draft' | 'sent'): Promise<void> => {
     if (!form.clientId) {
       setError('Please select a client before saving.');
       return;

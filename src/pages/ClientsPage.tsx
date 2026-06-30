@@ -15,7 +15,7 @@ export default function ClientsPage(): React.JSX.Element {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [modalClient, setModalClient] = useState<Client | null | undefined>(undefined);
-  const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
+  const [_selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
 
   // undefined = closed, null = new client, Client = edit existing
   const isModalOpen = modalClient !== undefined;

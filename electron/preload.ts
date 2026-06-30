@@ -96,4 +96,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveSettings: (settings: Record<string, string>): Promise<boolean> => {
     return ipcRenderer.invoke('db-save-settings', settings);
   },
+
+  updateInvoiceStatus: (id: number, status: string): Promise<unknown> => {
+    return ipcRenderer.invoke('db-update-invoice-status', id, status);
+  },
 });

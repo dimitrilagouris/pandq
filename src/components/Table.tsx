@@ -8,6 +8,8 @@ export interface ColumnDef<T> {
   width?: string;
   /** Whether this column can be sorted. Requires `key` to be a primitive field. */
   sortable?: boolean;
+  /** Custom CSS classes for the cell container. Overrides default 'truncate'. */
+  className?: string;
 }
 
 type SortDir = 'asc' | 'desc';
@@ -151,7 +153,10 @@ export function Table<T>({
                   </div>
                 )}
                 {columns.map((col) => (
-                  <div key={String(col.key)} className="text-sm text-stone-700 truncate pr-3">
+                  <div
+                    key={String(col.key)}
+                    className={`text-sm text-stone-700 pr-3 ${col.className ?? 'truncate'}`}
+                  >
                     {col.render
                       ? col.render(row)
                       : String((row as Record<string, unknown>)[col.key as string] ?? '—')}

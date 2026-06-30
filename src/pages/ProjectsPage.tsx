@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { TbPlus, TbSearch, TbTrash, TbReceipt, TbMail } from 'react-icons/tb';
+import { TbPlus, TbSearch, TbTrash, TbReceipt, TbMail, TbChevronDown } from 'react-icons/tb';
 import { Invoice } from '../types';
 import { Page } from '../App';
 import { Table, ColumnDef } from '../components/Table';
@@ -39,6 +39,15 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
   const [error, setError] = useState<string>('');
   const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
   const [isSending, setIsSending] = useState<boolean>(false);
+  const [openStatusMenuId, setOpenStatusMenuId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const handleDocumentClick = (): void => {
+      setOpenStatusMenuId(null);
+    };
+    document.addEventListener('click', handleDocumentClick);
+    return () => document.removeEventListener('click', handleDocumentClick);
+  }, []);
 
   const loadInvoices = useCallback(async (): Promise<void> => {
     try {
@@ -163,16 +172,64 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
       header: 'Status',
       width: '1.2fr',
       sortable: true,
+      className: 'overflow-visible',
       render: (inv) => {
-        const status = inv.status.split('|')[0] || 'draft';
-        let badgeClass = 'text-stone-700 bg-stone-200 border border-stone-300';
+        const parts = inv.status.split('|');
+        const status = parts[0] || 'draft';
+        const notes = parts.slice(1).join('|');
+        const isMenuOpen = openStatusMenuId === inv.id;
+
+        let badgeClass = 'text-stone-700 bg-stone-100';
         if (status === 'sent') {
-          badgeClass = 'text-emerald-700 bg-emerald-50 border border-emerald-100';
+          badgeClass = 'text-blue-700 bg-blue-100/80';
+        } else if (status === 'paid') {
+          badgeClass = 'text-emerald-700 bg-emerald-100';
+        } else if (status === 'cancelled') {
+          badgeClass = 'text-red-700 bg-red-100';
         }
+
+        const handleStatusClick = (e: React.MouseEvent) => {
+          e.stopPropagation();
+          setOpenStatusMenuId(isMenuOpen ? null : inv.id);
+        };
+
+        const handleStatusSelect = async (newStatus: string) => {
+          const updatedStatus = notes ? `${newStatus}|${notes}` : newStatus;
+          try {
+            await window.electronAPI.updateInvoiceStatus(inv.id, updatedStatus);
+            loadInvoices();
+          } catch (err) {
+            console.error('Failed to update invoice status:', err);
+          }
+          setOpenStatusMenuId(null);
+        };
+
         return (
-          <span className={`inline-block px-2.5 py-0.5 text-xs font-semibold rounded-lg ${badgeClass}`}>
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-          </span>
+          <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
+            <button 
+              onClick={handleStatusClick}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full cursor-pointer hover:opacity-85 transition-all select-none border-0 ${badgeClass}`}
+            >
+              <span>{status.charAt(0).toUpperCase() + status.slice(1)}</span>
+              <TbChevronDown className="w-3 h-3 text-stone-500/80" />
+            </button>
+
+            {isMenuOpen && (
+              <div className="absolute z-50 left-0 mt-1 bg-stone-600/95 backdrop-blur-md border border-white/5 rounded-2xl shadow-2xl p-1.5 w-32 flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-150">
+                {['draft', 'sent', 'paid', 'cancelled'].map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => handleStatusSelect(st)}
+                    className={`w-full text-left px-3 py-1.5 rounded-xl transition-all duration-150 text-xs font-normal
+                      ${status === st ? 'bg-white/10 text-white shadow-sm font-medium' : 'text-stone-200 hover:bg-white/5'}
+                    `}
+                  >
+                    {st.charAt(0).toUpperCase() + st.slice(1)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         );
       },
     },

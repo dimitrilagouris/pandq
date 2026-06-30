@@ -260,7 +260,7 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
   };
 
   /** Listens for '/' typing to display tag options. */
-  const handleKeyUp = (e: React.KeyboardEvent<HTMLDivElement>): void => {
+  const handleKeyUp = (_e: React.KeyboardEvent<HTMLDivElement>): void => {
     const sel = window.getSelection();
     if (!sel || !sel.rangeCount) return;
     

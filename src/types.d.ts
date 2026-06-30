@@ -93,6 +93,7 @@ export interface ElectronAPI {
   deleteProject: (id: number) => Promise<unknown>;
   getSettings: () => Promise<Record<string, string>>;
   saveSettings: (settings: Record<string, string>) => Promise<boolean>;
+  updateInvoiceStatus: (id: number, status: string) => Promise<unknown>;
 }
 
 declare global {

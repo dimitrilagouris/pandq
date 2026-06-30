@@ -9,8 +9,7 @@ import {
   TbLayoutDashboard,
   TbLogout,
   TbPlus,
-  TbLayoutSidebar,
-  TbBriefcase
+  TbLayoutSidebar
 } from 'react-icons/tb';
 import { Button } from './Button';
 import { Page } from '../App';

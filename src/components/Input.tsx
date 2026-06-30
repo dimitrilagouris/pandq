@@ -16,6 +16,8 @@ export interface InputProps {
   disabled?: boolean;
   rows?: number;
   id?: string;
+  autoFocus?: boolean;
+  onFocus?: React.FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>;
 }
 
 /**

@@ -34,12 +34,17 @@ interface ProjectsPageProps {
  */
 export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPageProps): React.JSX.Element {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [settings, setSettings] = useState<Record<string, string>>({});
   const [search, setSearch] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
   const [isSending, setIsSending] = useState<boolean>(false);
   const [openStatusMenuId, setOpenStatusMenuId] = useState<number | null>(null);
+
+  useEffect(() => {
+    window.electronAPI.getSettings().then(setSettings).catch(console.error);
+  }, []);
 
   useEffect(() => {
     const handleDocumentClick = (): void => {
@@ -105,7 +110,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           client_address: (fullData as any).client_address || (inv as any).client_address,
           items: fullData.items || [],
           discounts: fullData.discounts || [],
-        });
+        }, settings);
 
         entries.push({ invoiceNumber: fullData.invoice_number, htmlContent });
       }

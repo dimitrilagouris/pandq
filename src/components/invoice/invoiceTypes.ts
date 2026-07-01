@@ -5,6 +5,8 @@ export interface LineItem {
   type: 'labour' | 'materials';
   description: string;
   quantity: number;
+  hours?: number;
+  date?: string;
   unitPrice: number;
 }
 

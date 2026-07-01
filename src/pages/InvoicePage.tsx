@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { TbMail, TbFileText, TbDeviceFloppy, TbArrowUpRight, TbChevronRight, TbPlus, TbMinus } from 'react-icons/tb';
 import { Client } from '../types';
 import { Button } from '../components/Button';
 import { InvoiceForm } from '../components/invoice/InvoiceForm';
 import { InvoicePreview, computeTotals } from '../components/invoice/InvoicePreview';
+import { PreviewCanvas } from '../components/invoice/PreviewCanvas';
 import { InvoiceFormState } from '../components/invoice/invoiceTypes';
 import { Page } from '../App';
 
@@ -41,15 +42,40 @@ const INITIAL_FORM: InvoiceFormState = {
  */
 const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirtyChange }) => {
   const [form, setForm] = useState<InvoiceFormState>(INITIAL_FORM);
+  const [settings, setSettings] = useState<Record<string, string>>({});
   const [initialFormState, setInitialFormState] = useState<InvoiceFormState | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [exportType, setExportType] = useState<'email' | 'pdf'>('email');
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
-  const [zoom, setZoom] = useState<number>(0.8);
+  const [canvasScale, setCanvasScale] = useState<number>(0.7);
+  const [formWidth, setFormWidth] = useState<number>(480);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleDividerMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = formWidth;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      // Constraint to minimum 320px and maximum 850px width
+      const newWidth = Math.max(320, Math.min(850, startWidth + deltaX));
+      setFormWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  };
 
   useEffect(() => {
     window.electronAPI.getClients().then(setClients).catch(console.error);
+    window.electronAPI.getSettings().then(setSettings).catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -69,6 +95,8 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
               type: (item.type || 'labour') as 'labour' | 'materials',
               description: item.description,
               quantity: item.quantity,
+              hours: item.hours !== null ? item.hours : undefined,
+              date: item.date || undefined,
               unitPrice: item.rate,
             })),
             gstEnabled: Boolean(data.gst_added),
@@ -168,8 +196,10 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
       const items = form.items.map(item => ({
         type: item.type,
         description: item.description,
-        quantity: item.quantity,
+        hours: item.type === 'labour' ? (item.hours ?? item.quantity ?? 0) : null,
         rate: item.unitPrice,
+        quantity: item.type === 'materials' ? (item.quantity ?? 0) : null,
+        date: item.type === 'labour' ? (item.date ?? '') : null,
       }));
 
       if (invoiceId) {
@@ -232,8 +262,10 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
       const items = form.items.map(item => ({
         type: item.type,
         description: item.description,
-        quantity: item.quantity,
+        hours: item.type === 'labour' ? (item.hours ?? item.quantity ?? 0) : null,
         rate: item.unitPrice,
+        quantity: item.type === 'materials' ? (item.quantity ?? 0) : null,
+        date: item.type === 'labour' ? (item.date ?? '') : null,
       }));
 
       // 1. Auto-save state to database first
@@ -348,8 +380,10 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
       const items = form.items.map(item => ({
         type: item.type,
         description: item.description,
-        quantity: item.quantity,
+        hours: item.type === 'labour' ? (item.hours ?? item.quantity ?? 0) : null,
         rate: item.unitPrice,
+        quantity: item.type === 'materials' ? (item.quantity ?? 0) : null,
+        date: item.type === 'labour' ? (item.date ?? '') : null,
       }));
 
       // 1. Auto-save state to database first
@@ -442,7 +476,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
     <div className="flex flex-col h-full">
 
       {/* ── Top Header Bar (Transparent background) ── */}
-      <header className="flex items-center justify-between px-6 pt-6 pb-4 bg-transparent flex-shrink-0">
+      <header className="flex items-center justify-between px-6 pt-6 pb-2 bg-transparent flex-shrink-0">
         <div className="flex flex-col">
           {/* Breadcrumbs */}
           <div className="flex items-center gap-1 text-xs font-medium text-stone-400">
@@ -488,16 +522,27 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
       </header>
 
       {/* ── Split Panels Layout ── */}
-      <div className="flex-1 flex overflow-hidden px-6 py-6 gap-5">
+      <div className="flex-1 flex overflow-hidden px-6 pt-2 pb-6 gap-0">
         {/* Left Form Panel */}
-        <div className="w-[480px] flex-shrink-0 flex flex-col h-full border-stone-200/80 rounded-2xl shadow-1">
+        <div 
+          style={{ width: `${formWidth}px` }}
+          className="flex-shrink-0 flex flex-col h-full rounded-2xl shadow-1 bg-white"
+        >
           <div className="flex-1 overflow-y-auto px-6 py-6">
             <InvoiceForm form={form} clients={clients} onChange={handleChange} />
           </div>
         </div>
 
+        {/* Draggable Divider Column */}
+        <div 
+          className="w-5 flex-shrink-0 flex items-center justify-center cursor-col-resize group select-none"
+          onMouseDown={handleDividerMouseDown}
+        >
+          <div className="w-1 h-8 rounded-full bg-stone-300 group-hover:bg-stone-500 transition-colors" />
+        </div>
+
         {/* Right Preview Panel */}
-        <div className="flex-1 overflow-hidden flex flex-col h-full shadow-1 rounded-xl bg-stone-100">
+        <div className="flex-1 overflow-hidden flex flex-col h-full rounded-2xl shadow-1 bg-stone-100">
           {/* Preview header with type toggle and zoom */}
           <div className="flex items-center justify-between px-6 pt-4 pb-2 flex-shrink-0">
             <div className="flex items-center gap-2">
@@ -509,18 +554,18 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
               <div className="flex items-center bg-stone-200/60 p-0.5 rounded-xl shadow-1 text-xs font-medium">
                 <button
                   type="button"
-                  onClick={() => setZoom(z => Math.max(0.4, z - 0.05))}
+                  onClick={() => setCanvasScale(s => Math.max(0.2, s - 0.1))}
                   className="px-2 py-1.5 text-stone-600 hover:text-stone-900 transition-colors"
                   title="Zoom Out"
                 >
                   <TbMinus className="w-3.5 h-3.5" />
                 </button>
                 <span className="w-12 text-center text-xs text-stone-700 select-none font-medium">
-                  {Math.round(zoom * 100)}%
+                  {Math.round(canvasScale * 100)}%
                 </span>
                 <button
                   type="button"
-                  onClick={() => setZoom(z => Math.min(1.5, z + 0.05))}
+                  onClick={() => setCanvasScale(s => Math.min(2.0, s + 0.1))}
                   className="px-2 py-1.5 text-stone-600 hover:text-stone-900 transition-colors"
                   title="Zoom In"
                 >
@@ -528,7 +573,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
                 </button>
                 <button
                   type="button"
-                  onClick={() => setZoom(0.8)}
+                  onClick={() => setCanvasScale(0.7)}
                   className="px-3 py-1.5 text-xs text-stone-600 hover:text-stone-900 border-l border-stone-300 transition-colors font-medium"
                 >
                   Reset
@@ -563,8 +608,10 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
             </div>
           </div>
 
-          <div className="flex-1 overflow-hidden">
-            <InvoicePreview form={form} client={selectedClient} zoom={zoom} />
+          <div ref={previewContainerRef} className="flex-1 overflow-hidden">
+            <PreviewCanvas scale={canvasScale} onScaleChange={setCanvasScale}>
+              <InvoicePreview form={form} client={selectedClient} settings={settings} />
+            </PreviewCanvas>
           </div>
         </div>
       </div>

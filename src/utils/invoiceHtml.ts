@@ -9,7 +9,7 @@ interface InvoiceData {
   client_business_name?: string;
   client_email?: string;
   client_address?: string;
-  items: Array<{ type: string; description: string; quantity: number; rate: number }>;
+  items: Array<{ type: string; description: string; quantity: number; rate: number; hours?: number | null; date?: string | null }>;
   discounts: Array<{ amount: number }>;
 }
 
@@ -31,23 +31,33 @@ function buildItemRows(items: InvoiceData['items'], type: string): string {
   if (filtered.length === 0) return '';
 
   const label = type === 'labour' ? 'Labour' : 'Materials';
+  const qtyLabel = type === 'labour' ? 'Hours' : 'Qty';
   const rateLabel = type === 'labour' ? 'Rate' : 'Cost';
 
-  const rows = filtered.map(item => `
+  const rows = filtered.map(item => {
+    const qty = type === 'labour' ? (item.hours ?? item.quantity ?? 0) : (item.quantity ?? 0);
+    const dateLine = type === 'labour' && item.date
+      ? `<p style="font-size: 11px; color: #78716c; margin-top: 2px;">${fmtDate(item.date)}</p>`
+      : '';
+    return `
     <div style="display: grid; grid-template-columns: 1fr 64px 88px 80px; gap: 8px; padding: 8px 0; border-bottom: 1px solid #fafaf9;">
-      <span style="font-size: 14px; color: #1c1917;">${item.description || 'No description'}</span>
-      <span style="font-size: 14px; color: #57534e; text-align: center;">${item.quantity}</span>
+      <span style="font-size: 14px; color: #1c1917;">
+        <span>${item.description || 'No description'}</span>
+        ${dateLine}
+      </span>
+      <span style="font-size: 14px; color: #57534e; text-align: center;">${qty}</span>
       <span style="font-size: 14px; color: #57534e; text-align: right;">${fmtCurrency(item.rate)}</span>
-      <span style="font-size: 14px; font-weight: 500; color: #1c1917; text-align: right;">${fmtCurrency(item.quantity * item.rate)}</span>
+      <span style="font-size: 14px; font-weight: 500; color: #1c1917; text-align: right;">${fmtCurrency(qty * item.rate)}</span>
     </div>
-  `).join('');
+    `;
+  }).join('');
 
   return `
     <div>
       <p style="font-size: 11px; font-weight: 600; color: #a8a29e; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">${label}</p>
       <div style="display: grid; grid-template-columns: 1fr 64px 88px 80px; gap: 8px; padding-bottom: 6px; border-bottom: 1px solid #f5f5f4;">
         <span style="font-size: 11px; font-weight: 500; color: #a8a29e;">Description</span>
-        <span style="font-size: 11px; font-weight: 500; color: #a8a29e; text-align: center;">Qty</span>
+        <span style="font-size: 11px; font-weight: 500; color: #a8a29e; text-align: center;">${qtyLabel}</span>
         <span style="font-size: 11px; font-weight: 500; color: #a8a29e; text-align: right;">${rateLabel}</span>
         <span style="font-size: 11px; font-weight: 500; color: #a8a29e; text-align: right;">Total</span>
       </div>
@@ -61,7 +71,10 @@ function buildItemRows(items: InvoiceData['items'], type: string): string {
  * Uses inline styles rather than Tailwind classes so it renders correctly in an offscreen window.
  */
 export function buildInvoiceHtml(data: InvoiceData): string {
-  const subtotal = data.items.reduce((sum, i) => sum + i.quantity * i.rate, 0);
+  const subtotal = data.items.reduce((sum, i) => {
+    const qty = i.type === 'labour' ? (i.hours ?? i.quantity ?? 0) : (i.quantity ?? 0);
+    return sum + qty * i.rate;
+  }, 0);
   const gst = data.gst_added ? subtotal * GST_RATE : 0;
   const discount = data.discounts?.[0]?.amount ?? 0;
   const grandTotal = subtotal + gst - discount;

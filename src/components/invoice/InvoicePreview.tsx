@@ -18,7 +18,10 @@ function formatDate(dateStr: string): string {
 
 /** Derive invoice totals from form state. */
 export function computeTotals(form: InvoiceFormState): InvoiceTotals {
-  const subtotal = form.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+  const subtotal = form.items.reduce((sum, item) => {
+    const qty = item.type === 'labour' ? (item.hours ?? item.quantity ?? 0) : (item.quantity ?? 0);
+    return sum + qty * item.unitPrice;
+  }, 0);
   const gst = form.gstEnabled ? subtotal * GST_RATE : 0;
   const discount = form.discount ?? 0;
   const grandTotal = subtotal + gst - discount;
@@ -28,21 +31,32 @@ export function computeTotals(form: InvoiceFormState): InvoiceTotals {
 interface InvoicePreviewProps {
   form: InvoiceFormState;
   client: Client | null;
-  zoom?: number;
+  settings?: Record<string, string>;
 }
 
 /**
- * Right-panel live preview — renders the invoice document as it will appear when exported.
+ * Invoice document card — renders the A4 invoice as it will appear when exported.
+ * Zoom and pan are handled externally by PreviewCanvas.
  */
-export const InvoicePreview: React.FC<InvoicePreviewProps> = ({ form, client, zoom = 0.8 }) => {
+export const InvoicePreview: React.FC<InvoicePreviewProps> = ({ form, client, settings = {} }) => {
   const totals = computeTotals(form);
   const hasItems = form.items.length > 0;
 
+  // Extract Organisation details
+  const orgName = settings['setting_org_name'] || 'Your Business';
+  const orgAddress = settings['setting_org_address'] || 'Your address here';
+  const orgPhone = settings['setting_org_phone'] || '';
+  const orgEmail = settings['setting_org_email'] || '';
+  const orgAbn = settings['setting_org_abn'] || '';
+
+  // Extract Payment details
+  const bankName = settings['setting_bank_name'] || '';
+  const bsb = settings['setting_bsb'] || '';
+  const accountNumber = settings['setting_account_number'] || '';
+  const paymentInstructions = settings['setting_payment_instructions'] || '';
+
   return (
-    <div className="h-full flex flex-col items-center py-8 px-6 overflow-y-auto">
-      <div style={{ zoom }} className="origin-top flex flex-col items-center">
-        {/* Document card */}
-        <div id="invoice-preview-card" className="w-[210mm] min-h-[297mm] bg-white rounded-none shadow-22 overflow-hidden flex flex-col p-[10mm] box-border relative a4-page-breaks">
+    <div id="invoice-preview-card" className="w-[210mm] min-h-[297mm] bg-white rounded-none shadow-22 overflow-hidden flex flex-col p-[10mm] box-border relative a4-page-breaks">
 
         {/* Document header band */}
         <div className="bg-stone-900 px-8 py-7 flex items-start justify-between">
@@ -69,8 +83,11 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({ form, client, zo
           <div className="grid grid-cols-2 gap-6">
             <div>
               <p className="text-xs text-stone-400 mb-1.5">Billed by</p>
-              <p className="text-sm font-semibold text-stone-900">Your Business</p>
-              <p className="text-xs text-stone-500 mt-0.5">Your address here</p>
+              <p className="text-sm font-semibold text-stone-900">{orgName}</p>
+              {orgAbn && <p className="text-xs text-stone-500 mt-0.5">ABN: {orgAbn}</p>}
+              <p className="text-xs text-stone-500 mt-0.5 whitespace-pre-wrap">{orgAddress}</p>
+              {orgPhone && <p className="text-xs text-stone-500 mt-0.5">{orgPhone}</p>}
+              {orgEmail && <p className="text-xs text-stone-500 mt-0.5">{orgEmail}</p>}
             </div>
             <div>
               <p className="text-xs text-stone-400 mb-1.5">Billed to</p>
@@ -123,7 +140,7 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({ form, client, zo
                 <p className="text-xs font-semibold text-stone-400 uppercase tracking-widest mb-2">Labour</p>
                 <div className="grid gap-2 pb-1.5 border-b border-stone-100" style={{ gridTemplateColumns: '1fr 64px 88px 80px' }}>
                   <span className="text-xs font-medium text-stone-400">Description</span>
-                  <span className="text-xs font-medium text-stone-400 text-center">Qty</span>
+                  <span className="text-xs font-medium text-stone-400 text-center">Hours</span>
                   <span className="text-xs font-medium text-stone-400 text-right">Rate</span>
                   <span className="text-xs font-medium text-stone-400 text-right">Total</span>
                 </div>
@@ -135,11 +152,18 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({ form, client, zo
                       className="grid gap-2 py-2 border-b border-stone-50"
                       style={{ gridTemplateColumns: '1fr 64px 88px 80px' }}
                     >
-                      <span className="text-sm text-stone-900">{item.description || <span className="text-stone-300 italic">No description</span>}</span>
-                      <span className="text-sm text-stone-600 text-center">{item.quantity}</span>
+                      <span className="text-sm text-stone-900 flex flex-col">
+                        <span>{item.description || <span className="text-stone-300 italic">No description</span>}</span>
+                        {item.date && (
+                          <span className="text-[10px] text-stone-400 font-normal mt-0.5">
+                            {formatDate(item.date)}
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-sm text-stone-600 text-center">{item.hours ?? item.quantity}</span>
                       <span className="text-sm text-stone-600 text-right">{formatCurrency(item.unitPrice)}</span>
                       <span className="text-sm font-medium text-stone-900 text-right">
-                        {formatCurrency(item.quantity * item.unitPrice)}
+                        {formatCurrency((item.hours ?? item.quantity) * item.unitPrice)}
                       </span>
                     </div>
                   ))}
@@ -206,12 +230,24 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({ form, client, zo
               </div>
             </>
           )}
-
+          {/* Payment Details */}
+          {(bankName || bsb || accountNumber || paymentInstructions) && (
+            <>
+              <div className="h-px bg-stone-100" />
+              <div className="bg-stone-50 rounded-xl px-4 py-3">
+                <p className="text-xs font-medium text-stone-400 uppercase tracking-widest mb-2">Payment Details</p>
+                <div className="flex flex-col gap-1 text-xs text-stone-600">
+                  {bankName && <p><span className="font-semibold text-stone-700">Bank:</span> {bankName}</p>}
+                  {bsb && <p><span className="font-semibold text-stone-700">BSB:</span> {bsb}</p>}
+                  {accountNumber && <p><span className="font-semibold text-stone-700">Account No:</span> {accountNumber}</p>}
+                  {paymentInstructions && <p className="mt-1.5 italic text-stone-500 whitespace-pre-wrap">{paymentInstructions}</p>}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
-    </div>
-  </div>
-);
+  );
 };
 
 /** Simple label + value row for the totals block. */

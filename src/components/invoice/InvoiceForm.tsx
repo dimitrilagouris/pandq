@@ -54,7 +54,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
       id: crypto.randomUUID(),
       type,
       description: '',
-      quantity: 1,
+      quantity: type === 'materials' ? 1 : 0,
+      hours: type === 'labour' ? 1 : undefined,
+      date: type === 'labour' ? new Date().toISOString().slice(0, 10) : undefined,
       unitPrice: 0,
     };
     onChange({ items: [...form.items, newItem] });
@@ -188,50 +190,63 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
 
       {/* ── Labour Section ── */}
       <Section title="Labour">
-        {/* Column headers */}
-        {form.items.some(item => item.type === 'labour') && (
-          <div className="grid items-center gap-2 px-1" style={{ gridTemplateColumns: '1fr 72px 96px 32px' }}>
-            <span className="text-xs font-medium text-stone-400">Description</span>
-            <span className="text-xs font-medium text-stone-400 text-center">Quantity</span>
-            <span className="text-xs font-medium text-stone-400 text-right">Cost/hr</span>
-            <span />
-          </div>
-        )}
-
-        {/* Item rows */}
-        {form.items
-          .filter(item => item.type === 'labour')
-          .map((item) => (
-            <div key={item.id} className="grid items-center gap-2" style={{ gridTemplateColumns: '1fr 72px 96px 32px' }}>
-              <Input
-                value={item.description}
-                onChange={(val) => updateItem(item.id, { description: val })}
-                placeholder="Labour description"
-                name={`desc-${item.id}`}
-              />
-              <Input
-                value={String(item.quantity)}
-                onChange={(val) => updateItem(item.id, { quantity: Number(val) || 0 })}
-                type="number"
-                name={`qty-${item.id}`}
-                placeholder="1"
-              />
-              <Input
-                value={String(item.unitPrice)}
-                onChange={(val) => updateItem(item.id, { unitPrice: Number(val) || 0 })}
-                type="number"
-                name={`price-${item.id}`}
-                placeholder="0.00"
-              />
-              <button
-                type="button"
-                onClick={() => removeItem(item.id)}
-                className="flex items-center justify-center w-8 h-8 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+        {/* Item cards list */}
+        <div className="flex flex-col gap-3">
+          {form.items
+            .filter(item => item.type === 'labour')
+            .map((item) => (
+              <div 
+                key={item.id} 
+                className="flex flex-col gap-3 p-4 bg-stone-50 border border-stone-200/60 rounded-2xl shadow-sm"
               >
-                <TbTrash className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
+                {/* Row 1: Description & Delete */}
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <Input
+                      label="Description"
+                      value={item.description}
+                      onChange={(val) => updateItem(item.id, { description: val })}
+                      placeholder="Labour description (e.g. Code Review, Wiring...)"
+                      name={`desc-${item.id}`}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeItem(item.id)}
+                    className="flex items-center justify-center w-10 h-10 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors border border-transparent hover:border-red-100 flex-shrink-0 mb-0.5"
+                    title="Remove item"
+                  >
+                    <TbTrash className="w-4.5 h-4.5" />
+                  </button>
+                </div>
+
+                {/* Row 2: Date, Hours, Cost/hr */}
+                <div className="grid gap-3" style={{ gridTemplateColumns: '1.5fr 0.75fr 0.75fr' }}>
+                  <DatePicker
+                    label="Date"
+                    value={item.date || ''}
+                    onChange={(val) => updateItem(item.id, { date: val })}
+                  />
+                  <Input
+                    label="Hours"
+                    value={item.hours !== undefined ? String(item.hours) : String(item.quantity)}
+                    onChange={(val) => updateItem(item.id, { hours: Number(val) || 0 })}
+                    type="number"
+                    name={`hours-${item.id}`}
+                    placeholder="0"
+                  />
+                  <Input
+                    label="Rate/hr"
+                    value={String(item.unitPrice)}
+                    onChange={(val) => updateItem(item.id, { unitPrice: Number(val) || 0 })}
+                    type="number"
+                    name={`price-${item.id}`}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+            ))}
+        </div>
 
         {/* Divider with centred add button */}
         <div className="flex items-center gap-3 py-1">

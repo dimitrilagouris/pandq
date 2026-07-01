@@ -4,7 +4,7 @@ import { Client } from '../types';
 import { Button } from '../components/Button';
 import { InvoiceForm } from '../components/invoice/InvoiceForm';
 import { InvoicePreview, computeTotals } from '../components/invoice/InvoicePreview';
-import { PreviewCanvas } from '../components/invoice/PreviewCanvas';
+import { PreviewCanvas, PreviewCanvasHandle } from '../components/invoice/PreviewCanvas';
 import { InvoiceFormState } from '../components/invoice/invoiceTypes';
 import { Page } from '../App';
 
@@ -48,9 +48,10 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
   const [exportType, setExportType] = useState<'email' | 'pdf'>('email');
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
-  const [canvasScale, setCanvasScale] = useState<number>(0.7);
+  const [canvasScale, setCanvasScale] = useState<number>(0.8);
   const [formWidth, setFormWidth] = useState<number>(480);
   const previewContainerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<PreviewCanvasHandle>(null);
 
   const handleDividerMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -573,7 +574,10 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
                 </button>
                 <button
                   type="button"
-                  onClick={() => setCanvasScale(0.7)}
+                  onClick={() => {
+                    setCanvasScale(0.8);
+                    canvasRef.current?.resetView();
+                  }}
                   className="px-3 py-1.5 text-xs text-stone-600 hover:text-stone-900 border-l border-stone-300 transition-colors font-medium"
                 >
                   Reset
@@ -609,7 +613,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           </div>
 
           <div ref={previewContainerRef} className="flex-1 overflow-hidden">
-            <PreviewCanvas scale={canvasScale} onScaleChange={setCanvasScale}>
+            <PreviewCanvas ref={canvasRef} scale={canvasScale} onScaleChange={setCanvasScale}>
               <InvoicePreview form={form} client={selectedClient} settings={settings} />
             </PreviewCanvas>
           </div>

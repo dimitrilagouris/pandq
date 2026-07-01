@@ -66,6 +66,7 @@ function initDatabase(): void {
       hours REAL,
       rate REAL,
       quantity REAL,
+      date TEXT,
       FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
     );
 
@@ -89,6 +90,13 @@ function initDatabase(): void {
   const hasDisplayDueDate = tableInfo.some((col) => col.name === 'display_due_date');
   if (!hasDisplayDueDate) {
     db.exec("ALTER TABLE invoices ADD COLUMN display_due_date BOOLEAN DEFAULT 1");
+  }
+
+  // Run column migrations to add date column to invoice_items if not exists
+  const itemTableInfo = db.prepare("PRAGMA table_info(invoice_items)").all() as Array<{ name: string }>;
+  const hasDateColumn = itemTableInfo.some((col) => col.name === 'date');
+  if (!hasDateColumn) {
+    db.exec("ALTER TABLE invoice_items ADD COLUMN date TEXT");
   }
 }
 
@@ -209,7 +217,7 @@ app.whenReady().then(() => {
     displayDueDate: boolean,
     discount: number,
     price: number,
-    items: Array<{ type: string; description: string; quantity: number; rate: number }>,
+    items: Array<{ type: string; description: string; hours: number | null; rate: number; quantity: number | null; date: string | null }>,
     notes: string,
   ): unknown => {
     if (!db) throw new Error('Database not initialised');
@@ -219,7 +227,7 @@ app.whenReady().then(() => {
     );
     const deleteItems = db.prepare('DELETE FROM invoice_items WHERE invoice_id = ?');
     const insertItem = db.prepare(
-      'INSERT INTO invoice_items (invoice_id, type, description, hours, rate, quantity) VALUES (?, ?, ?, ?, ?, ?)'
+      'INSERT INTO invoice_items (invoice_id, type, description, hours, rate, quantity, date) VALUES (?, ?, ?, ?, ?, ?, ?)'
     );
     const deleteDiscounts = db.prepare('DELETE FROM discounts WHERE invoice_id = ?');
     const insertDiscount = db.prepare(
@@ -234,7 +242,7 @@ app.whenReady().then(() => {
       
       deleteItems.run(invoiceId);
       for (const item of items) {
-        insertItem.run(invoiceId, item.type, item.description, null, item.rate, item.quantity);
+        insertItem.run(invoiceId, item.type, item.description, item.hours, item.rate, item.quantity, item.date);
       }
 
       deleteDiscounts.run(invoiceId);
@@ -285,7 +293,7 @@ app.whenReady().then(() => {
     displayDueDate: boolean,
     discount: number,
     price: number,
-    items: Array<{ type: string; description: string; quantity: number; rate: number }>,
+    items: Array<{ type: string; description: string; hours: number | null; rate: number; quantity: number | null; date: string | null }>,
     notes: string,
   ): unknown => {
     if (!db) throw new Error('Database not initialised');
@@ -295,7 +303,7 @@ app.whenReady().then(() => {
       'INSERT INTO invoices (client_id, invoice_number, date, due_date, status, price, gst_added, display_due_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     );
     const insertItem = db.prepare(
-      'INSERT INTO invoice_items (invoice_id, type, description, hours, rate, quantity) VALUES (?, ?, ?, ?, ?, ?)'
+      'INSERT INTO invoice_items (invoice_id, type, description, hours, rate, quantity, date) VALUES (?, ?, ?, ?, ?, ?, ?)'
     );
     const insertDiscount = db.prepare(
       'INSERT INTO discounts (invoice_id, description, amount, type) VALUES (?, ?, ?, ?)'
@@ -309,7 +317,7 @@ app.whenReady().then(() => {
       const invoiceId = result.lastInsertRowid as number;
 
       for (const item of items) {
-        insertItem.run(invoiceId, item.type, item.description, null, item.rate, item.quantity);
+        insertItem.run(invoiceId, item.type, item.description, item.hours, item.rate, item.quantity, item.date);
       }
 
       if (discount > 0) {

@@ -21,7 +21,10 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
   return (
-    <aside className="w-[260px] h-[calc(100vh-2rem)] my-4 ml-4 bg-stone-100 flex flex-col rounded-2xl text-stone-700 flex-shrink-0 shadow-1 overflow-hidden">
+    <aside 
+      style={{ backgroundColor: 'var(--bg-sidebar)' }}
+      className="w-[260px] h-[calc(100vh-2rem)] my-4 ml-4 flex flex-col rounded-2xl text-stone-700 flex-shrink-0 shadow-1 overflow-hidden"
+    >
       
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-6 pb-4">

@@ -527,7 +527,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
         {/* Left Form Panel */}
         <div 
           style={{ width: `${formWidth}px` }}
-          className="flex-shrink-0 flex flex-col h-full rounded-2xl shadow-1 bg-white"
+          className="flex-shrink-0 flex flex-col h-full rounded-2xl shadow-1 bg-stone-50"
         >
           <div className="flex-1 overflow-y-auto px-6 py-6">
             <InvoiceForm form={form} clients={clients} onChange={handleChange} />
@@ -543,7 +543,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
         </div>
 
         {/* Right Preview Panel */}
-        <div className="flex-1 overflow-hidden flex flex-col h-full rounded-2xl shadow-1 bg-stone-100">
+        <div className="flex-1 overflow-hidden flex flex-col h-full rounded-2xl shadow-1 bg-stone-50">
           {/* Preview header with type toggle and zoom */}
           <div className="flex items-center justify-between px-6 pt-4 pb-2 flex-shrink-0">
             <div className="flex items-center gap-2">
@@ -552,7 +552,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
 
             <div className="flex items-center gap-3">
               {/* Zoom Controls */}
-              <div className="flex items-center bg-stone-200/60 p-0.5 rounded-xl shadow-1 text-xs font-medium">
+              <div className="flex items-center bg-stone-200 p-0.5 rounded-xl shadow-1 text-xs font-medium">
                 <button
                   type="button"
                   onClick={() => setCanvasScale(s => Math.max(0.2, s - 0.1))}
@@ -585,7 +585,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
               </div>
 
               {/* Email / PDF Toggle selector */}
-              <div className="flex bg-stone-200/60 p-0.5 rounded-xl shadow-1 text-xs font-medium">
+              <div className="flex bg-stone-200 p-0.5 rounded-xl shadow-1 text-xs font-medium">
                 <button
                   type="button"
                   onClick={() => setExportType('email')}

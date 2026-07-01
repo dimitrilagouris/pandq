@@ -85,6 +85,29 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
     && selectedInvoices.every(inv => inv.client_id === selectedInvoices[0].client_id);
   const canSendBatch = selectedInvoices.length > 0 && allSameClient;
 
+  // Metric calculations
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const sevenDaysAgoStr = sevenDaysAgo.toISOString().slice(0, 10);
+
+  const totalInvoices = invoices.length;
+
+  const overdueInvoicesCount = invoices.filter((inv) => {
+    const status = inv.status.split('|')[0] || 'draft';
+    return status === 'sent' && inv.due_date && inv.due_date < todayStr;
+  }).length;
+
+  const toBePaidInvoicesCount = invoices.filter((inv) => {
+    const status = inv.status.split('|')[0] || 'draft';
+    return status === 'sent';
+  }).length;
+
+  const recentlySentCount = invoices.filter((inv) => {
+    const status = inv.status.split('|')[0] || 'draft';
+    return status === 'sent' && inv.date && inv.date >= sevenDaysAgoStr;
+  }).length;
+
   /** Fetch full data for each selected invoice, build HTML, and email as a batch. */
   const handleSendSelected = async (): Promise<void> => {
     if (!canSendBatch) return;
@@ -225,11 +248,9 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                   <button
                     key={st}
                     onClick={() => handleStatusSelect(st)}
-                    className={`w-full text-left px-3 py-1.5 rounded-xl transition-all duration-150 text-xs font-normal
-                      ${status === st ? 'bg-white/10 text-white shadow-sm font-medium' : 'text-stone-200 hover:bg-white/5'}
-                    `}
+                    className="w-full px-2.5 py-1.5 text-left text-xs font-medium text-white hover:bg-white/10 rounded-lg transition-colors capitalize border-0 bg-transparent cursor-pointer"
                   >
-                    {st.charAt(0).toUpperCase() + st.slice(1)}
+                    {st}
                   </button>
                 ))}
               </div>
@@ -241,12 +262,20 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
     {
       key: 'actions',
       header: '',
-      width: '80px',
+      width: '1.2fr',
+      className: 'text-right justify-end pr-1',
       render: (inv) => (
-        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-end gap-1.5">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => onEditInvoice(inv.id)}
+          >
+            Edit
+          </Button>
           <button
             onClick={() => handleDelete(inv)}
-            className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+            className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border-0 bg-transparent cursor-pointer"
           >
             <TbTrash className="w-4 h-4" />
           </button>
@@ -284,6 +313,26 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           >
             New Invoice
           </Button>
+        </div>
+      </div>
+
+      {/* Metrics Cards Grid */}
+      <div className="grid grid-cols-4 gap-4">
+        <div className="bg-stone-100 border border-stone-200/40 rounded-2xl p-4 shadow-1 flex flex-col gap-1.5 select-none">
+          <span className="text-xs font-medium text-stone-400 uppercase tracking-wider">Invoices Made</span>
+          <span className="text-2xl font-bold text-stone-900">{totalInvoices}</span>
+        </div>
+        <div className="bg-stone-100 border border-stone-200/40 rounded-2xl p-4 shadow-1 flex flex-col gap-1.5 select-none">
+          <span className="text-xs font-medium text-stone-400 uppercase tracking-wider">Overdue Invoices</span>
+          <span className="text-2xl font-bold text-red-600">{overdueInvoicesCount}</span>
+        </div>
+        <div className="bg-stone-100 border border-stone-200/40 rounded-2xl p-4 shadow-1 flex flex-col gap-1.5 select-none">
+          <span className="text-xs font-medium text-stone-400 uppercase tracking-wider">To Be Paid</span>
+          <span className="text-2xl font-bold text-stone-900">{toBePaidInvoicesCount}</span>
+        </div>
+        <div className="bg-stone-100 border border-stone-200/40 rounded-2xl p-4 shadow-1 flex flex-col gap-1.5 select-none">
+          <span className="text-xs font-medium text-stone-400 uppercase tracking-wider">Recently Sent</span>
+          <span className="text-2xl font-bold text-stone-900">{recentlySentCount}</span>
         </div>
       </div>
 

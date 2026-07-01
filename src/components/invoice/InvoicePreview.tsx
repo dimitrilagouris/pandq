@@ -224,7 +224,7 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({ form, client, se
           {form.notes.trim() && (
             <>
               <div className="h-px bg-stone-100" />
-              <div className="bg-stone-50 rounded-xl px-4 py-3">
+              <div className="bg-stone-100 rounded-xl px-4 py-3">
                 <p className="text-xs font-medium text-stone-400 uppercase tracking-widest mb-2">Notes</p>
                 <p className="text-xs text-stone-600 whitespace-pre-wrap">{form.notes}</p>
               </div>
@@ -234,7 +234,7 @@ export const InvoicePreview: React.FC<InvoicePreviewProps> = ({ form, client, se
           {(bankName || bsb || accountNumber || paymentInstructions) && (
             <>
               <div className="h-px bg-stone-100" />
-              <div className="bg-stone-50 rounded-xl px-4 py-3">
+              <div className="bg-stone-100 rounded-xl px-4 py-3">
                 <p className="text-xs font-medium text-stone-400 uppercase tracking-widest mb-2">Payment Details</p>
                 <div className="flex flex-col gap-1 text-xs text-stone-600">
                   {bankName && <p><span className="font-semibold text-stone-700">Bank:</span> {bankName}</p>}

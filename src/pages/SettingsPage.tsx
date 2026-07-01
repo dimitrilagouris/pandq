@@ -159,7 +159,7 @@ export default function SettingsPage(): React.JSX.Element {
               label="Organisation Name"
               value={orgName}
               onChange={setOrgName}
-              placeholder="e.g. Acme Corp"
+              placeholder="e.g. Telos"
             />
             <Input
               label="Business Number / ABN"
@@ -186,7 +186,7 @@ export default function SettingsPage(): React.JSX.Element {
                 label="Public/Billing Email"
                 value={orgEmail}
                 onChange={setOrgEmail}
-                placeholder="e.g. accounts@acme.com"
+                placeholder="e.g. accounts@telos.com"
                 type="email"
               />
             </div>
@@ -269,7 +269,7 @@ export default function SettingsPage(): React.JSX.Element {
               label="Default Sender Name"
               value={senderName}
               onChange={setSenderName}
-              placeholder="e.g. Acme Billing"
+              placeholder="e.g. Telos Billing"
             />
             <TemplatedInput
               label="Default Subject Template"
@@ -338,8 +338,8 @@ export default function SettingsPage(): React.JSX.Element {
               onClick={() => { setActiveTab('organisation'); setSaveSuccess(false); }}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
                 ${activeTab === 'organisation'
-                  ? 'bg-stone-100 text-stone-900'
-                  : 'text-stone-600 hover:bg-stone-100/50 hover:text-stone-900'}
+                  ? 'bg-stone-200 text-stone-900'
+                  : 'text-stone-600 hover:bg-stone-200/50 hover:text-stone-900'}
               `}
             >
               <TbBuilding className={`w-4 h-4 flex-shrink-0 ${activeTab === 'organisation' ? 'text-stone-900' : 'text-stone-400'}`} />
@@ -349,8 +349,8 @@ export default function SettingsPage(): React.JSX.Element {
               onClick={() => { setActiveTab('payment'); setSaveSuccess(false); }}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
                 ${activeTab === 'payment'
-                  ? 'bg-stone-100 text-stone-900'
-                  : 'text-stone-600 hover:bg-stone-100/50 hover:text-stone-900'}
+                  ? 'bg-stone-200 text-stone-900'
+                  : 'text-stone-600 hover:bg-stone-200/50 hover:text-stone-900'}
               `}
             >
               <TbCreditCard className={`w-4 h-4 flex-shrink-0 ${activeTab === 'payment' ? 'text-stone-900' : 'text-stone-400'}`} />
@@ -369,8 +369,8 @@ export default function SettingsPage(): React.JSX.Element {
               onClick={() => { setActiveTab('personalisation'); setSaveSuccess(false); }}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
                 ${activeTab === 'personalisation'
-                  ? 'bg-stone-100 text-stone-900'
-                  : 'text-stone-600 hover:bg-stone-100/50 hover:text-stone-900'}
+                  ? 'bg-stone-200 text-stone-900'
+                  : 'text-stone-600 hover:bg-stone-200/50 hover:text-stone-900'}
               `}
             >
               <TbPalette className={`w-4 h-4 flex-shrink-0 ${activeTab === 'personalisation' ? 'text-stone-900' : 'text-stone-400'}`} />
@@ -380,8 +380,8 @@ export default function SettingsPage(): React.JSX.Element {
               onClick={() => { setActiveTab('invoice'); setSaveSuccess(false); }}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
                 ${activeTab === 'invoice'
-                  ? 'bg-stone-100 text-stone-900'
-                  : 'text-stone-600 hover:bg-stone-100/50 hover:text-stone-900'}
+                  ? 'bg-stone-200 text-stone-900'
+                  : 'text-stone-600 hover:bg-stone-200/50 hover:text-stone-900'}
               `}
             >
               <TbReceipt className={`w-4 h-4 flex-shrink-0 ${activeTab === 'invoice' ? 'text-stone-900' : 'text-stone-400'}`} />
@@ -391,8 +391,8 @@ export default function SettingsPage(): React.JSX.Element {
               onClick={() => { setActiveTab('email'); setSaveSuccess(false); }}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
                 ${activeTab === 'email'
-                  ? 'bg-stone-100 text-stone-900'
-                  : 'text-stone-600 hover:bg-stone-100/50 hover:text-stone-900'}
+                  ? 'bg-stone-200 text-stone-900'
+                  : 'text-stone-600 hover:bg-stone-200/50 hover:text-stone-900'}
               `}
             >
               <TbMail className={`w-4 h-4 flex-shrink-0 ${activeTab === 'email' ? 'text-stone-900' : 'text-stone-400'}`} />

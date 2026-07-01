@@ -197,7 +197,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
             .map((item) => (
               <div 
                 key={item.id} 
-                className="flex flex-col gap-3 p-4 bg-stone-50 border border-stone-200/60 rounded-2xl shadow-sm"
+                className="flex flex-col gap-3 p-4 bg-stone-100 border border-stone-200/60 rounded-2xl shadow-sm"
               >
                 {/* Row 1: Description & Delete */}
                 <div className="flex items-end gap-2">

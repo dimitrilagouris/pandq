@@ -167,7 +167,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
                   <select
                     value={countryCode}
                     onChange={(e) => setCountryCode(e.target.value)}
-                    className="h-9 px-3 text-sm text-stone-900 bg-stone-50 border border-transparent rounded-xl shadow-1 focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-400 focus:ring-offset-1 appearance-none pr-8 cursor-pointer transition-all duration-150"
+                    className="h-9 px-3 text-sm text-stone-900 bg-white border border-transparent rounded-xl shadow-1 focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-400 focus:ring-offset-1 appearance-none pr-8 cursor-pointer transition-all duration-150"
                   >
                     <option value="+61">🇦🇺 +61</option>
                     <option value="+1">🇺🇸 +1</option>
@@ -213,6 +213,9 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
               name="address"
               value={form.address}
               onChange={(val) => handleFieldChange('address', val)}
+              multiline
+              autoGrow
+              rows={2}
             />
           </div>
 

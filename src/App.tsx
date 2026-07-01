@@ -86,7 +86,7 @@ export default function App(): React.JSX.Element {
   };
 
   return (
-    <div className="flex h-screen w-full bg-stone-50 overflow-hidden font-sans">
+    <div className="flex h-screen w-full bg-stone-100 overflow-hidden font-sans">
       <Sidebar
         activePage={activePage}
         onNavigate={handleNavigate}

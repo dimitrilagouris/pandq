@@ -163,7 +163,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         <button
           type="button"
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full h-10 px-3 pl-9 text-left text-sm text-stone-900 bg-stone-50 border border-transparent rounded-xl shadow-1 hover:bg-stone-100/50 transition-all duration-150 focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-400 focus:ring-offset-1 flex items-center justify-between"
+          className="w-full h-10 px-3 pl-9 text-left text-sm text-stone-900 bg-white border border-transparent rounded-xl shadow-1 hover:bg-stone-100/50 transition-all duration-150 focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-400 focus:ring-offset-1 flex items-center justify-between"
         >
           <span>{formatDisplayString(value) || 'Select date…'}</span>
           <TbCalendar className="w-4 h-4 text-stone-400 flex-shrink-0" />

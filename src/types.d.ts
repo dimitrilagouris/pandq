@@ -71,8 +71,8 @@ export interface ElectronAPI {
   ) => Promise<unknown>;
   deleteInvoice: (id: number) => Promise<unknown>;
   printToPDF: (invoiceNumber: string, htmlContent: string) => Promise<boolean>;
-  emailInvoice: (invoiceNumber: string, htmlContent: string, recipientEmail: string) => Promise<boolean>;
-  emailMultipleInvoices: (invoiceEntries: Array<{ invoiceNumber: string; htmlContent: string }>, recipientEmail: string) => Promise<boolean>;
+  emailInvoice: (invoiceNumber: string, htmlContent: string, recipientEmail: string, clientName: string, grandTotal: number, dueDate: string) => Promise<boolean>;
+  emailMultipleInvoices: (invoiceEntries: Array<{ invoiceNumber: string; htmlContent: string; clientName: string; grandTotal: number; dueDate: string }>, recipientEmail: string) => Promise<boolean>;
   getInvoiceById: (id: number) => Promise<any>;
   updateInvoice: (
     invoiceId: number,

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { TbPlus, TbTrash, TbCalendar, TbUser, TbHash, TbChevronDown } from 'react-icons/tb';
+import { TbPlus, TbTrash, TbCalendar, TbUser, TbHash, TbChevronDown, TbChevronRight } from 'react-icons/tb';
 import { Client } from '../../types';
 import { Input } from '../Input';
 import { DatePicker } from '../DatePicker';
@@ -21,6 +21,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
 
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAdditionalSettingsOpen, setIsAdditionalSettingsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on click outside
@@ -90,29 +91,6 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
             value={form.dueDate}
             onChange={(val) => onChange({ dueDate: val })}
           />
-        </div>
-        <div className="grid grid-cols-2 gap-3 mt-3">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-stone-500 tracking-wide">Display Due Date to client</label>
-            <div className="flex items-center h-10">
-              <button
-                type="button"
-                onClick={() => onChange({ displayDueDate: !form.displayDueDate })}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out shadow-3 ${
-                  form.displayDueDate ? 'bg-stone-800' : 'bg-stone-200'
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-1 ring-0 transition duration-200 ease-in-out ${
-                    form.displayDueDate ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-              <span className="text-sm font-medium text-stone-700 ml-3 select-none">
-                {form.displayDueDate ? 'Visible' : 'Hidden'}
-              </span>
-            </div>
-          </div>
         </div>
       </Section>
 
@@ -365,17 +343,59 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
         </div>
       </Section>
 
-      {/* ── Notes ── */}
-      <Section title="Notes">
-        <Input
-          name="notes"
-          value={form.notes}
-          onChange={(val) => onChange({ notes: val })}
-          multiline
-          autoGrow
-          placeholder="Payment terms, bank details, or any other notes…"
-        />
-      </Section>
+      {/* ── Additional Settings (Collapsible) ── */}
+      <div className="border-t border-stone-200/80 pt-4 flex flex-col gap-3">
+        <button
+          type="button"
+          onClick={() => setIsAdditionalSettingsOpen(!isAdditionalSettingsOpen)}
+          className="flex items-center gap-2 text-sm font-semibold text-stone-900 w-full text-left cursor-pointer select-none border-0 bg-transparent"
+        >
+          {isAdditionalSettingsOpen ? (
+            <TbChevronDown className="w-4 h-4 text-stone-550" />
+          ) : (
+            <TbChevronRight className="w-4 h-4 text-stone-550" />
+          )}
+          <span>Additional settings</span>
+        </button>
+
+        {isAdditionalSettingsOpen && (
+          <div className="flex flex-col gap-4 pl-6 animate-in fade-in slide-in-from-top-1 duration-150">
+            {/* Display Due Date Toggle */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-stone-500 tracking-wide">Display Due Date to client</label>
+              <div className="flex items-center h-10">
+                <button
+                  type="button"
+                  onClick={() => onChange({ displayDueDate: !form.displayDueDate })}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out shadow-3 ${
+                    form.displayDueDate ? 'bg-stone-800' : 'bg-stone-200'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-1 ring-0 transition duration-200 ease-in-out ${
+                      form.displayDueDate ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+                <span className="text-sm font-medium text-stone-700 ml-3 select-none">
+                  {form.displayDueDate ? 'Visible' : 'Hidden'}
+                </span>
+              </div>
+            </div>
+
+            {/* Notes */}
+            <Input
+              label="Notes"
+              name="notes"
+              value={form.notes}
+              onChange={(val) => onChange({ notes: val })}
+              multiline
+              autoGrow
+              placeholder="Payment terms, bank details, or any other notes…"
+            />
+          </div>
+        )}
+      </div>
 
     </div>
   );

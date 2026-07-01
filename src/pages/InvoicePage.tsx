@@ -464,7 +464,15 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
       `;
 
       // 3. Trigger email creation with attachment
-      await window.electronAPI.emailInvoice(form.invoiceNumber, htmlContent, selectedClient?.email || '');
+      const clientName = selectedClient ? (selectedClient.business_name || selectedClient.name) : '';
+      await window.electronAPI.emailInvoice(
+        form.invoiceNumber,
+        htmlContent,
+        selectedClient?.email || '',
+        clientName,
+        totals.grandTotal,
+        form.dueDate
+      );
       onNavigate('projects', true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to send invoice.');

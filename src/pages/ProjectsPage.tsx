@@ -135,7 +135,13 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           discounts: fullData.discounts || [],
         }, settings);
 
-        entries.push({ invoiceNumber: fullData.invoice_number, htmlContent });
+        entries.push({
+          invoiceNumber: fullData.invoice_number,
+          htmlContent,
+          clientName: inv.client_name || inv.client_business_name || '',
+          grandTotal: inv.price,
+          dueDate: inv.due_date || '',
+        });
       }
 
       if (entries.length === 0) {

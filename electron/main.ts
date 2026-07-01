@@ -383,7 +383,37 @@ app.whenReady().then(() => {
     return true;
   });
 
-  ipcMain.handle('email-invoice', async (_event, invoiceNumber: string, htmlContent: string, recipientEmail: string): Promise<boolean> => {
+  function formatDate(dateStr: string): string {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    const [y, m, d] = parts;
+    return `${d}/${m}/${y}`;
+  }
+
+  function getDatabaseSettings(): Record<string, string> {
+    const settingsObj: Record<string, string> = {};
+    if (!db) return settingsObj;
+    try {
+      const rows = db.prepare('SELECT key, value FROM settings').all() as Array<{ key: string; value: string }>;
+      for (const row of rows) {
+        settingsObj[row.key] = row.value;
+      }
+    } catch (err) {
+      console.error('Failed to query settings from DB:', err);
+    }
+    return settingsObj;
+  }
+
+  ipcMain.handle('email-invoice', async (
+    _event,
+    invoiceNumber: string,
+    htmlContent: string,
+    recipientEmail: string,
+    clientName: string = '',
+    grandTotal: number = 0,
+    dueDate: string = ''
+  ): Promise<boolean> => {
     const printWin = new BrowserWindow({
       show: false,
       webPreferences: {
@@ -417,8 +447,26 @@ app.whenReady().then(() => {
     const tempPdfPath = path.join(app.getPath('temp'), `Invoice-${invoiceNumber}.pdf`);
     fs.writeFileSync(tempPdfPath, pdfData);
 
-    const subject = `Invoice ${invoiceNumber}`;
-    const body = `Hi,\n\nPlease find attached invoice ${invoiceNumber}.\n\nKind regards,\nYour Business`;
+    const settings = getDatabaseSettings();
+    const settingSubject = settings['setting_email_subject'] || 'Invoice {invoiceNumber}';
+    const settingBody = settings['setting_email_body'] || 'Hi,\n\nPlease find attached invoice {invoiceNumber}.\n\nKind regards,\n{orgName}';
+    const orgName = settings['setting_org_name'] || 'Your Business';
+
+    const formattedTotal = `$${grandTotal.toFixed(2)}`;
+    const formattedDueDate = formatDate(dueDate);
+
+    const subject = settingSubject
+      .replace(/{invoiceNumber}/g, invoiceNumber)
+      .replace(/{clientName}/g, clientName)
+      .replace(/{grandTotal}/g, formattedTotal)
+      .replace(/{dueDate}/g, formattedDueDate);
+
+    const body = settingBody
+      .replace(/{invoiceNumber}/g, invoiceNumber)
+      .replace(/{clientName}/g, clientName)
+      .replace(/{grandTotal}/g, formattedTotal)
+      .replace(/{dueDate}/g, formattedDueDate)
+      .replace(/{orgName}/g, orgName);
 
     // Write AppleScript to a temp file to avoid shell escaping issues
     const scriptContent = [
@@ -482,9 +530,35 @@ app.whenReady().then(() => {
       pdfPaths.push(pdfPath);
     }
 
+    const settings = getDatabaseSettings();
+    const settingSubject = settings['setting_email_subject'] || 'Invoice {invoiceNumber}';
+    const settingBody = settings['setting_email_body'] || 'Hi,\n\nPlease find attached invoice {invoiceNumber}.\n\nKind regards,\n{orgName}';
+    const orgName = settings['setting_org_name'] || 'Your Business';
+
+    const totalAmount = invoiceEntries.reduce((sum, e) => sum + (e.grandTotal || 0), 0);
+    const clientName = invoiceEntries[0]?.clientName || '';
+    const formattedTotal = `$${totalAmount.toFixed(2)}`;
+    const dueDates = Array.from(new Set(invoiceEntries.map(e => e.dueDate).filter(Boolean))).map(formatDate).join(', ');
+
     const invoiceNumbers = invoiceEntries.map(e => e.invoiceNumber).join(', ');
-    const subject = `Invoices: ${invoiceNumbers}`;
-    const body = `Hi,\n\nPlease find attached ${invoiceEntries.length} invoice${invoiceEntries.length > 1 ? 's' : ''}: ${invoiceNumbers}.\n\nKind regards,\nYour Business`;
+    const subjectRaw = settingSubject.includes('{invoiceNumber}')
+      ? settingSubject.replace(/{invoiceNumber}/g, invoiceNumbers)
+      : `Invoices: ${invoiceNumbers}`;
+
+    const subject = subjectRaw
+      .replace(/{clientName}/g, clientName)
+      .replace(/{grandTotal}/g, formattedTotal)
+      .replace(/{dueDate}/g, dueDates);
+
+    let bodyRaw = settingBody.includes('{invoiceNumber}')
+      ? settingBody.replace(/{invoiceNumber}/g, invoiceNumbers)
+      : `Hi,\n\nPlease find attached ${invoiceEntries.length} invoice${invoiceEntries.length > 1 ? 's' : ''}: ${invoiceNumbers}.\n\nKind regards,\n${orgName}`;
+
+    const body = bodyRaw
+      .replace(/{clientName}/g, clientName)
+      .replace(/{grandTotal}/g, formattedTotal)
+      .replace(/{orgName}/g, orgName)
+      .replace(/{dueDate}/g, dueDates);
 
     const attachmentLines = pdfPaths.map(p =>
       `    make new attachment with properties {file name:(POSIX file "${p}" as alias)} at after the last paragraph of content of newMsg`

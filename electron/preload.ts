@@ -45,11 +45,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return ipcRenderer.invoke('print-to-pdf', invoiceNumber, htmlContent);
   },
 
-  emailInvoice: (invoiceNumber: string, htmlContent: string, recipientEmail: string): Promise<boolean> => {
-    return ipcRenderer.invoke('email-invoice', invoiceNumber, htmlContent, recipientEmail);
+  emailInvoice: (invoiceNumber: string, htmlContent: string, recipientEmail: string, clientName: string, grandTotal: number, dueDate: string): Promise<boolean> => {
+    return ipcRenderer.invoke('email-invoice', invoiceNumber, htmlContent, recipientEmail, clientName, grandTotal, dueDate);
   },
 
-  emailMultipleInvoices: (invoiceEntries: Array<{ invoiceNumber: string; htmlContent: string }>, recipientEmail: string): Promise<boolean> => {
+  emailMultipleInvoices: (invoiceEntries: Array<{ invoiceNumber: string; htmlContent: string; clientName: string; grandTotal: number; dueDate: string }>, recipientEmail: string): Promise<boolean> => {
     return ipcRenderer.invoke('email-multiple-invoices', invoiceEntries, recipientEmail);
   },
 

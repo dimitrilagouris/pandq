@@ -160,18 +160,20 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       )}
 
       <div className="relative w-full">
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="w-full h-10 px-3 pl-9 text-left text-sm text-stone-900 bg-white border border-transparent rounded-xl shadow-1 hover:bg-stone-100/50 transition-all duration-150 focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-400 focus:ring-offset-1 flex items-center justify-between"
-        >
-          <span>{formatDisplayString(value) || 'Select date…'}</span>
-          <TbCalendar className="w-4 h-4 text-stone-400 flex-shrink-0" />
-        </button>
-
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">
-          <TbCalendar className="w-4 h-4" />
-        </div>
+        {(() => {
+          const isPlaceholder = !value;
+          const textClass = isPlaceholder ? 'text-stone-300 font-normal' : 'text-stone-900 font-medium';
+          return (
+            <button
+              type="button"
+              onClick={() => setIsOpen(!isOpen)}
+              className={`w-full h-10 px-3 text-left text-sm bg-white border border-transparent rounded-xl shadow-1 transition-all duration-150 focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-400 focus:ring-offset-1 flex items-center justify-between cursor-pointer ${textClass}`}
+            >
+              <span>{formatDisplayString(value) || 'Select date…'}</span>
+              <TbCalendar className="w-4 h-4 text-stone-400 flex-shrink-0" />
+            </button>
+          );
+        })()}
 
         {isOpen && (
           <div className="absolute z-50 left-0 mt-1.5 w-64 bg-stone-100 border border-stone-200/80 rounded-2xl shadow-22 p-4 animate-in fade-in slide-in-from-top-2 duration-150 select-none">

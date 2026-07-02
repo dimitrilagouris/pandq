@@ -73,7 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
         </div>
         <nav className="flex flex-col gap-0.5">
           <NavItem icon={<TbReceipt className="w-[18px] h-[18px]" />} label="Invoices" active={activePage === 'projects'} onClick={() => onNavigate('projects')} />
-          <NavItem icon={<TbActivity className="w-[18px] h-[18px]" />} label="Activities" active={activePage === 'activities'} onClick={() => onNavigate('activities')} />
+          <NavItem icon={<TbActivity className="w-[18px] h-[18px]" />} label="Activity" active={activePage === 'activities'} onClick={() => onNavigate('activities')} />
           <NavItem icon={<TbUsers className="w-[18px] h-[18px]" />} label="Clients" active={activePage === 'clients'} onClick={() => onNavigate('clients')} />
           <NavItem icon={<TbLayoutDashboard className="w-[18px] h-[18px]" />} label="Dashboard" active={activePage === 'dashboard'} onClick={() => onNavigate('dashboard')} />
           <NavItem icon={<TbSettings className="w-[18px] h-[18px]" />} label="Settings" active={activePage === 'settings'} onClick={() => onNavigate('settings')} />

@@ -5,6 +5,7 @@ import { Page } from '../App';
 import { Table, ColumnDef } from '../components/Table';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
+import { Dropdown } from '../components/Dropdown';
 import { buildInvoiceHtml } from '../utils/invoiceHtml';
 
 /** Format a date string YYYY-MM-DD into a nicer layout. */
@@ -40,7 +41,6 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
   const [error, setError] = useState<string>('');
   const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
   const [isSending, setIsSending] = useState<boolean>(false);
-  const [openStatusMenuId, setOpenStatusMenuId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sliderStyle, setSliderStyle] = useState({ left: 0, width: 0, opacity: 0 });
 
@@ -63,14 +63,6 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
 
   useEffect(() => {
     window.electronAPI.getSettings().then(setSettings).catch(console.error);
-  }, []);
-
-  useEffect(() => {
-    const handleDocumentClick = (): void => {
-      setOpenStatusMenuId(null);
-    };
-    document.addEventListener('click', handleDocumentClick);
-    return () => document.removeEventListener('click', handleDocumentClick);
   }, []);
 
   const loadInvoices = useCallback(async (): Promise<void> => {
@@ -105,11 +97,6 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
   const canSendBatch = selectedInvoices.length > 0 && allSameClient;
 
   // Metric calculations
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  const sevenDaysAgoStr = sevenDaysAgo.toISOString().slice(0, 10);
-
   const totalInvoices = invoices.length;
 
   // Dynamic list of statuses for expandable pill navigation
@@ -242,7 +229,6 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
         const parts = inv.status.split('|');
         const status = parts[0] || 'draft';
         const notes = parts.slice(1).join('|');
-        const isMenuOpen = openStatusMenuId === inv.id;
 
         let badgeClass = 'text-stone-700 bg-stone-100';
         if (status === 'sent') {
@@ -253,11 +239,6 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           badgeClass = 'text-red-700 bg-red-100';
         }
 
-        const handleStatusClick = (e: React.MouseEvent) => {
-          e.stopPropagation();
-          setOpenStatusMenuId(isMenuOpen ? null : inv.id);
-        };
-
         const handleStatusSelect = async (newStatus: string) => {
           const updatedStatus = notes ? `${newStatus}|${notes}` : newStatus;
           try {
@@ -266,32 +247,24 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           } catch (err) {
             console.error('Failed to update invoice status:', err);
           }
-          setOpenStatusMenuId(null);
         };
 
-        return (
-          <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={handleStatusClick}
-              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg cursor-pointer hover:opacity-85 transition-all select-none border-0 ${badgeClass}`}
-            >
-              <span>{status.charAt(0).toUpperCase() + status.slice(1)}</span>
-              <TbChevronDown className="w-3 h-3 text-stone-500/80" />
-            </button>
+        const statusOptions = [
+          { value: 'draft', label: 'Draft' },
+          { value: 'sent', label: 'Sent' },
+          { value: 'paid', label: 'Paid' },
+          { value: 'cancelled', label: 'Cancelled' }
+        ];
 
-            {isMenuOpen && (
-              <div className="absolute z-50 left-0 mt-1 bg-stone-600/95 backdrop-blur-md border border-white/5 rounded-2xl shadow-2xl p-1.5 w-32 flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-150">
-                {['draft', 'sent', 'paid', 'cancelled'].map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => handleStatusSelect(st)}
-                    className="w-full px-2.5 py-1.5 text-left text-xs font-medium text-white hover:bg-white/10 rounded-lg transition-colors capitalize border-0 bg-transparent cursor-pointer"
-                  >
-                    {st}
-                  </button>
-                ))}
-              </div>
-            )}
+        return (
+          <div onClick={(e) => e.stopPropagation()}>
+            <Dropdown
+              options={statusOptions}
+              onSelect={handleStatusSelect}
+              triggerLabel={status.charAt(0).toUpperCase() + status.slice(1)}
+              triggerClassName={`px-3 py-1 text-xs font-medium rounded-lg cursor-pointer hover:opacity-85 transition-all select-none border-0 ${badgeClass}`}
+              widthClass="w-32"
+            />
           </div>
         );
       },

@@ -24,6 +24,16 @@ function initDatabase(): void {
   // Enforce foreign key constraints
   db.pragma('foreign_keys = ON');
 
+  // Check if we need to migrate activity_logs (e.g. if column 'action' exists instead of 'action_code')
+  try {
+    const tableInfo = db.prepare("PRAGMA table_info(activity_logs)").all() as Array<{ name: string }>;
+    if (tableInfo.length > 0 && tableInfo.some(col => col.name === 'action')) {
+      db.exec('DROP TABLE activity_logs');
+    }
+  } catch (err) {
+    console.error('Failed to run logs migration check:', err);
+  }
+
   // Create schema tables
   db.exec(`
     CREATE TABLE IF NOT EXISTS clients (
@@ -83,7 +93,50 @@ function initDatabase(): void {
       key TEXT PRIMARY KEY,
       value TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS activity_actions (
+      code TEXT PRIMARY KEY,
+      label TEXT NOT NULL,
+      category TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS activity_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      invoice_id INTEGER,
+      invoice_number TEXT,
+      action_code TEXT NOT NULL,
+      details TEXT,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (action_code) REFERENCES activity_actions(code)
+    );
   `);
+
+  // Pre-populate activity_actions
+  try {
+    db.exec(`
+      INSERT OR IGNORE INTO activity_actions (code, label, category) VALUES
+      ('invoice_created', 'Invoice Created', 'Invoice'),
+      ('invoice_updated', 'Invoice Updated', 'Invoice'),
+      ('invoice_deleted', 'Invoice Deleted', 'Invoice'),
+      ('invoice_status_updated', 'Status Updated', 'Invoice'),
+      ('invoice_sent', 'Invoice Emailed', 'Invoice'),
+      ('client_created', 'Client Created', 'Client'),
+      ('client_updated', 'Client Updated', 'Client'),
+      ('client_deleted', 'Client Deleted', 'Client'),
+      ('item_added', 'Item Added', 'Invoice'),
+      ('item_updated', 'Item Updated', 'Invoice'),
+      ('item_removed', 'Item Removed', 'Invoice'),
+      ('material_added', 'Material Added', 'Invoice'),
+      ('material_updated', 'Material Updated', 'Invoice'),
+      ('material_removed', 'Material Removed', 'Invoice'),
+      ('note_updated', 'Note Updated', 'Invoice'),
+      ('discount_updated', 'Discount Updated', 'Invoice'),
+      ('gst_toggled', 'GST Settings Changed', 'Invoice'),
+      ('date_updated', 'Date Settings Changed', 'Invoice')
+    `);
+  } catch (err) {
+    console.error('Failed to populate activity_actions:', err);
+  }
 
   // Run column migrations to add display_due_date column if not exists
   const tableInfo = db.prepare("PRAGMA table_info(invoices)").all() as Array<{ name: string }>;
@@ -120,6 +173,7 @@ function createWindow(): void {
 
   if (process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
+    mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
@@ -164,17 +218,37 @@ app.whenReady().then(() => {
 
   ipcMain.handle('db-create-client', (_event, name: string, businessName: string, email: string, phone: string, address: string): unknown => {
     if (!db) throw new Error('Database not initialised');
-    return db.prepare('INSERT INTO clients (name, business_name, email, phone, address) VALUES (?, ?, ?, ?, ?)').run(name, businessName, email, phone, address);
+    const res = db.prepare('INSERT INTO clients (name, business_name, email, phone, address) VALUES (?, ?, ?, ?, ?)').run(name, businessName, email, phone, address);
+    insertActivityLog(null, null, 'client_created', `Created client "${name}"`);
+    return res;
   });
 
   ipcMain.handle('db-update-client', (_event, id: number, name: string, businessName: string, email: string, phone: string, address: string): unknown => {
     if (!db) throw new Error('Database not initialised');
-    return db.prepare('UPDATE clients SET name = ?, business_name = ?, email = ?, phone = ?, address = ? WHERE id = ?').run(name, businessName, email, phone, address, id);
+    const oldClient = db.prepare('SELECT * FROM clients WHERE id = ?').get(id) as any;
+    const res = db.prepare('UPDATE clients SET name = ?, business_name = ?, email = ?, phone = ?, address = ? WHERE id = ?').run(name, businessName, email, phone, address, id);
+    if (oldClient) {
+      const changes: string[] = [];
+      if (oldClient.name !== name) changes.push(`name changed to "${name}"`);
+      if (oldClient.business_name !== businessName) changes.push(`business name changed to "${businessName}"`);
+      if (oldClient.email !== email) changes.push(`email changed to "${email}"`);
+      if (oldClient.phone !== phone) changes.push(`phone changed to "${phone}"`);
+      if (oldClient.address !== address) changes.push(`address changed`);
+      
+      const details = changes.length > 0 ? `Client "${name}" updated: ${changes.join(', ')}` : `Client "${name}" updated`;
+      insertActivityLog(null, null, 'client_updated', details);
+    } else {
+      insertActivityLog(null, null, 'client_updated', `Client "${name}" details updated`);
+    }
+    return res;
   });
 
   ipcMain.handle('db-delete-client', (_event, id: number): unknown => {
     if (!db) throw new Error('Database not initialised');
-    return db.prepare('DELETE FROM clients WHERE id = ?').run(id);
+    const client = db.prepare('SELECT name FROM clients WHERE id = ?').get(id) as { name: string } | undefined;
+    const res = db.prepare('DELETE FROM clients WHERE id = ?').run(id);
+    insertActivityLog(null, null, 'client_deleted', `Client "${client?.name || 'N/A'}" was deleted`);
+    return res;
   });
 
   ipcMain.handle('db-get-invoices', (): unknown[] => {
@@ -189,12 +263,20 @@ app.whenReady().then(() => {
 
   ipcMain.handle('db-delete-invoice', (_event, id: number): unknown => {
     if (!db) throw new Error('Database not initialised');
-    return db.prepare('DELETE FROM invoices WHERE id = ?').run(id);
+    const inv = db.prepare('SELECT invoice_number FROM invoices WHERE id = ?').get(id) as { invoice_number: string } | undefined;
+    const invoiceNumber = inv?.invoice_number || null;
+    const res = db.prepare('DELETE FROM invoices WHERE id = ?').run(id);
+    insertActivityLog(null, invoiceNumber, 'invoice_deleted', `Invoice ${invoiceNumber || 'N/A'} was deleted`);
+    return res;
   });
 
   ipcMain.handle('db-update-invoice-status', (_event, id: number, status: string): unknown => {
     if (!db) throw new Error('Database not initialised');
-    return db.prepare('UPDATE invoices SET status = ? WHERE id = ?').run(status, id);
+    const inv = db.prepare('SELECT invoice_number FROM invoices WHERE id = ?').get(id) as { invoice_number: string } | undefined;
+    const invoiceNumber = inv?.invoice_number || null;
+    const res = db.prepare('UPDATE invoices SET status = ? WHERE id = ?').run(status, id);
+    insertActivityLog(id, invoiceNumber, 'invoice_status_updated', `Status updated to ${status.split('|')[0] || 'draft'}`);
+    return res;
   });
 
   ipcMain.handle('db-get-invoice-by-id', (_event, id: number): unknown => {
@@ -222,6 +304,11 @@ app.whenReady().then(() => {
   ): unknown => {
     if (!db) throw new Error('Database not initialised');
 
+    // 1. Fetch old details for comparison
+    const oldInv = db.prepare('SELECT * FROM invoices WHERE id = ?').get(invoiceId) as any;
+    const oldItems = db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ?').all(invoiceId) as any[];
+    const oldDiscounts = db.prepare('SELECT * FROM discounts WHERE invoice_id = ?').all(invoiceId) as any[];
+    
     const updateInvoice = db.prepare(
       'UPDATE invoices SET client_id = ?, invoice_number = ?, date = ?, due_date = ?, price = ?, gst_added = ?, display_due_date = ? WHERE id = ?'
     );
@@ -255,6 +342,96 @@ app.whenReady().then(() => {
     });
 
     transaction();
+
+    // 2. Perform delta logging comparisons
+    if (oldInv) {
+      // GST toggle
+      const oldGst = oldInv.gst_added === 1;
+      if (oldGst !== gstEnabled) {
+        insertActivityLog(invoiceId, invoiceNumber, 'gst_toggled', gstEnabled ? 'GST enabled' : 'GST disabled');
+      }
+
+      // Client Link
+      if (oldInv.client_id !== clientId) {
+        const oldClient = db.prepare('SELECT name FROM clients WHERE id = ?').get(oldInv.client_id) as { name: string } | undefined;
+        const newClient = db.prepare('SELECT name FROM clients WHERE id = ?').get(clientId) as { name: string } | undefined;
+        insertActivityLog(
+          invoiceId,
+          invoiceNumber,
+          'client_updated',
+          `Linked client changed from "${oldClient?.name || 'N/A'}" to "${newClient?.name || 'N/A'}"`
+        );
+      }
+
+      // Dates
+      if (oldInv.date !== date) {
+        insertActivityLog(invoiceId, invoiceNumber, 'date_updated', `Invoice date updated to ${formatDate(date)}`);
+      }
+      if (oldInv.due_date !== dueDate) {
+        insertActivityLog(invoiceId, invoiceNumber, 'date_updated', `Invoice due date updated to ${formatDate(dueDate)}`);
+      }
+
+      // Discount
+      const oldDiscVal = oldDiscounts.length > 0 ? oldDiscounts[0].amount : 0;
+      if (oldDiscVal !== discount) {
+        insertActivityLog(invoiceId, invoiceNumber, 'discount_updated', `Discount updated to $${discount.toFixed(2)}`);
+      }
+
+      // Notes
+      const oldStatusParts = oldInv.status.split('|');
+      const oldNotes = oldStatusParts.slice(1).join('|').trim();
+      if (oldNotes !== notes.trim()) {
+        insertActivityLog(invoiceId, invoiceNumber, 'note_updated', 'Invoice notes updated');
+      }
+
+      // Items & Materials Comparison
+      const oldServices = oldItems.filter(i => i.type === 'service');
+      const newServices = items.filter(i => i.type === 'service');
+
+      // Detect added/updated services
+      for (const newS of newServices) {
+        const matched = oldServices.find(oldS => oldS.description === newS.description);
+        if (!matched) {
+          insertActivityLog(invoiceId, invoiceNumber, 'item_added', `Service added: "${newS.description}"`);
+        } else {
+          if (matched.rate !== newS.rate || matched.hours !== newS.hours) {
+            insertActivityLog(invoiceId, invoiceNumber, 'item_updated', `Service updated: "${newS.description}"`);
+          }
+        }
+      }
+      // Detect removed services
+      for (const oldS of oldServices) {
+        const matched = newServices.find(newS => newS.description === oldS.description);
+        if (!matched) {
+          insertActivityLog(invoiceId, invoiceNumber, 'item_removed', `Service removed: "${oldS.description}"`);
+        }
+      }
+
+      // Check Materials
+      const oldMaterials = oldItems.filter(i => i.type === 'material');
+      const newMaterials = items.filter(i => i.type === 'material');
+
+      // Detect added/updated materials
+      for (const newM of newMaterials) {
+        const matched = oldMaterials.find(oldM => oldM.description === newM.description);
+        if (!matched) {
+          insertActivityLog(invoiceId, invoiceNumber, 'material_added', `Material added: "${newM.description}"`);
+        } else {
+          if (matched.rate !== newM.rate || matched.quantity !== newM.quantity) {
+            insertActivityLog(invoiceId, invoiceNumber, 'material_updated', `Material updated: "${newM.description}"`);
+          }
+        }
+      }
+      // Detect removed materials
+      for (const oldM of oldMaterials) {
+        const matched = newMaterials.find(newM => newM.description === oldM.description);
+        if (!matched) {
+          insertActivityLog(invoiceId, invoiceNumber, 'material_removed', `Material removed: "${oldM.description}"`);
+        }
+      }
+    }
+
+    insertActivityLog(invoiceId, invoiceNumber, 'invoice_updated', 'Updated invoice details');
     return true;
   });
 
@@ -332,7 +509,9 @@ app.whenReady().then(() => {
       return invoiceId;
     });
 
-    return transaction();
+    const invoiceId = transaction();
+    insertActivityLog(invoiceId, invoiceNumber, 'invoice_created', 'Created new invoice');
+    return invoiceId;
   });
 
   ipcMain.handle('print-to-pdf', async (_event, invoiceNumber: string, htmlContent: string): Promise<boolean> => {
@@ -404,6 +583,30 @@ app.whenReady().then(() => {
     }
     return settingsObj;
   }
+
+  function insertActivityLog(invoiceId: number | null, invoiceNumber: string | null, actionCode: string, details: string | null = null): void {
+    if (!db) return;
+    try {
+      db.prepare('INSERT INTO activity_logs (invoice_id, invoice_number, action_code, details) VALUES (?, ?, ?, ?)').run(
+        invoiceId,
+        invoiceNumber,
+        actionCode,
+        details
+      );
+    } catch (err) {
+      console.error('Failed to insert activity log:', err);
+    }
+  }
+
+  ipcMain.handle('db-get-activity-logs', (): unknown[] => {
+    if (!db) throw new Error('Database not initialised');
+    return db.prepare(`
+      SELECT l.*, a.label AS action_label, a.category AS action_category
+      FROM activity_logs l
+      LEFT JOIN activity_actions a ON l.action_code = a.code
+      ORDER BY l.id DESC LIMIT 500
+    `).all();
+  });
 
   ipcMain.handle('email-invoice', async (
     _event,
@@ -488,6 +691,11 @@ app.whenReady().then(() => {
     return new Promise((resolve) => {
       exec(`osascript "${tempScriptPath}"`, (error) => {
         try { fs.unlinkSync(tempScriptPath); } catch {}
+        
+        // Log activity
+        const inv = db?.prepare('SELECT id FROM invoices WHERE invoice_number = ?').get(invoiceNumber) as { id: number } | undefined;
+        insertActivityLog(inv?.id || null, invoiceNumber, 'invoice_sent', `Emailed to ${recipientEmail}`);
+
         if (error) {
           console.error('Failed to open Mail.app via AppleScript:', error);
           shell.openExternal(`mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
@@ -582,6 +790,13 @@ app.whenReady().then(() => {
     return new Promise((resolve) => {
       exec(`osascript "${tempScriptPath}"`, (error) => {
         try { fs.unlinkSync(tempScriptPath); } catch {}
+
+        // Log activity for each entry
+        for (const entry of invoiceEntries) {
+          const inv = db?.prepare('SELECT id FROM invoices WHERE invoice_number = ?').get(entry.invoiceNumber) as { id: number } | undefined;
+          insertActivityLog(inv?.id || null, entry.invoiceNumber, 'invoice_sent', `Batch emailed to ${recipientEmail}`);
+        }
+
         if (error) {
           console.error('Failed to open Mail.app via AppleScript:', error);
           shell.openExternal(`mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);

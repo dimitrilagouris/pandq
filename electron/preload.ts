@@ -100,4 +100,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   updateInvoiceStatus: (id: number, status: string): Promise<unknown> => {
     return ipcRenderer.invoke('db-update-invoice-status', id, status);
   },
+
+  getActivityLogs: (): Promise<unknown[]> => {
+    return ipcRenderer.invoke('db-get-activity-logs');
+  },
 });

@@ -5,6 +5,7 @@ import ClientsPage from './pages/ClientsPage';
 import InvoicePage from './pages/InvoicePage';
 import ProjectsPage from './pages/ProjectsPage';
 import SettingsPage from './pages/SettingsPage';
+import ActivitiesPage from './pages/ActivitiesPage';
 
 export type Page = 'dashboard' | 'invoices' | 'clients' | 'activities' | 'settings' | 'projects';
 
@@ -63,6 +64,8 @@ export default function App(): React.JSX.Element {
         );
       case 'settings':
         return <SettingsPage />;
+      case 'activities':
+        return <ActivitiesPage />;
       case 'projects':
         return (
           <ProjectsPage

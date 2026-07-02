@@ -94,6 +94,7 @@ export interface ElectronAPI {
   getSettings: () => Promise<Record<string, string>>;
   saveSettings: (settings: Record<string, string>) => Promise<boolean>;
   updateInvoiceStatus: (id: number, status: string) => Promise<unknown>;
+  getActivityLogs: () => Promise<any[]>;
 }
 
 declare global {

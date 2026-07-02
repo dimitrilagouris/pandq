@@ -5,8 +5,7 @@ import {
   TbReceipt,
   TbMail,
   TbCreditCard,
-  TbCheck,
-  TbHistory
+  TbCheck
 } from 'react-icons/tb';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
@@ -14,18 +13,7 @@ import { TemplatedInput } from '../components/TemplatedInput';
 import { HelpBadge } from '../components/HelpBadge';
 import { TutorialModal } from '../components/TutorialModal';
 
-type SettingsTab = 'personalisation' | 'organisation' | 'invoice' | 'email' | 'payment' | 'activity';
-
-interface ActivityLog {
-  id: number;
-  invoice_id: number | null;
-  invoice_number: string | null;
-  action_code: string;
-  action_label: string;
-  action_category: string;
-  details: string | null;
-  timestamp: string;
-}
+type SettingsTab = 'personalisation' | 'organisation' | 'invoice' | 'email' | 'payment';
 
 /**
  * SettingsPage - provides user preferences and organisation config with persistent local storage storage.
@@ -35,20 +23,6 @@ export default function SettingsPage(): React.JSX.Element {
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState<boolean>(false);
-  const [logs, setLogs] = useState<ActivityLog[]>([]);
-  const [logsLoading, setLogsLoading] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (activeTab === 'activity') {
-      setLogsLoading(true);
-      window.electronAPI.getActivityLogs()
-        .then((data) => {
-          setLogs(data as ActivityLog[]);
-        })
-        .catch(console.error)
-        .finally(() => setLogsLoading(false));
-    }
-  }, [activeTab]);
 
   // My Organisation State
   const [orgName, setOrgName] = useState<string>('Your Business');
@@ -372,73 +346,6 @@ export default function SettingsPage(): React.JSX.Element {
             />
           </div>
         );
-      case 'activity':
-        return (
-          <div className="flex flex-col gap-4 h-full overflow-hidden">
-            <div className="flex-1 overflow-auto border border-stone-200/60 rounded-xl bg-white shadow-sm">
-              {logsLoading ? (
-                <div className="flex items-center justify-center h-48 text-stone-400 text-xs font-medium">
-                  Loading activity logs…
-                </div>
-              ) : logs.length === 0 ? (
-                <div className="flex items-center justify-center h-48 text-stone-400 text-xs font-medium">
-                  No activity logged yet.
-                </div>
-              ) : (
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-stone-200 border-b border-stone-200/80 text-stone-700 text-[10px] font-bold uppercase tracking-wider select-none">
-                      <th className="py-2.5 px-4 font-semibold">Timestamp</th>
-                      <th className="py-2.5 px-4 font-semibold">Invoice</th>
-                      <th className="py-2.5 px-4 font-semibold">Action</th>
-                      <th className="py-2.5 px-4 font-semibold">Details</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-xs text-stone-700 divide-y divide-stone-100">
-                    {logs.map((log) => {
-                      let badgeClass = 'bg-stone-100 text-stone-700';
-                      const code = log.action_code || '';
-                      
-                      if (code.includes('created')) {
-                        badgeClass = 'bg-blue-50 text-blue-700';
-                      } else if (code.includes('updated') || code.includes('toggled')) {
-                        badgeClass = 'bg-purple-50 text-purple-700';
-                      } else if (code.includes('sent')) {
-                        badgeClass = 'bg-orange-50 text-orange-700';
-                      } else if (code.includes('status_updated')) {
-                        badgeClass = 'bg-lime-50 text-lime-700';
-                      } else if (code.includes('deleted') || code.includes('removed')) {
-                        badgeClass = 'bg-red-50 text-red-700';
-                      }
-
-                      let formattedDate = log.timestamp;
-                      try {
-                        const date = new Date(log.timestamp.replace(' ', 'T') + 'Z');
-                        if (!isNaN(date.getTime())) {
-                          const pad = (n: number) => String(n).padStart(2, '0');
-                          formattedDate = `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}, ${pad(date.getHours())}:${pad(date.getMinutes())}`;
-                        }
-                      } catch {}
-
-                      return (
-                        <tr key={log.id} className="hover:bg-stone-50/50 transition-colors">
-                          <td className="py-2.5 px-4 text-stone-500 whitespace-nowrap">{formattedDate}</td>
-                          <td className="py-2.5 px-4 font-mono font-medium text-stone-900">{log.invoice_number || 'N/A'}</td>
-                          <td className="py-2.5 px-4">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium uppercase tracking-wide ${badgeClass}`}>
-                              {log.action_label || 'Activity'}
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-4 text-stone-600 leading-normal">{log.details || ''}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </div>
-        );
     }
   };
 
@@ -520,25 +427,6 @@ export default function SettingsPage(): React.JSX.Element {
           </nav>
         </div>
 
-        {/* Category: System */}
-        <div className="mb-6">
-          <div className="px-2 pb-2">
-            <span className="text-xs font-medium text-stone-400 uppercase tracking-wider">System</span>
-          </div>
-          <nav className="flex flex-col gap-0.5">
-            <button
-              onClick={() => { setActiveTab('activity'); setSaveSuccess(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
-                ${activeTab === 'activity'
-                  ? 'bg-stone-200 text-stone-900'
-                  : 'text-stone-600 hover:bg-stone-200/50 hover:text-stone-900'}
-              `}
-            >
-              <TbHistory className={`w-4 h-4 flex-shrink-0 ${activeTab === 'activity' ? 'text-stone-900' : 'text-stone-400'}`} />
-              <span>Activity Log</span>
-            </button>
-          </nav>
-        </div>
       </aside>
 
       {/* ── Settings Content Panel (Right side of page) ── */}
@@ -551,7 +439,6 @@ export default function SettingsPage(): React.JSX.Element {
               {activeTab === 'invoice' && 'Invoice Creation'}
               {activeTab === 'email' && 'Email Preference'}
               {activeTab === 'payment' && 'Payment Details'}
-              {activeTab === 'activity' && 'Activity Log'}
             </h1>
             <p className="text-xs text-stone-400 mt-1 select-none">
               {activeTab === 'organisation' && 'Configure address, business numbers, and contact info.'}
@@ -559,12 +446,10 @@ export default function SettingsPage(): React.JSX.Element {
               {activeTab === 'invoice' && 'Establish default values, terms, and billing templates.'}
               {activeTab === 'email' && 'Set up mail draft templates and sender parameters.'}
               {activeTab === 'payment' && 'Maintain bank account coordinates and general payment guidelines.'}
-              {activeTab === 'activity' && 'Browse local database history for audit trails and events.'}
             </p>
           </div>
 
-          {activeTab !== 'activity' && (
-            <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3">
               {/* Animated slide-out "Settings saved" indicator */}
               {saveSuccess && (
                 <div className="flex items-center gap-2 animate-slide-out-right select-none">
@@ -578,17 +463,12 @@ export default function SettingsPage(): React.JSX.Element {
               )}
               <Button
                 variant={saveSuccess ? 'secondary' : 'primary'}
-                size="sm"
                 onClick={handleSave}
                 disabled={isSaving}
-                className={`transition-all duration-300 ${
-                  saveSuccess ? 'bg-lime-600 hover:bg-lime-700 text-white' : ''
-                }`}
               >
-                {isSaving ? 'Saving…' : saveSuccess ? 'Saved' : 'Save Changes'}
+                {isSaving ? 'Saving...' : 'Save settings'}
               </Button>
             </div>
-          )}
         </div>
 
         <div className="flex-1">

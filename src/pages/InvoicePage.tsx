@@ -166,6 +166,8 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
       if (c.description !== init.description) return true;
       if (c.quantity !== init.quantity) return true;
       if (c.unitPrice !== init.unitPrice) return true;
+      if (c.hours !== init.hours) return true;
+      if (c.date !== init.date) return true;
     }
     return false;
   }, []);

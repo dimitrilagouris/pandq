@@ -10,6 +10,8 @@ import {
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { TemplatedInput } from '../components/TemplatedInput';
+import { HelpBadge } from '../components/HelpBadge';
+import { TutorialModal } from '../components/TutorialModal';
 
 type SettingsTab = 'personalisation' | 'organisation' | 'invoice' | 'email' | 'payment';
 
@@ -20,6 +22,7 @@ export default function SettingsPage(): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<SettingsTab>('organisation');
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState<boolean>(false);
 
   // My Organisation State
   const [orgName, setOrgName] = useState<string>('Your Business');
@@ -161,8 +164,13 @@ export default function SettingsPage(): React.JSX.Element {
               onChange={setOrgName}
               placeholder="e.g. Telos"
             />
-            <Input
-              label="Business Number / ABN"
+             <Input
+              label={
+                <span className="inline-flex items-center gap-1.5">
+                  <span>Business Number / ABN</span>
+                  <HelpBadge tooltipText="Your Australian Business Number (11 digits)." />
+                </span>
+              }
               value={orgAbn}
               onChange={setOrgAbn}
               placeholder="e.g. 12 345 678 901"
@@ -218,9 +226,12 @@ export default function SettingsPage(): React.JSX.Element {
             />
 
             {/* Toggle: Default GST Enabled */}
-            <div className="flex items-center justify-between py-2.5 border-b border-stone-100">
+             <div className="flex items-center justify-between py-2.5 border-b border-stone-100">
               <div className="flex flex-col gap-0.5 max-w-[80%]">
-                <span className="text-sm font-medium text-stone-700">Enable GST by default</span>
+                <span className="text-sm font-medium text-stone-700 inline-flex items-center gap-1.5">
+                  <span>Enable GST by default</span>
+                  <HelpBadge tooltipText="Automatically adds a 10% GST calculation to all newly created invoices." />
+                </span>
                 <span className="text-xs text-stone-400">Enable GST calculations automatically on all new invoices.</span>
               </div>
               <button
@@ -271,14 +282,24 @@ export default function SettingsPage(): React.JSX.Element {
               onChange={setSenderName}
               placeholder="e.g. Telos Billing"
             />
-            <TemplatedInput
-              label="Default Subject Template"
+             <TemplatedInput
+              label={
+                <span className="inline-flex items-center gap-1.5">
+                  <span>Default Subject Template</span>
+                  <HelpBadge tooltipText="Customise the email subject line using variables." onClick={() => setIsTutorialOpen(true)} />
+                </span>
+              }
               value={emailSubject}
               onChange={setEmailSubject}
               placeholder="Use tags to dynamic prefill, e.g. Invoice {invoiceNumber}"
             />
             <TemplatedInput
-              label="Default Message Body"
+              label={
+                <span className="inline-flex items-center gap-1.5">
+                  <span>Default Message Body</span>
+                  <HelpBadge tooltipText="Customise the email message body using variables." onClick={() => setIsTutorialOpen(true)} />
+                </span>
+              }
               value={emailBody}
               onChange={setEmailBody}
               placeholder="Write the default body text"
@@ -310,8 +331,13 @@ export default function SettingsPage(): React.JSX.Element {
                 placeholder="e.g. 1234 5678"
               />
             </div>
-            <Input
-              label="Additional Payment Instructions"
+             <Input
+              label={
+                <span className="inline-flex items-center gap-1.5">
+                  <span>Additional Payment Instructions</span>
+                  <HelpBadge tooltipText="Additional terms or bank details printed at the bottom of the invoice page." />
+                </span>
+              }
               value={paymentInstructions}
               onChange={setPaymentInstructions}
               placeholder="Payment reference instructions"
@@ -453,6 +479,7 @@ export default function SettingsPage(): React.JSX.Element {
         </div>
       </main>
 
+      <TutorialModal isOpen={isTutorialOpen} onClose={() => setIsTutorialOpen(false)} />
     </div>
   );
 }

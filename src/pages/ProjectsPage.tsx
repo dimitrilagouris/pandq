@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { TbPlus, TbSearch, TbTrash, TbReceipt, TbMail, TbChevronDown } from 'react-icons/tb';
 import { Invoice } from '../types';
 import { Page } from '../App';
@@ -41,6 +41,25 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
   const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
   const [isSending, setIsSending] = useState<boolean>(false);
   const [openStatusMenuId, setOpenStatusMenuId] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sliderStyle, setSliderStyle] = useState({ left: 0, width: 0, opacity: 0 });
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    const activeBtn = buttonRefs.current[statusFilter];
+    const container = containerRef.current;
+    if (activeBtn && container) {
+      const containerRect = container.getBoundingClientRect();
+      const btnRect = activeBtn.getBoundingClientRect();
+      setSliderStyle({
+        left: btnRect.left - containerRect.left,
+        width: btnRect.width,
+        opacity: 1,
+      });
+    }
+  }, [statusFilter, invoices]);
 
   useEffect(() => {
     window.electronAPI.getSettings().then(setSettings).catch(console.error);
@@ -93,20 +112,28 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
 
   const totalInvoices = invoices.length;
 
-  const overdueInvoicesCount = invoices.filter((inv) => {
-    const status = inv.status.split('|')[0] || 'draft';
-    return status === 'sent' && inv.due_date && inv.due_date < todayStr;
-  }).length;
+  // Dynamic list of statuses for expandable pill navigation
+  const statusOptions = ['all'];
+  const databaseStatuses = Array.from(
+    new Set(
+      invoices.map((inv) => inv.status.split('|')[0] || 'draft')
+    )
+  );
 
-  const toBePaidInvoicesCount = invoices.filter((inv) => {
-    const status = inv.status.split('|')[0] || 'draft';
-    return status === 'sent';
-  }).length;
+  const standardOrder = ['draft', 'sent', 'paid', 'cancelled'];
+  for (const std of standardOrder) {
+    statusOptions.push(std);
+  }
+  for (const custom of databaseStatuses) {
+    if (!standardOrder.includes(custom)) {
+      statusOptions.push(custom);
+    }
+  }
 
-  const recentlySentCount = invoices.filter((inv) => {
-    const status = inv.status.split('|')[0] || 'draft';
-    return status === 'sent' && inv.date && inv.date >= sevenDaysAgoStr;
-  }).length;
+  const getStatusCount = (statusKey: string): number => {
+    if (statusKey === 'all') return invoices.length;
+    return invoices.filter((inv) => (inv.status.split('|')[0] || 'draft') === statusKey).length;
+  };
 
   /** Fetch full data for each selected invoice, build HTML, and email as a batch. */
   const handleSendSelected = async (): Promise<void> => {
@@ -158,10 +185,14 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
     }
   };
 
-  const filtered = invoices.filter((inv) =>
-    inv.invoice_number.toLowerCase().includes(search.toLowerCase()) ||
-    (inv.client_name && inv.client_name.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filtered = invoices.filter((inv) => {
+    const matchesSearch = inv.invoice_number.toLowerCase().includes(search.toLowerCase()) ||
+      (inv.client_name && inv.client_name.toLowerCase().includes(search.toLowerCase()));
+
+    if (statusFilter === 'all') return matchesSearch;
+    const invStatus = inv.status.split('|')[0] || 'draft';
+    return invStatus === statusFilter && matchesSearch;
+  });
 
   const columns: ColumnDef<Invoice>[] = [
     {
@@ -240,7 +271,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
 
         return (
           <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
-            <button 
+            <button
               onClick={handleStatusClick}
               className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-lg cursor-pointer hover:opacity-85 transition-all select-none border-0 ${badgeClass}`}
             >
@@ -322,34 +353,60 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
         </div>
       </div>
 
-      {/* Metrics Cards Grid */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="bg-stone-100 border border-stone-200/40 rounded-2xl p-4 shadow-1 flex flex-col gap-1.5 select-none">
-          <span className="text-xs font-medium text-stone-400 uppercase tracking-wider">Invoices Made</span>
-          <span className="text-2xl font-bold text-stone-900">{totalInvoices}</span>
-        </div>
-        <div className="bg-stone-100 border border-stone-200/40 rounded-2xl p-4 shadow-1 flex flex-col gap-1.5 select-none">
-          <span className="text-xs font-medium text-stone-400 uppercase tracking-wider">Overdue Invoices</span>
-          <span className="text-2xl font-bold text-red-600">{overdueInvoicesCount}</span>
-        </div>
-        <div className="bg-stone-100 border border-stone-200/40 rounded-2xl p-4 shadow-1 flex flex-col gap-1.5 select-none">
-          <span className="text-xs font-medium text-stone-400 uppercase tracking-wider">To Be Paid</span>
-          <span className="text-2xl font-bold text-stone-900">{toBePaidInvoicesCount}</span>
-        </div>
-        <div className="bg-stone-100 border border-stone-200/40 rounded-2xl p-4 shadow-1 flex flex-col gap-1.5 select-none">
-          <span className="text-xs font-medium text-stone-400 uppercase tracking-wider">Recently Sent</span>
-          <span className="text-2xl font-bold text-stone-900">{recentlySentCount}</span>
-        </div>
-      </div>
+      {/* Filters & Search Row */}
+      <div className="flex items-center justify-between gap-4">
+        {/* Status Filters Pill Navigation */}
+        <div
+          ref={containerRef}
+          className="relative flex bg-stone-200 p-0.5 rounded-xl w-fit shadow-sm text-xs font-medium select-none items-center gap-0.5"
+        >
+          {/* Sliding background highlight */}
+          <div
+            style={{
+              transform: `translateX(${sliderStyle.left}px)`,
+              width: `${sliderStyle.width}px`,
+              opacity: sliderStyle.opacity,
+            }}
+            className="absolute top-0.5 bottom-0.5 left-0 bg-white rounded-lg shadow-1 transition-all duration-300 ease-out pointer-events-none"
+          />
 
-      {/* Search */}
-      <Input
-        value={search}
-        onChange={setSearch}
-        placeholder="Search invoices…"
-        icon={<TbSearch className="w-4 h-4" />}
-        className="max-w-sm"
-      />
+          {statusOptions.map((opt) => {
+            const isSelected = statusFilter === opt;
+            const count = getStatusCount(opt);
+            const displayLabel = opt === 'all' ? 'All' : opt.charAt(0).toUpperCase() + opt.slice(1);
+
+            return (
+              <button
+                key={opt}
+                ref={(el) => { buttonRefs.current[opt] = el; }}
+                type="button"
+                onClick={() => setStatusFilter(opt)}
+                className={`relative z-10 flex items-center px-3 py-1.5 rounded-lg transition-all duration-150 border-0 cursor-pointer text-xs font-medium bg-transparent ${isSelected
+                    ? 'text-stone-900'
+                    : 'text-stone-500 hover:text-stone-900'
+                  }`}
+              >
+                <span>{displayLabel}</span>
+                <span className={`ml-1.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full transition-all duration-150 ${isSelected
+                    ? 'bg-stone-100 text-stone-855'
+                    : 'bg-stone-300 text-stone-600'
+                  }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Search */}
+        <Input
+          value={search}
+          onChange={setSearch}
+          placeholder="Search invoices…"
+          icon={<TbSearch className="w-4 h-4" />}
+          className="max-w-xs"
+        />
+      </div>
 
       {/* Error */}
       {error && (

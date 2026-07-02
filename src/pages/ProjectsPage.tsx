@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { TbPlus, TbSearch, TbTrash, TbReceipt, TbMail, TbChevronDown } from 'react-icons/tb';
+import { TbPlus, TbSearch, TbTrash, TbReceipt, TbMail, TbDotsVertical, TbCheck } from 'react-icons/tb';
 import { Invoice } from '../types';
 import { Page } from '../App';
-import { Table, ColumnDef } from '../components/Table';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Dropdown } from '../components/Dropdown';
@@ -31,7 +30,7 @@ interface ProjectsPageProps {
 
 /**
  * Invoices page — lists all saved invoices with search, add, delete actions.
- * Supports multi-select to batch-email invoices for the same client.
+ * Displays a list of cards on the left, with space reserved on the right.
  */
 export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPageProps): React.JSX.Element {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -43,6 +42,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
   const [isSending, setIsSending] = useState<boolean>(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sliderStyle, setSliderStyle] = useState({ left: 0, width: 0, opacity: 0 });
+  const [isSelectionMode, setIsSelectionMode] = useState<boolean>(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -96,8 +96,15 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
     && selectedInvoices.every(inv => inv.client_id === selectedInvoices[0].client_id);
   const canSendBatch = selectedInvoices.length > 0 && allSameClient;
 
-  // Metric calculations
-  const totalInvoices = invoices.length;
+  const handleToggleSelection = (id: number) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
 
   // Dynamic list of statuses for expandable pill navigation
   const statusOptions = ['all'];
@@ -165,6 +172,8 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
 
       await window.electronAPI.emailMultipleInvoices(entries, recipientEmail);
       setSelectedIds(new Set());
+      setIsSelectionMode(false);
+      await loadInvoices(); // Refresh to fetch newly updated_at timestamps
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to send invoices.');
     } finally {
@@ -181,129 +190,16 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
     return invStatus === statusFilter && matchesSearch;
   });
 
-  const columns: ColumnDef<Invoice>[] = [
-    {
-      key: 'invoice_number',
-      header: 'Invoice ID',
-      width: '2.5fr',
-      sortable: true,
-      render: (inv) => (
-        <div className="flex items-center gap-3">
-          <div className="flex-shrink-0 w-7 h-7 rounded-full bg-stone-200 flex items-center justify-center text-stone-500">
-            <TbReceipt className="w-4 h-4" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-medium text-stone-900">{inv.invoice_number}</span>
-            <span className="text-xs text-stone-500 font-semibold mt-0.5">
-              {formatCurrency(inv.price)}
-            </span>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'client_name',
-      header: 'Client',
-      width: '2fr',
-      sortable: true,
-      render: (inv) => (
-        <span className={inv.client_name ? 'text-stone-750 font-medium' : 'text-stone-400 italic'}>
-          {inv.client_name || 'No Client'}
-        </span>
-      ),
-    },
-    {
-      key: 'date',
-      header: 'Date Issued',
-      width: '1.5fr',
-      sortable: true,
-      render: (inv) => <span>{formatDate(inv.date)}</span>,
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      width: '1.2fr',
-      sortable: true,
-      className: 'overflow-visible',
-      render: (inv) => {
-        const parts = inv.status.split('|');
-        const status = parts[0] || 'draft';
-        const notes = parts.slice(1).join('|');
-
-        let badgeClass = 'text-stone-700 bg-stone-100';
-        if (status === 'sent') {
-          badgeClass = 'text-blue-700 bg-blue-100/80';
-        } else if (status === 'paid') {
-          badgeClass = 'text-lime-700 bg-lime-100';
-        } else if (status === 'cancelled') {
-          badgeClass = 'text-red-700 bg-red-100';
-        }
-
-        const handleStatusSelect = async (newStatus: string) => {
-          const updatedStatus = notes ? `${newStatus}|${notes}` : newStatus;
-          try {
-            await window.electronAPI.updateInvoiceStatus(inv.id, updatedStatus);
-            loadInvoices();
-          } catch (err) {
-            console.error('Failed to update invoice status:', err);
-          }
-        };
-
-        const statusOptions = [
-          { value: 'draft', label: 'Draft' },
-          { value: 'sent', label: 'Sent' },
-          { value: 'paid', label: 'Paid' },
-          { value: 'cancelled', label: 'Cancelled' }
-        ];
-
-        return (
-          <div onClick={(e) => e.stopPropagation()}>
-            <Dropdown
-              options={statusOptions}
-              onSelect={handleStatusSelect}
-              triggerLabel={status.charAt(0).toUpperCase() + status.slice(1)}
-              triggerClassName={`px-3 py-1 text-xs font-medium rounded-lg cursor-pointer hover:opacity-85 transition-all select-none border-0 ${badgeClass}`}
-              widthClass="w-32"
-            />
-          </div>
-        );
-      },
-    },
-    {
-      key: 'actions',
-      header: '',
-      width: '1.2fr',
-      className: 'text-right justify-end pr-1',
-      render: (inv) => (
-        <div className="flex items-center justify-end gap-1.5">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => onEditInvoice(inv.id)}
-          >
-            Edit
-          </Button>
-          <button
-            onClick={() => handleDelete(inv)}
-            className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border-0 bg-transparent cursor-pointer"
-          >
-            <TbTrash className="w-4 h-4" />
-          </button>
-        </div>
-      ),
-    },
-  ];
-
   return (
-    <div className="flex flex-col h-full p-6 gap-5">
+    <div className="flex flex-col h-full p-6 gap-5 overflow-hidden">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-shrink-0">
         <div>
           <h1 className="text-xl font-semibold text-stone-900">Invoices</h1>
           <p className="text-sm text-stone-500 mt-0.5">{invoices.length} invoice{invoices.length !== 1 ? 's' : ''} total</p>
         </div>
         <div className="flex items-center gap-2">
-          {canSendBatch && (
+          {isSelectionMode && canSendBatch && (
             <Button
               variant="secondary"
               leftIcon={<TbMail className="w-5 h-5" />}
@@ -313,9 +209,18 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
               {isSending ? 'Sending…' : `Send ${selectedInvoices.length} Invoice${selectedInvoices.length > 1 ? 's' : ''}`}
             </Button>
           )}
-          {selectedInvoices.length > 0 && !allSameClient && (
-            <span className="text-xs text-amber-600 mr-1">Select invoices for the same client</span>
+          {isSelectionMode && selectedInvoices.length > 0 && !allSameClient && (
+            <span className="text-xs text-amber-600 mr-2">Select invoices for the same client</span>
           )}
+          <Button
+            variant={isSelectionMode ? 'secondary' : 'secondary'}
+            onClick={() => {
+              setIsSelectionMode(!isSelectionMode);
+              if (isSelectionMode) setSelectedIds(new Set());
+            }}
+          >
+            {isSelectionMode ? 'Cancel Selection' : 'Select'}
+          </Button>
           <Button
             variant="primary"
             leftIcon={<TbPlus className="w-5 h-5" />}
@@ -327,7 +232,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
       </div>
 
       {/* Filters & Search Row */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4 flex-shrink-0">
         {/* Status Filters Pill Navigation */}
         <div
           ref={containerRef}
@@ -383,25 +288,133 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
 
       {/* Error */}
       {error && (
-        <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
+        <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2 flex-shrink-0">{error}</p>
       )}
 
-      {/* Table */}
-      {isLoading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-sm text-stone-400">Loading invoices…</p>
+      {/* Main 2-Column Layout */}
+      <div className="flex-1 flex gap-6 overflow-hidden min-h-0">
+        {/* Left Column: Invoice Cards List */}
+        <div className="w-[380px] flex-shrink-0 flex flex-col gap-3 overflow-y-auto pr-2 pb-10 custom-scrollbar">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <p className="text-sm text-stone-400">Loading invoices…</p>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex items-center justify-center h-32 border border-dashed border-stone-200 rounded-2xl">
+              <p className="text-sm text-stone-400">
+                {search ? 'No invoices match your search.' : 'No invoices yet. Add your first one!'}
+              </p>
+            </div>
+          ) : (
+            filtered.map((inv) => {
+              const parts = inv.status.split('|');
+              const status = parts[0] || 'draft';
+              
+              let badgeClass = 'text-stone-700 bg-stone-100';
+              if (status === 'sent') {
+                badgeClass = 'text-blue-700 bg-blue-100/80';
+              } else if (status === 'paid') {
+                badgeClass = 'text-lime-700 bg-lime-100';
+              } else if (status === 'cancelled') {
+                badgeClass = 'text-red-700 bg-red-100';
+              }
+
+              // Dropdown Actions
+              const actionOptions = [
+                { value: 'edit', label: 'Edit' },
+                { value: 'delete', label: 'Delete', className: 'text-red-600 hover:bg-red-50' }
+              ];
+
+              const handleAction = (val: string) => {
+                if (val === 'edit') onEditInvoice(inv.id);
+                if (val === 'delete') handleDelete(inv);
+              };
+              
+              const isSelected = selectedIds.has(inv.id);
+              
+              // Last Updated date
+              let displayDate = inv.updated_at ? formatDate(inv.updated_at.split('T')[0]) : formatDate(inv.date);
+
+              return (
+                <div 
+                  key={inv.id}
+                  onClick={() => {
+                    if (isSelectionMode) handleToggleSelection(inv.id);
+                  }}
+                  className={`border rounded-2xl p-3 shadow-sm transition-all flex flex-col justify-between relative group h-[80px] ${
+                    isSelectionMode ? 'cursor-pointer hover:border-stone-300' : 'border-stone-200/60'
+                  } ${isSelected ? 'bg-white border-stone-400 ring-2 ring-stone-400 ring-offset-1' : 'bg-stone-50'}`}
+                >
+                  {/* Selection Checkbox (transitions opacity) */}
+                  <div className={`absolute top-3 left-3 z-10 transition-all duration-300 ease-out ${
+                    isSelectionMode ? 'opacity-100 pointer-events-auto scale-100' : 'opacity-0 pointer-events-none scale-95'
+                  }`}>
+                    <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                      isSelected ? 'bg-stone-800 border-stone-800 text-white' : 'border-stone-300 bg-white group-hover:border-stone-400'
+                    }`}>
+                      {isSelected && <TbCheck className="w-3.5 h-3.5" />}
+                    </div>
+                  </div>
+
+                  <div className={`flex flex-col h-full justify-between transition-all duration-300 ease-out ${isSelectionMode ? 'pl-8' : 'pl-0'}`}>
+                    {/* Top Row: Client Name, Status, Date */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className={`font-medium text-base truncate max-w-[120px] ${inv.client_name ? 'text-stone-900' : 'text-stone-400 italic'}`}>
+                          {inv.client_name || 'No Client'}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide ${badgeClass}`}>
+                          {status}
+                        </span>
+                      </div>
+                      <span className="text-xs text-stone-400 whitespace-nowrap">
+                        {displayDate}
+                      </span>
+                    </div>
+
+                    {/* Bottom Row: Invoice ID, Client Address, More Menu */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <span className="font-normal text-stone-600 text-sm leading-none tracking-tight flex-shrink-0">
+                          {inv.invoice_number}
+                        </span>
+                        <span className="text-xs font-normal text-stone-500 truncate max-w-[160px]">
+                          {inv.client_address || ''}
+                        </span>
+                      </div>
+                      
+                      <div 
+                        onClick={(e) => e.stopPropagation()} 
+                        className={`flex-shrink-0 transition-opacity duration-300 ${isSelectionMode ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}
+                      >
+                        <Dropdown
+                          variant="badge"
+                          options={actionOptions}
+                          onSelect={handleAction}
+                          triggerLabel=""
+                          icon={<TbDotsVertical className="w-4 h-4 text-stone-500 group-hover:text-stone-800 transition-colors" />}
+                          triggerClassName="w-7 h-7 flex items-center justify-center bg-transparent border border-stone-200 shadow-sm hover:bg-stone-50 hover:border-stone-300 rounded-md cursor-pointer !p-0 [&>span]:hidden"
+                          widthClass="w-32"
+                          align="right"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
-      ) : (
-        <Table
-          columns={columns}
-          data={filtered}
-          keyExtractor={(inv) => inv.id}
-          onRowClick={(inv) => onEditInvoice(inv.id)}
-          onSelectionChange={setSelectedIds}
-          emptyMessage={search ? 'No invoices match your search.' : 'No invoices yet. Add your first one!'}
-        />
-      )}
+
+        {/* Right Column: Empty details pane */}
+        <div className="flex-1 bg-stone-50/50 rounded-2xl border border-dashed border-stone-200 flex flex-col items-center justify-center p-8 text-center hidden md:flex">
+          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-stone-100 mb-4">
+            <TbReceipt className="w-6 h-6 text-stone-300" />
+          </div>
+          <h3 className="text-stone-500 font-medium mb-1">No invoice selected</h3>
+          <p className="text-stone-400 text-sm">Select an invoice from the list to view its details</p>
+        </div>
+      </div>
     </div>
   );
 }
-

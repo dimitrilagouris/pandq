@@ -16,10 +16,12 @@ export interface Invoice {
   status: string;
   price: number;
   gst_added: boolean;
+  updated_at?: string;
   display_due_date?: boolean;
   client_name?: string;
   client_business_name?: string;
   client_email?: string;
+  client_address?: string;
 }
 
 export interface InvoiceItem {

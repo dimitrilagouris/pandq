@@ -34,6 +34,16 @@ function initDatabase(): void {
     console.error('Failed to run logs migration check:', err);
   }
 
+  // Check if we need to add updated_at to invoices
+  try {
+    const invoicesTableInfo = db.prepare("PRAGMA table_info(invoices)").all() as Array<{ name: string }>;
+    if (invoicesTableInfo.length > 0 && !invoicesTableInfo.some(col => col.name === 'updated_at')) {
+      db.exec('ALTER TABLE invoices ADD COLUMN updated_at TEXT;');
+    }
+  } catch (err) {
+    console.error('Failed to run invoices migration check:', err);
+  }
+
   // Create schema tables
   db.exec(`
     CREATE TABLE IF NOT EXISTS clients (
@@ -65,6 +75,7 @@ function initDatabase(): void {
       price REAL,
       gst_added BOOLEAN,
       display_due_date BOOLEAN DEFAULT 1,
+      updated_at TEXT,
       FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
     );
 
@@ -274,7 +285,7 @@ app.whenReady().then(() => {
     if (!db) throw new Error('Database not initialised');
     const inv = db.prepare('SELECT invoice_number FROM invoices WHERE id = ?').get(id) as { invoice_number: string } | undefined;
     const invoiceNumber = inv?.invoice_number || null;
-    const res = db.prepare('UPDATE invoices SET status = ? WHERE id = ?').run(status, id);
+    const res = db.prepare('UPDATE invoices SET status = ?, updated_at = ? WHERE id = ?').run(status, new Date().toISOString(), id);
     insertActivityLog(id, invoiceNumber, 'invoice_status_updated', `Status updated to ${status.split('|')[0] || 'draft'}`);
     return res;
   });
@@ -310,7 +321,7 @@ app.whenReady().then(() => {
     const oldDiscounts = db.prepare('SELECT * FROM discounts WHERE invoice_id = ?').all(invoiceId) as any[];
     
     const updateInvoice = db.prepare(
-      'UPDATE invoices SET client_id = ?, invoice_number = ?, date = ?, due_date = ?, price = ?, gst_added = ?, display_due_date = ? WHERE id = ?'
+      'UPDATE invoices SET client_id = ?, invoice_number = ?, date = ?, due_date = ?, price = ?, gst_added = ?, display_due_date = ?, updated_at = ? WHERE id = ?'
     );
     const deleteItems = db.prepare('DELETE FROM invoice_items WHERE invoice_id = ?');
     const insertItem = db.prepare(
@@ -325,7 +336,7 @@ app.whenReady().then(() => {
     );
 
     const transaction = db.transaction(() => {
-      updateInvoice.run(clientId, invoiceNumber, date, dueDate, price, gstEnabled ? 1 : 0, displayDueDate ? 1 : 0, invoiceId);
+      updateInvoice.run(clientId, invoiceNumber, date, dueDate, price, gstEnabled ? 1 : 0, displayDueDate ? 1 : 0, new Date().toISOString(), invoiceId);
       
       deleteItems.run(invoiceId);
       for (const item of items) {
@@ -477,7 +488,7 @@ app.whenReady().then(() => {
 
     // Persist invoice, items, and optional discount atomically
     const insertInvoice = db.prepare(
-      'INSERT INTO invoices (client_id, invoice_number, date, due_date, status, price, gst_added, display_due_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO invoices (client_id, invoice_number, date, due_date, status, price, gst_added, display_due_date, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     const insertItem = db.prepare(
       'INSERT INTO invoice_items (invoice_id, type, description, hours, rate, quantity, date) VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -490,7 +501,7 @@ app.whenReady().then(() => {
     );
 
     const transaction = db.transaction(() => {
-      const result = insertInvoice.run(clientId, invoiceNumber, date, dueDate, 'draft', price, gstEnabled ? 1 : 0, displayDueDate ? 1 : 0);
+      const result = insertInvoice.run(clientId, invoiceNumber, date, dueDate, 'draft', price, gstEnabled ? 1 : 0, displayDueDate ? 1 : 0, new Date().toISOString());
       const invoiceId = result.lastInsertRowid as number;
 
       for (const item of items) {
@@ -601,9 +612,14 @@ app.whenReady().then(() => {
   ipcMain.handle('db-get-activity-logs', (): unknown[] => {
     if (!db) throw new Error('Database not initialised');
     return db.prepare(`
-      SELECT l.*, a.label AS action_label, a.category AS action_category
+      SELECT 
+        l.*, 
+        a.label AS action_label, 
+        a.category AS action_category,
+        i.status AS invoice_status
       FROM activity_logs l
       LEFT JOIN activity_actions a ON l.action_code = a.code
+      LEFT JOIN invoices i ON l.invoice_id = i.id
       ORDER BY l.id DESC LIMIT 500
     `).all();
   });

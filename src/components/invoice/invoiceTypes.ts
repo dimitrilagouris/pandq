@@ -21,6 +21,7 @@ export interface InvoiceFormState {
   displayDueDate: boolean;
   discount: number;
   notes: string;
+  templateId: string;
 }
 
 /** Computed financial totals derived from InvoiceFormState. */

@@ -3,8 +3,10 @@ import { TbPlus, TbTrash, TbCalendar, TbUser, TbHash, TbChevronDown, TbChevronRi
 import { Client } from '../../types';
 import { Input } from '../Input';
 import { DatePicker } from '../DatePicker';
+import { Dropdown } from '../Dropdown';
 import { Button } from '../Button';
 import { InvoiceFormState, LineItem } from './invoiceTypes';
+import { templates } from './templates/registry';
 
 interface InvoiceFormProps {
   form: InvoiceFormState;
@@ -67,6 +69,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
     onChange({ items: form.items.filter(item => item.id !== id) });
   };
 
+  const templateOptions = templates.map(t => ({ value: t.id, label: t.name }));
+  const selectedTemplateName = templates.find(t => t.id === form.templateId)?.name || 'Classic';
+
   return (
     <div className="flex flex-col gap-6">
 
@@ -92,6 +97,15 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
             onChange={(val) => onChange({ dueDate: val })}
           />
         </div>
+        <Dropdown
+          options={templateOptions}
+          onSelect={(val) => onChange({ templateId: val })}
+          triggerLabel={selectedTemplateName}
+          variant="input"
+          value={form.templateId}
+          placeholder="Select template…"
+          widthClass="w-full"
+        />
       </Section>
 
       {/* ── Billed To ── */}

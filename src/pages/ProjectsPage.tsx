@@ -2,13 +2,13 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { TbPlus, TbMinus, TbSearch, TbTrash, TbReceipt, TbMail, TbDotsVertical, TbCheck } from 'react-icons/tb';
 import { Invoice, Client } from '../types';
 import { Page } from '../App';
-import { InvoicePreview } from '../components/invoice/InvoicePreview';
+import { InvoicePreview, computeTotals, buildTemplateData } from '../components/invoice/InvoicePreview';
 import { PreviewCanvas, PreviewCanvasHandle } from '../components/invoice/PreviewCanvas';
 import { InvoiceFormState } from '../components/invoice/invoiceTypes';
+import { getTemplate } from '../components/invoice/templates/registry';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Dropdown } from '../components/Dropdown';
-import { buildInvoiceHtml } from '../utils/invoiceHtml';
 
 /** Format a date string YYYY-MM-DD into a nicer layout. */
 function formatDate(dateStr: string): string {
@@ -121,14 +121,14 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
       handleToggleSelection(inv.id);
       return;
     }
-    
+
     setSelectedPreviewId(inv.id);
     try {
       const fullData = await window.electronAPI.getInvoiceById(inv.id);
       if (fullData) {
         const statusStr = fullData.status || '';
         const notesStr = statusStr.includes('|') ? statusStr.split('|').slice(1).join('|') : '';
-        
+
         setPreviewForm({
           invoiceNumber: fullData.invoice_number,
           dateIssued: fullData.date,
@@ -147,6 +147,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           displayDueDate: fullData.display_due_date !== undefined ? Boolean(fullData.display_due_date) : true,
           discount: fullData.discounts && fullData.discounts[0] ? fullData.discounts[0].amount : 0,
           notes: notesStr,
+          templateId: fullData.template_id || 'classic',
         });
 
         const client = clients.find(c => c.id === fullData.client_id) || {
@@ -156,7 +157,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           email: inv.client_email || '',
           address: inv.client_address || '',
         } as Client;
-        
+
         setPreviewClient(client);
       }
     } catch (err) {
@@ -201,18 +202,43 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
         const fullData = await window.electronAPI.getInvoiceById(inv.id);
         if (!fullData) continue;
 
-        const htmlContent = buildInvoiceHtml({
-          invoice_number: fullData.invoice_number,
-          date: fullData.date,
-          due_date: fullData.due_date,
-          gst_added: Boolean(fullData.gst_added),
-          client_name: inv.client_name,
-          client_business_name: inv.client_business_name,
-          client_email: inv.client_email,
-          client_address: (fullData as any).client_address || (inv as any).client_address,
-          items: fullData.items || [],
-          discounts: fullData.discounts || [],
-        }, settings);
+        const statusStr = fullData.status || '';
+        const notesStr = statusStr.includes('|') ? statusStr.split('|').slice(1).join('|') : '';
+        const templateId = fullData.template_id || 'classic';
+
+        const formState: InvoiceFormState = {
+          invoiceNumber: fullData.invoice_number,
+          dateIssued: fullData.date,
+          dueDate: fullData.due_date,
+          clientId: fullData.client_id,
+          items: (fullData.items || []).map((item: any) => ({
+            id: item.id || String(Math.random()),
+            type: (item.type || 'labour') as 'labour' | 'materials',
+            description: item.description,
+            quantity: item.quantity,
+            hours: item.hours !== null ? item.hours : undefined,
+            date: item.date || undefined,
+            unitPrice: item.rate,
+          })),
+          gstEnabled: Boolean(fullData.gst_added),
+          displayDueDate: fullData.display_due_date !== undefined ? Boolean(fullData.display_due_date) : true,
+          discount: fullData.discounts && fullData.discounts[0] ? fullData.discounts[0].amount : 0,
+          notes: notesStr,
+          templateId,
+        };
+
+        const client: Client = clients.find(c => c.id === fullData.client_id) || {
+          id: fullData.client_id,
+          name: inv.client_name || '',
+          business_name: inv.client_business_name || '',
+          email: inv.client_email || '',
+          phone: '',
+          address: (fullData as any).client_address || (inv as any).client_address || '',
+        };
+
+        const templateData = buildTemplateData(formState, client, settings);
+        const template = getTemplate(templateId);
+        const htmlContent = template.buildHtml(templateData);
 
         entries.push({
           invoiceNumber: fullData.invoice_number,
@@ -245,16 +271,16 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
     const invNotes = statusParts.slice(1).join('|');
 
     const searchLower = search.toLowerCase();
-    
+
     const matchesNumber = inv.invoice_number.toLowerCase().includes(searchLower);
-    
+
     const matchesClient = (inv.client_name && inv.client_name.toLowerCase().includes(searchLower)) ||
       (inv.client_business_name && inv.client_business_name.toLowerCase().includes(searchLower));
-      
+
     const matchesAddress = inv.client_address && inv.client_address.toLowerCase().includes(searchLower);
-    
+
     const matchesNotes = invNotes.toLowerCase().includes(searchLower);
-    
+
     const matchesItems = inv.items_description && inv.items_description.toLowerCase().includes(searchLower);
 
     const matchesSearch = matchesNumber || matchesClient || matchesAddress || matchesNotes || matchesItems;
@@ -336,14 +362,14 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                 type="button"
                 onClick={() => setStatusFilter(opt)}
                 className={`relative z-10 flex items-center px-3 py-1.5 rounded-lg transition-all duration-150 border-0 cursor-pointer text-xs font-medium bg-transparent ${isSelected
-                    ? 'text-stone-900'
-                    : 'text-stone-500 hover:text-stone-900'
+                  ? 'text-stone-900'
+                  : 'text-stone-500 hover:text-stone-900'
                   }`}
               >
                 <span>{displayLabel}</span>
                 <span className={`ml-1.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full transition-all duration-150 ${isSelected
-                    ? 'bg-stone-100 text-stone-855'
-                    : 'bg-stone-300 text-stone-600'
+                  ? 'bg-stone-100 text-stone-855'
+                  : 'bg-stone-300 text-stone-600'
                   }`}>
                   {count}
                 </span>
@@ -387,7 +413,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
             filtered.map((inv) => {
               const parts = inv.status.split('|');
               const status = parts[0] || 'draft';
-              
+
               let badgeClass = 'text-stone-800 bg-stone-100';
               if (status === 'sent') {
                 badgeClass = 'text-blue-800 bg-blue-100';
@@ -407,27 +433,24 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                 if (val === 'edit') onEditInvoice(inv.id);
                 if (val === 'delete') handleDelete(inv);
               };
-              
+
               const isSelected = isSelectionMode ? selectedIds.has(inv.id) : selectedPreviewId === inv.id;
-              
+
               // Last Updated date
               let displayDate = inv.updated_at ? formatDate(inv.updated_at.split('T')[0]) : formatDate(inv.date);
 
               return (
-                <div 
+                <div
                   key={inv.id}
                   onClick={() => handleCardClick(inv)}
-                  className={`border rounded-2xl p-3 shadow-sm transition-all flex flex-col justify-between relative group h-[80px] hover:z-50 focus-within:z-50 cursor-pointer hover:border-stone-300 ${
-                    isSelected ? 'z-10 bg-white border-stone-400 ring-2 ring-stone-400 ring-offset-1' : 'z-0 bg-stone-50 border-stone-200/60'
-                  }`}
+                  className={`border rounded-2xl p-3 shadow-sm transition-all flex flex-col justify-between relative group h-[80px] hover:z-50 focus-within:z-50 cursor-pointer hover:border-stone-300 ${isSelected ? 'z-10 bg-white border-stone-400 ring-2 ring-stone-400 ring-offset-1' : 'z-0 bg-stone-50 border-stone-200/60'
+                    }`}
                 >
                   {/* Selection Checkbox (transitions opacity) */}
-                  <div className={`absolute top-3 left-3 z-10 transition-all duration-300 ease-out ${
-                    isSelectionMode ? 'opacity-100 pointer-events-auto scale-100' : 'opacity-0 pointer-events-none scale-95'
-                  }`}>
-                    <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
-                      isSelected ? 'bg-stone-800 border-stone-800 text-white' : 'border-stone-300 bg-white group-hover:border-stone-400'
+                  <div className={`absolute top-3 left-3 z-10 transition-all duration-300 ease-out ${isSelectionMode ? 'opacity-100 pointer-events-auto scale-100' : 'opacity-0 pointer-events-none scale-95'
                     }`}>
+                    <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${isSelected ? 'bg-stone-800 border-stone-800 text-white' : 'border-stone-300 bg-white group-hover:border-stone-400'
+                      }`}>
                       {isSelected && <TbCheck className="w-3.5 h-3.5" />}
                     </div>
                   </div>
@@ -458,9 +481,9 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                           {inv.client_address || ''}
                         </span>
                       </div>
-                      
-                      <div 
-                        onClick={(e) => e.stopPropagation()} 
+
+                      <div
+                        onClick={(e) => e.stopPropagation()}
                         className={`flex-shrink-0 transition-opacity duration-300 ${isSelectionMode ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}
                       >
                         <Dropdown
@@ -521,7 +544,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                   </button>
                 </div>
               </div>
-              
+
               {/* Canvas area */}
               <div className="flex-1 overflow-hidden relative">
                 <PreviewCanvas ref={canvasRef} scale={canvasScale} onScaleChange={setCanvasScale}>

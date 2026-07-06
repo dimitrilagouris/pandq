@@ -3,9 +3,10 @@ import { TbMail, TbFileText, TbDeviceFloppy, TbArrowUpRight, TbChevronRight, TbP
 import { Client } from '../types';
 import { Button } from '../components/Button';
 import { InvoiceForm } from '../components/invoice/InvoiceForm';
-import { InvoicePreview, computeTotals } from '../components/invoice/InvoicePreview';
+import { InvoicePreview, computeTotals, buildTemplateData } from '../components/invoice/InvoicePreview';
 import { PreviewCanvas, PreviewCanvasHandle } from '../components/invoice/PreviewCanvas';
 import { InvoiceFormState } from '../components/invoice/invoiceTypes';
+import { getTemplate } from '../components/invoice/templates/registry';
 import { Page } from '../App';
 
 interface InvoicePageProps {
@@ -35,6 +36,7 @@ const INITIAL_FORM: InvoiceFormState = {
   displayDueDate: true,
   discount: 0,
   notes: '',
+  templateId: 'classic',
 };
 
 /**
@@ -104,6 +106,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
             displayDueDate: data.display_due_date !== undefined ? Boolean(data.display_due_date) : true,
             discount: data.discounts && data.discounts[0] ? data.discounts[0].amount : 0,
             notes: notesStr,
+            templateId: data.template_id || 'classic',
           };
           setForm(populatedForm);
           setInitialFormState(populatedForm);
@@ -121,6 +124,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
         const defaultNotes = settings['setting_default_notes'] || '';
         const defaultGst = settings['setting_default_gst_enabled'] === 'true';
         const defaultDisplayDue = settings['setting_default_display_due_date'] !== 'false';
+        const defaultTemplate = settings['setting_default_template_id'] || 'classic';
 
         const defaultForm = {
           ...INITIAL_FORM,
@@ -129,6 +133,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           gstEnabled: defaultGst,
           displayDueDate: defaultDisplayDue,
           notes: defaultNotes,
+          templateId: defaultTemplate,
         };
         setForm(defaultForm);
         setInitialFormState(defaultForm);
@@ -156,8 +161,9 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
     if (current.displayDueDate !== initial.displayDueDate) return true;
     if (current.discount !== initial.discount) return true;
     if (current.notes !== initial.notes) return true;
+    if (current.templateId !== initial.templateId) return true;
     if (current.items.length !== initial.items.length) return true;
-    
+
     for (let i = 0; i < current.items.length; i++) {
       const c = current.items[i];
       const init = initial.items[i];
@@ -218,6 +224,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           totals.grandTotal,
           items,
           form.notes,
+          form.templateId,
         );
       } else {
         await window.electronAPI.createInvoice(
@@ -231,6 +238,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           totals.grandTotal,
           items,
           form.notes,
+          form.templateId,
         );
       }
       onNavigate('projects', true);
@@ -403,6 +411,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           totals.grandTotal,
           items,
           form.notes,
+          form.templateId,
         );
       } else {
         await window.electronAPI.createInvoice(
@@ -416,6 +425,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           totals.grandTotal,
           items,
           form.notes,
+          form.templateId,
         );
       }
 
@@ -535,7 +545,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
       {/* ── Split Panels Layout ── */}
       <div className="flex-1 flex overflow-hidden px-6 pt-2 pb-6 gap-0">
         {/* Left Form Panel */}
-        <div 
+        <div
           style={{ width: `${formWidth}px` }}
           className="flex-shrink-0 flex flex-col h-full rounded-2xl shadow-1 bg-stone-50"
         >
@@ -545,7 +555,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
         </div>
 
         {/* Draggable Divider Column */}
-        <div 
+        <div
           className="w-5 flex-shrink-0 flex items-center justify-center cursor-col-resize group select-none"
           onMouseDown={handleDividerMouseDown}
         >
@@ -600,8 +610,8 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
                   type="button"
                   onClick={() => setExportType('email')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 ${exportType === 'email'
-                      ? 'bg-white text-stone-900 shadow-1'
-                      : 'text-stone-500 hover:text-stone-900'
+                    ? 'bg-white text-stone-900 shadow-1'
+                    : 'text-stone-500 hover:text-stone-900'
                     }`}
                 >
                   <TbMail className="w-3.5 h-3.5" />
@@ -611,8 +621,8 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
                   type="button"
                   onClick={() => setExportType('pdf')}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-150 ${exportType === 'pdf'
-                      ? 'bg-white text-stone-900 shadow-1'
-                      : 'text-stone-500 hover:text-stone-900'
+                    ? 'bg-white text-stone-900 shadow-1'
+                    : 'text-stone-500 hover:text-stone-900'
                     }`}
                 >
                   <TbFileText className="w-3.5 h-3.5" />

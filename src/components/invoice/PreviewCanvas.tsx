@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useCallback, useState, useImperativeHandle, f
 
 const MIN_SCALE = 0.2;
 const MAX_SCALE = 2.0;
-const INITIAL_TOP_PADDING = 32;
+const INITIAL_TOP_PADDING = 24;
 
 export interface PreviewCanvasHandle {
   /** Reset pan to centred position. */
@@ -33,7 +33,6 @@ export const PreviewCanvas = forwardRef<PreviewCanvasHandle, PreviewCanvasProps>
     const panStart = useRef({ x: 0, y: 0 });
     // Store scale in a ref so wheel handler always reads the latest value
     const scaleRef = useRef(scale);
-    scaleRef.current = scale;
 
     /** Apply the current transform to the content element directly. */
     const applyTransform = useCallback((s: number, p: { x: number; y: number }) => {
@@ -52,14 +51,25 @@ export const PreviewCanvas = forwardRef<PreviewCanvasHandle, PreviewCanvasProps>
       return { x: (containerW - contentW * s) / 2, y: INITIAL_TOP_PADDING };
     }, []);
 
+    const isInternalZoom = useRef(false);
+    const resetRequested = useRef(false);
+
     // Expose resetView to parent via ref
     useImperativeHandle(ref, () => ({
-      resetView: () => {
-        const centredPan = computeCentredPan(scaleRef.current);
-        panRef.current = centredPan;
-        setPan(centredPan);
+      resetView: (targetScale?: number) => {
+        resetRequested.current = true;
+        const currentScale = scaleRef.current;
+        const s = targetScale ?? currentScale;
+        
+        if (s === currentScale) {
+          resetRequested.current = false;
+          const centredPan = computeCentredPan(s);
+          panRef.current = centredPan;
+          setPan(centredPan);
+          applyTransform(s, centredPan);
+        }
       },
-    }), [computeCentredPan]);
+    }), [computeCentredPan, applyTransform]);
 
     // Centre the invoice card horizontally on first render
     useEffect(() => {
@@ -68,18 +78,59 @@ export const PreviewCanvas = forwardRef<PreviewCanvasHandle, PreviewCanvasProps>
       const content = contentRef.current;
       if (!container || !content) return;
 
-      requestAnimationFrame(() => {
-        const centredPan = computeCentredPan(scale);
-        panRef.current = centredPan;
-        setPan(centredPan);
-        hasCentred.current = true;
-      });
-    }, [scale, computeCentredPan]);
+      const checkAndCenter = () => {
+        if (!hasCentred.current && container.clientWidth > 0 && content.scrollWidth > 0) {
+          const centredPan = computeCentredPan(scaleRef.current);
+          panRef.current = centredPan;
+          setPan(centredPan);
+          hasCentred.current = true;
+          observer.disconnect();
+        }
+      };
+
+      const observer = new ResizeObserver(() => checkAndCenter());
+      observer.observe(container);
+      observer.observe(content);
+      
+      checkAndCenter(); // Try immediately as well
+
+      return () => observer.disconnect();
+    }, [computeCentredPan]);
 
     // Keep the visual transform in sync with React state
     useEffect(() => {
-      applyTransform(scale, pan);
-    }, [scale, pan, applyTransform]);
+      if (scaleRef.current !== scale || resetRequested.current) {
+        if (resetRequested.current) {
+          resetRequested.current = false;
+          const centredPan = computeCentredPan(scale);
+          panRef.current = centredPan;
+          setPan(centredPan);
+        } else if (isInternalZoom.current) {
+          isInternalZoom.current = false;
+        } else {
+          // External zoom (e.g. buttons) - anchor at the center of the container
+          const currentScale = scaleRef.current;
+          const ratio = scale / currentScale;
+          const container = containerRef.current;
+          
+          if (container) {
+            const centerX = container.clientWidth / 2;
+            const centerY = container.clientHeight / 2;
+            
+            const newPan = {
+              x: centerX - ratio * (centerX - panRef.current.x),
+              y: centerY - ratio * (centerY - panRef.current.y),
+            };
+            
+            panRef.current = newPan;
+            setPan(newPan);
+          }
+        }
+        scaleRef.current = scale;
+      }
+      
+      applyTransform(scale, panRef.current);
+    }, [scale, applyTransform, computeCentredPan]);
 
     // Wheel handler: zoom toward cursor, or pan when no modifier
     useEffect(() => {
@@ -110,6 +161,7 @@ export const PreviewCanvas = forwardRef<PreviewCanvasHandle, PreviewCanvasProps>
           panRef.current = newPan;
           applyTransform(newScale, newPan);
           setPan(newPan);
+          isInternalZoom.current = true;
           onScaleChange(newScale);
         } else {
           // Regular scroll/two-finger swipe to pan
@@ -169,6 +221,7 @@ export const PreviewCanvas = forwardRef<PreviewCanvasHandle, PreviewCanvasProps>
         <div
           ref={contentRef}
           className="preview-canvas__content"
+          style={{ padding: '40px' }}
         >
           {children}
         </div>

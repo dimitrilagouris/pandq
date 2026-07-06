@@ -32,7 +32,7 @@ export const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputPro
   value,
   onChange,
   placeholder,
-  type = 'text',
+  type = 'twext',
   name,
   required,
   className = '',

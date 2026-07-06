@@ -22,6 +22,7 @@ export interface Invoice {
   client_business_name?: string;
   client_email?: string;
   client_address?: string;
+  items_description?: string;
 }
 
 export interface InvoiceItem {

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { TbCalendar, TbChevronLeft, TbChevronRight } from 'react-icons/tb';
 
 interface DatePickerProps {
@@ -27,6 +28,17 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+
+  const handleOpen = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setCoords({ top: rect.bottom + 6, left: rect.left });
+    }
+    setIsOpen(!isOpen);
+  };
 
   // Parse YYYY-MM-DD safely into year, month, date components in local time
   const parseDateString = (dateStr: string) => {
@@ -57,13 +69,31 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   // Click outside listener to close calendar popup
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        containerRef.current && !containerRef.current.contains(target) &&
+        (!popupRef.current || !popupRef.current.contains(target))
+      ) {
         setIsOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Close on scroll or resize when open (since it is fixed positioned)
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleScroll = () => setIsOpen(false);
+    const handleResize = () => setIsOpen(false);
+    
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [isOpen]);
 
   // Format a JS Date object as YYYY-MM-DD in local time
   const formatDateString = (date: Date) => {
@@ -165,8 +195,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           const textClass = isPlaceholder ? 'text-stone-300 font-normal' : 'text-stone-900 font-medium';
           return (
             <button
+              ref={buttonRef}
               type="button"
-              onClick={() => setIsOpen(!isOpen)}
+              onClick={handleOpen}
               className={`w-full h-10 px-3 text-left text-sm bg-white border border-transparent rounded-xl shadow-1 transition-all duration-150 focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-400 focus:ring-offset-1 flex items-center justify-between cursor-pointer ${textClass}`}
             >
               <span>{formatDisplayString(value) || 'Select date…'}</span>
@@ -175,8 +206,12 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           );
         })()}
 
-        {isOpen && (
-          <div className="absolute z-50 left-0 mt-1.5 w-64 bg-stone-100 border border-stone-200/80 rounded-2xl shadow-22 p-4 animate-in fade-in slide-in-from-top-2 duration-150 select-none">
+        {isOpen && createPortal(
+          <div 
+            ref={popupRef}
+            style={{ top: coords.top, left: coords.left }}
+            className="fixed z-[9999] w-64 bg-stone-100 border border-stone-200/80 rounded-2xl shadow-22 p-4 animate-in fade-in slide-in-from-top-2 duration-150 select-none"
+          >
             {/* Header controls */}
             <div className="flex items-center justify-between mb-3.5">
               <button
@@ -213,7 +248,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             <div className="grid grid-cols-7 gap-y-1 gap-x-1 justify-items-center">
               {dayCells}
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </div>

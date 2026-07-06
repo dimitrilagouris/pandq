@@ -24,103 +24,153 @@ function initDatabase(): void {
   // Enforce foreign key constraints
   db.pragma('foreign_keys = ON');
 
-  // Check if we need to migrate activity_logs (e.g. if column 'action' exists instead of 'action_code')
   try {
-    const tableInfo = db.prepare("PRAGMA table_info(activity_logs)").all() as Array<{ name: string }>;
-    if (tableInfo.length > 0 && tableInfo.some(col => col.name === 'action')) {
-      db.exec('DROP TABLE activity_logs');
+    const currentVersion = db.pragma('user_version', { simple: true }) as number;
+
+    // Version 1: Create baseline tables
+    if (currentVersion < 1) {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS clients (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT,
+          business_name TEXT,
+          email TEXT,
+          phone TEXT,
+          address TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS projects (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          client_id INTEGER,
+          name TEXT NOT NULL,
+          description TEXT,
+          status TEXT,
+          start_date TEXT,
+          FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS invoices (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          client_id INTEGER,
+          invoice_number TEXT,
+          date TEXT,
+          due_date TEXT,
+          status TEXT,
+          price REAL,
+          gst_added BOOLEAN,
+          display_due_date BOOLEAN DEFAULT 1,
+          FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS invoice_items (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          invoice_id INTEGER,
+          type TEXT,
+          description TEXT,
+          hours REAL,
+          rate REAL,
+          quantity REAL,
+          date TEXT,
+          FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS discounts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          invoice_id INTEGER,
+          description TEXT,
+          amount REAL,
+          type TEXT,
+          FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS settings (
+          key TEXT PRIMARY KEY,
+          value TEXT
+        );
+
+        CREATE TABLE IF NOT EXISTS activity_actions (
+          code TEXT PRIMARY KEY,
+          label TEXT NOT NULL,
+          category TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS activity_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          invoice_id INTEGER,
+          invoice_number TEXT,
+          action_code TEXT NOT NULL,
+          details TEXT,
+          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (action_code) REFERENCES activity_actions(code)
+        );
+      `);
+
+      // Cleanup code for very old pre-release installations that had the "action" column in activity_logs
+      try {
+        const tableInfo = db.prepare("PRAGMA table_info(activity_logs)").all() as Array<{ name: string }>;
+        if (tableInfo.length > 0 && tableInfo.some(col => col.name === 'action')) {
+          db.exec('DROP TABLE activity_logs');
+          db.exec(`
+            CREATE TABLE IF NOT EXISTS activity_logs (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              invoice_id INTEGER,
+              invoice_number TEXT,
+              action_code TEXT NOT NULL,
+              details TEXT,
+              timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (action_code) REFERENCES activity_actions(code)
+            );
+          `);
+        }
+      } catch (err) {
+        console.error('Failed to run logs migration check:', err);
+      }
+
+      db.pragma('user_version = 1');
     }
-  } catch (err) {
-    console.error('Failed to run logs migration check:', err);
-  }
 
-  // Check if we need to add updated_at to invoices
-  try {
-    const invoicesTableInfo = db.prepare("PRAGMA table_info(invoices)").all() as Array<{ name: string }>;
-    if (invoicesTableInfo.length > 0 && !invoicesTableInfo.some(col => col.name === 'updated_at')) {
-      db.exec('ALTER TABLE invoices ADD COLUMN updated_at TEXT;');
+    // Version 2: Add updated_at column to invoices table
+    if (currentVersion < 2) {
+      try {
+        const invoicesTableInfo = db.prepare("PRAGMA table_info(invoices)").all() as Array<{ name: string }>;
+        if (invoicesTableInfo.length > 0 && !invoicesTableInfo.some(col => col.name === 'updated_at')) {
+          db.exec('ALTER TABLE invoices ADD COLUMN updated_at TEXT;');
+        }
+      } catch (err) {
+        console.error('Failed to run invoices updated_at migration:', err);
+      }
+      db.pragma('user_version = 2');
     }
+
+    // Version 3: Ensure display_due_date column exists in invoices (fallback for old DBs)
+    if (currentVersion < 3) {
+      try {
+        const tableInfo = db.prepare("PRAGMA table_info(invoices)").all() as Array<{ name: string }>;
+        if (tableInfo.length > 0 && !tableInfo.some((col) => col.name === 'display_due_date')) {
+          db.exec("ALTER TABLE invoices ADD COLUMN display_due_date BOOLEAN DEFAULT 1");
+        }
+      } catch (err) {
+        console.error('Failed to run display_due_date migration:', err);
+      }
+      db.pragma('user_version = 3');
+    }
+
+    // Version 4: Ensure date column exists in invoice_items (fallback for old DBs)
+    if (currentVersion < 4) {
+      try {
+        const itemTableInfo = db.prepare("PRAGMA table_info(invoice_items)").all() as Array<{ name: string }>;
+        if (itemTableInfo.length > 0 && !itemTableInfo.some((col) => col.name === 'date')) {
+          db.exec("ALTER TABLE invoice_items ADD COLUMN date TEXT");
+        }
+      } catch (err) {
+        console.error('Failed to run invoice_items date migration:', err);
+      }
+      db.pragma('user_version = 4');
+    }
+
   } catch (err) {
-    console.error('Failed to run invoices migration check:', err);
+    console.error('Failed to run schema migrations:', err);
   }
-
-  // Create schema tables
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS clients (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT,
-      business_name TEXT,
-      email TEXT,
-      phone TEXT,
-      address TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS projects (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      client_id INTEGER,
-      name TEXT NOT NULL,
-      description TEXT,
-      status TEXT,
-      start_date TEXT,
-      FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS invoices (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      client_id INTEGER,
-      invoice_number TEXT,
-      date TEXT,
-      due_date TEXT,
-      status TEXT,
-      price REAL,
-      gst_added BOOLEAN,
-      display_due_date BOOLEAN DEFAULT 1,
-      updated_at TEXT,
-      FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS invoice_items (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      invoice_id INTEGER,
-      type TEXT,
-      description TEXT,
-      hours REAL,
-      rate REAL,
-      quantity REAL,
-      date TEXT,
-      FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS discounts (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      invoice_id INTEGER,
-      description TEXT,
-      amount REAL,
-      type TEXT,
-      FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS settings (
-      key TEXT PRIMARY KEY,
-      value TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS activity_actions (
-      code TEXT PRIMARY KEY,
-      label TEXT NOT NULL,
-      category TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS activity_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      invoice_id INTEGER,
-      invoice_number TEXT,
-      action_code TEXT NOT NULL,
-      details TEXT,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (action_code) REFERENCES activity_actions(code)
-    );
-  `);
 
   // Pre-populate activity_actions
   try {
@@ -147,20 +197,6 @@ function initDatabase(): void {
     `);
   } catch (err) {
     console.error('Failed to populate activity_actions:', err);
-  }
-
-  // Run column migrations to add display_due_date column if not exists
-  const tableInfo = db.prepare("PRAGMA table_info(invoices)").all() as Array<{ name: string }>;
-  const hasDisplayDueDate = tableInfo.some((col) => col.name === 'display_due_date');
-  if (!hasDisplayDueDate) {
-    db.exec("ALTER TABLE invoices ADD COLUMN display_due_date BOOLEAN DEFAULT 1");
-  }
-
-  // Run column migrations to add date column to invoice_items if not exists
-  const itemTableInfo = db.prepare("PRAGMA table_info(invoice_items)").all() as Array<{ name: string }>;
-  const hasDateColumn = itemTableInfo.some((col) => col.name === 'date');
-  if (!hasDateColumn) {
-    db.exec("ALTER TABLE invoice_items ADD COLUMN date TEXT");
   }
 }
 
@@ -265,7 +301,8 @@ app.whenReady().then(() => {
   ipcMain.handle('db-get-invoices', (): unknown[] => {
     if (!db) throw new Error('Database not initialised');
     return db.prepare(`
-      SELECT i.*, c.name AS client_name, c.business_name AS client_business_name, c.email AS client_email, c.address AS client_address
+      SELECT i.*, c.name AS client_name, c.business_name AS client_business_name, c.email AS client_email, c.address AS client_address,
+             (SELECT GROUP_CONCAT(type || ' ' || description, ' ') FROM invoice_items WHERE invoice_id = i.id) AS items_description
       FROM invoices i 
       LEFT JOIN clients c ON i.client_id = c.id 
       ORDER BY i.id DESC

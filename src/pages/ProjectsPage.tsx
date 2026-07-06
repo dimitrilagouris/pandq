@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { TbPlus, TbSearch, TbTrash, TbReceipt, TbMail, TbDotsVertical, TbCheck } from 'react-icons/tb';
-import { Invoice } from '../types';
+import { TbPlus, TbMinus, TbSearch, TbTrash, TbReceipt, TbMail, TbDotsVertical, TbCheck } from 'react-icons/tb';
+import { Invoice, Client } from '../types';
 import { Page } from '../App';
+import { InvoicePreview } from '../components/invoice/InvoicePreview';
+import { PreviewCanvas, PreviewCanvasHandle } from '../components/invoice/PreviewCanvas';
+import { InvoiceFormState } from '../components/invoice/invoiceTypes';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Dropdown } from '../components/Dropdown';
@@ -34,6 +37,7 @@ interface ProjectsPageProps {
  */
 export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPageProps): React.JSX.Element {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [search, setSearch] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -43,9 +47,14 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sliderStyle, setSliderStyle] = useState({ left: 0, width: 0, opacity: 0 });
   const [isSelectionMode, setIsSelectionMode] = useState<boolean>(false);
+  const [selectedPreviewId, setSelectedPreviewId] = useState<number | null>(null);
+  const [previewForm, setPreviewForm] = useState<InvoiceFormState | null>(null);
+  const [previewClient, setPreviewClient] = useState<Client | null>(null);
+  const [canvasScale, setCanvasScale] = useState(0.85);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const canvasRef = useRef<PreviewCanvasHandle>(null);
 
   useEffect(() => {
     const activeBtn = buttonRefs.current[statusFilter];
@@ -62,6 +71,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
   }, [statusFilter, invoices]);
 
   useEffect(() => {
+    window.electronAPI.getClients().then(setClients).catch(console.error);
     window.electronAPI.getSettings().then(setSettings).catch(console.error);
   }, []);
 
@@ -104,6 +114,54 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
       newSelected.add(id);
     }
     setSelectedIds(newSelected);
+  };
+
+  const handleCardClick = async (inv: Invoice) => {
+    if (isSelectionMode) {
+      handleToggleSelection(inv.id);
+      return;
+    }
+    
+    setSelectedPreviewId(inv.id);
+    try {
+      const fullData = await window.electronAPI.getInvoiceById(inv.id);
+      if (fullData) {
+        const statusStr = fullData.status || '';
+        const notesStr = statusStr.includes('|') ? statusStr.split('|').slice(1).join('|') : '';
+        
+        setPreviewForm({
+          invoiceNumber: fullData.invoice_number,
+          dateIssued: fullData.date,
+          dueDate: fullData.due_date,
+          clientId: fullData.client_id,
+          items: fullData.items.map((item: any) => ({
+            id: item.id || String(Math.random()),
+            type: (item.type || 'labour') as 'labour' | 'materials',
+            description: item.description,
+            quantity: item.quantity,
+            hours: item.hours !== null ? item.hours : undefined,
+            date: item.date || undefined,
+            unitPrice: item.rate,
+          })),
+          gstEnabled: Boolean(fullData.gst_added),
+          displayDueDate: fullData.display_due_date !== undefined ? Boolean(fullData.display_due_date) : true,
+          discount: fullData.discounts && fullData.discounts[0] ? fullData.discounts[0].amount : 0,
+          notes: notesStr,
+        });
+
+        const client = clients.find(c => c.id === fullData.client_id) || {
+          id: fullData.client_id,
+          name: inv.client_name || '',
+          business_name: inv.client_business_name || '',
+          email: inv.client_email || '',
+          address: inv.client_address || '',
+        } as Client;
+        
+        setPreviewClient(client);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   // Dynamic list of statuses for expandable pill navigation
@@ -182,18 +240,33 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
   };
 
   const filtered = invoices.filter((inv) => {
-    const matchesSearch = inv.invoice_number.toLowerCase().includes(search.toLowerCase()) ||
-      (inv.client_name && inv.client_name.toLowerCase().includes(search.toLowerCase()));
+    const statusParts = inv.status.split('|');
+    const invStatus = statusParts[0] || 'draft';
+    const invNotes = statusParts.slice(1).join('|');
+
+    const searchLower = search.toLowerCase();
+    
+    const matchesNumber = inv.invoice_number.toLowerCase().includes(searchLower);
+    
+    const matchesClient = (inv.client_name && inv.client_name.toLowerCase().includes(searchLower)) ||
+      (inv.client_business_name && inv.client_business_name.toLowerCase().includes(searchLower));
+      
+    const matchesAddress = inv.client_address && inv.client_address.toLowerCase().includes(searchLower);
+    
+    const matchesNotes = invNotes.toLowerCase().includes(searchLower);
+    
+    const matchesItems = inv.items_description && inv.items_description.toLowerCase().includes(searchLower);
+
+    const matchesSearch = matchesNumber || matchesClient || matchesAddress || matchesNotes || matchesItems;
 
     if (statusFilter === 'all') return matchesSearch;
-    const invStatus = inv.status.split('|')[0] || 'draft';
     return invStatus === statusFilter && matchesSearch;
   });
 
   return (
-    <div className="flex flex-col h-full p-6 gap-5 overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Page Header */}
-      <div className="flex items-center justify-between flex-shrink-0">
+      <div className="flex items-center justify-between flex-shrink-0 px-6 pt-6 pb-2">
         <div>
           <h1 className="text-xl font-semibold text-stone-900">Invoices</h1>
           <p className="text-sm text-stone-500 mt-0.5">{invoices.length} invoice{invoices.length !== 1 ? 's' : ''} total</p>
@@ -202,7 +275,8 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           {isSelectionMode && canSendBatch && (
             <Button
               variant="secondary"
-              leftIcon={<TbMail className="w-5 h-5" />}
+              size="sm"
+              leftIcon={<TbMail className="w-4 h-4" />}
               onClick={handleSendSelected}
               disabled={isSending}
             >
@@ -214,6 +288,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           )}
           <Button
             variant={isSelectionMode ? 'secondary' : 'secondary'}
+            size="sm"
             onClick={() => {
               setIsSelectionMode(!isSelectionMode);
               if (isSelectionMode) setSelectedIds(new Set());
@@ -223,7 +298,8 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           </Button>
           <Button
             variant="primary"
-            leftIcon={<TbPlus className="w-5 h-5" />}
+            size="sm"
+            leftIcon={<TbPlus className="w-4 h-4" />}
             onClick={() => onNavigate('invoices')}
           >
             New Invoice
@@ -232,7 +308,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
       </div>
 
       {/* Filters & Search Row */}
-      <div className="flex items-center justify-between gap-4 flex-shrink-0">
+      <div className="flex items-center justify-between gap-4 flex-shrink-0 px-6 pb-2">
         {/* Status Filters Pill Navigation */}
         <div
           ref={containerRef}
@@ -288,13 +364,15 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
 
       {/* Error */}
       {error && (
-        <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2 flex-shrink-0">{error}</p>
+        <div className="px-6 flex-shrink-0">
+          <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>
+        </div>
       )}
 
       {/* Main 2-Column Layout */}
-      <div className="flex-1 flex gap-6 overflow-hidden min-h-0">
+      <div className="flex-1 flex gap-6 overflow-hidden min-h-0 px-6 pt-2 pb-6">
         {/* Left Column: Invoice Cards List */}
-        <div className="w-[380px] flex-shrink-0 flex flex-col gap-3 overflow-y-auto pr-2 pb-10 custom-scrollbar">
+        <div className="w-[384px] flex-shrink-0 flex flex-col gap-3 overflow-y-auto px-1 pt-1 pr-3 pb-10 custom-scrollbar">
           {isLoading ? (
             <div className="flex items-center justify-center h-32">
               <p className="text-sm text-stone-400">Loading invoices…</p>
@@ -310,13 +388,13 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
               const parts = inv.status.split('|');
               const status = parts[0] || 'draft';
               
-              let badgeClass = 'text-stone-700 bg-stone-100';
+              let badgeClass = 'text-stone-800 bg-stone-100';
               if (status === 'sent') {
-                badgeClass = 'text-blue-700 bg-blue-100/80';
+                badgeClass = 'text-blue-800 bg-blue-100';
               } else if (status === 'paid') {
-                badgeClass = 'text-lime-700 bg-lime-100';
+                badgeClass = 'text-lime-800 bg-lime-100';
               } else if (status === 'cancelled') {
-                badgeClass = 'text-red-700 bg-red-100';
+                badgeClass = 'text-red-800 bg-red-100';
               }
 
               // Dropdown Actions
@@ -330,7 +408,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                 if (val === 'delete') handleDelete(inv);
               };
               
-              const isSelected = selectedIds.has(inv.id);
+              const isSelected = isSelectionMode ? selectedIds.has(inv.id) : selectedPreviewId === inv.id;
               
               // Last Updated date
               let displayDate = inv.updated_at ? formatDate(inv.updated_at.split('T')[0]) : formatDate(inv.date);
@@ -338,12 +416,10 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
               return (
                 <div 
                   key={inv.id}
-                  onClick={() => {
-                    if (isSelectionMode) handleToggleSelection(inv.id);
-                  }}
-                  className={`border rounded-2xl p-3 shadow-sm transition-all flex flex-col justify-between relative group h-[80px] ${
-                    isSelectionMode ? 'cursor-pointer hover:border-stone-300' : 'border-stone-200/60'
-                  } ${isSelected ? 'bg-white border-stone-400 ring-2 ring-stone-400 ring-offset-1' : 'bg-stone-50'}`}
+                  onClick={() => handleCardClick(inv)}
+                  className={`border rounded-2xl p-3 shadow-sm transition-all flex flex-col justify-between relative group h-[80px] hover:z-50 focus-within:z-50 cursor-pointer hover:border-stone-300 ${
+                    isSelected ? 'z-10 bg-white border-stone-400 ring-2 ring-stone-400 ring-offset-1' : 'z-0 bg-stone-50 border-stone-200/60'
+                  }`}
                 >
                   {/* Selection Checkbox (transitions opacity) */}
                   <div className={`absolute top-3 left-3 z-10 transition-all duration-300 ease-out ${
@@ -363,7 +439,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                         <span className={`font-medium text-base truncate max-w-[120px] ${inv.client_name ? 'text-stone-900' : 'text-stone-400 italic'}`}>
                           {inv.client_name || 'No Client'}
                         </span>
-                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide ${badgeClass}`}>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium uppercase tracking-wide ${badgeClass}`}>
                           {status}
                         </span>
                       </div>
@@ -406,13 +482,62 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           )}
         </div>
 
-        {/* Right Column: Empty details pane */}
-        <div className="flex-1 bg-stone-50/50 rounded-2xl border border-dashed border-stone-200 flex flex-col items-center justify-center p-8 text-center hidden md:flex">
-          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-stone-100 mb-4">
-            <TbReceipt className="w-6 h-6 text-stone-300" />
-          </div>
-          <h3 className="text-stone-500 font-medium mb-1">No invoice selected</h3>
-          <p className="text-stone-400 text-sm">Select an invoice from the list to view its details</p>
+        {/* Right Column: Details Pane */}
+        <div className="flex-1 bg-stone-50 rounded-2xl shadow-1 flex flex-col overflow-hidden hidden md:flex relative">
+          {previewForm && previewClient ? (
+            <div className="flex-1 overflow-hidden relative flex flex-col">
+              {/* Header with zoom controls */}
+              <div className="flex items-center justify-between px-6 pt-4 pb-2 flex-shrink-0">
+                <span className="text-sm font-semibold text-stone-900">Preview</span>
+                <div className="flex items-center bg-stone-200 p-0.5 rounded-xl shadow-1 text-xs font-medium">
+                  <button
+                    type="button"
+                    onClick={() => setCanvasScale(s => Math.max(0.2, s - 0.1))}
+                    className="px-2 py-1.5 text-stone-600 hover:text-stone-900 transition-colors"
+                    title="Zoom Out"
+                  >
+                    <TbMinus className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="w-12 text-center text-xs text-stone-700 select-none font-medium">
+                    {Math.round(canvasScale * 100)}%
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setCanvasScale(s => Math.min(2.0, s + 0.1))}
+                    className="px-2 py-1.5 text-stone-600 hover:text-stone-900 transition-colors"
+                    title="Zoom In"
+                  >
+                    <TbPlus className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCanvasScale(0.85);
+                      canvasRef.current?.resetView(0.85);
+                    }}
+                    className="px-3 py-1.5 text-xs text-stone-600 hover:text-stone-900 border-l border-stone-300 transition-colors font-medium"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+              
+              {/* Canvas area */}
+              <div className="flex-1 overflow-hidden relative">
+                <PreviewCanvas ref={canvasRef} scale={canvasScale} onScaleChange={setCanvasScale}>
+                  <InvoicePreview form={previewForm} client={previewClient} settings={settings} />
+                </PreviewCanvas>
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-stone-100 mb-4">
+                <TbReceipt className="w-6 h-6 text-stone-300" />
+              </div>
+              <h3 className="text-stone-500 font-medium mb-1">No invoice selected</h3>
+              <p className="text-stone-400 text-sm">Select an invoice from the list to view its details</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

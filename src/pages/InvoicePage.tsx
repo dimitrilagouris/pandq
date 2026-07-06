@@ -586,7 +586,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
                   type="button"
                   onClick={() => {
                     setCanvasScale(0.8);
-                    canvasRef.current?.resetView();
+                    canvasRef.current?.resetView(0.8);
                   }}
                   className="px-3 py-1.5 text-xs text-stone-600 hover:text-stone-900 border-l border-stone-300 transition-colors font-medium"
                 >

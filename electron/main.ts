@@ -59,6 +59,7 @@ function initDatabase(): void {
           price REAL,
           gst_added BOOLEAN,
           display_due_date BOOLEAN DEFAULT 1,
+          template_id TEXT DEFAULT 'classic',
           FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
         );
 
@@ -166,6 +167,19 @@ function initDatabase(): void {
         console.error('Failed to run invoice_items date migration:', err);
       }
       db.pragma('user_version = 4');
+    }
+
+    // Version 5: Add template_id column to invoices table
+    if (currentVersion < 5) {
+      try {
+        const invoicesTableInfo = db.prepare("PRAGMA table_info(invoices)").all() as Array<{ name: string }>;
+        if (invoicesTableInfo.length > 0 && !invoicesTableInfo.some(col => col.name === 'template_id')) {
+          db.exec("ALTER TABLE invoices ADD COLUMN template_id TEXT DEFAULT 'classic';");
+        }
+      } catch (err) {
+        console.error('Failed to run invoices template_id migration:', err);
+      }
+      db.pragma('user_version = 5');
     }
 
   } catch (err) {
@@ -349,6 +363,7 @@ app.whenReady().then(() => {
     price: number,
     items: Array<{ type: string; description: string; hours: number | null; rate: number; quantity: number | null; date: string | null }>,
     notes: string,
+    templateId: string,
   ): unknown => {
     if (!db) throw new Error('Database not initialised');
 
@@ -358,7 +373,7 @@ app.whenReady().then(() => {
     const oldDiscounts = db.prepare('SELECT * FROM discounts WHERE invoice_id = ?').all(invoiceId) as any[];
     
     const updateInvoice = db.prepare(
-      'UPDATE invoices SET client_id = ?, invoice_number = ?, date = ?, due_date = ?, price = ?, gst_added = ?, display_due_date = ?, updated_at = ? WHERE id = ?'
+      'UPDATE invoices SET client_id = ?, invoice_number = ?, date = ?, due_date = ?, price = ?, gst_added = ?, display_due_date = ?, updated_at = ?, template_id = ? WHERE id = ?'
     );
     const deleteItems = db.prepare('DELETE FROM invoice_items WHERE invoice_id = ?');
     const insertItem = db.prepare(
@@ -373,7 +388,7 @@ app.whenReady().then(() => {
     );
 
     const transaction = db.transaction(() => {
-      updateInvoice.run(clientId, invoiceNumber, date, dueDate, price, gstEnabled ? 1 : 0, displayDueDate ? 1 : 0, new Date().toISOString(), invoiceId);
+      updateInvoice.run(clientId, invoiceNumber, date, dueDate, price, gstEnabled ? 1 : 0, displayDueDate ? 1 : 0, new Date().toISOString(), templateId, invoiceId);
       
       deleteItems.run(invoiceId);
       for (const item of items) {
@@ -520,12 +535,13 @@ app.whenReady().then(() => {
     price: number,
     items: Array<{ type: string; description: string; hours: number | null; rate: number; quantity: number | null; date: string | null }>,
     notes: string,
+    templateId: string,
   ): unknown => {
     if (!db) throw new Error('Database not initialised');
 
     // Persist invoice, items, and optional discount atomically
     const insertInvoice = db.prepare(
-      'INSERT INTO invoices (client_id, invoice_number, date, due_date, status, price, gst_added, display_due_date, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO invoices (client_id, invoice_number, date, due_date, status, price, gst_added, display_due_date, updated_at, template_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     const insertItem = db.prepare(
       'INSERT INTO invoice_items (invoice_id, type, description, hours, rate, quantity, date) VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -538,7 +554,7 @@ app.whenReady().then(() => {
     );
 
     const transaction = db.transaction(() => {
-      const result = insertInvoice.run(clientId, invoiceNumber, date, dueDate, 'draft', price, gstEnabled ? 1 : 0, displayDueDate ? 1 : 0, new Date().toISOString());
+      const result = insertInvoice.run(clientId, invoiceNumber, date, dueDate, 'draft', price, gstEnabled ? 1 : 0, displayDueDate ? 1 : 0, new Date().toISOString(), templateId);
       const invoiceId = result.lastInsertRowid as number;
 
       for (const item of items) {

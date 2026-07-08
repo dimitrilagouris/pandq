@@ -8,6 +8,10 @@ export default {
     extend: {
       fontFamily: {
         sans: ['"TASA Orbiter"', 'sans-serif'],
+        mono: ['"Inconsolata"', 'monospace'],
+      },
+      fontWeight: {
+        regular: '400',
       },
       colors: {
         sidebar: {

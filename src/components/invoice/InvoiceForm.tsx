@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { TbPlus, TbTrash, TbCalendar, TbUser, TbHash, TbChevronDown, TbChevronRight } from 'react-icons/tb';
+import { RiAddLine, RiDeleteBinLine, RiCalendarLine, RiUserLine, RiHashtag, RiArrowDownSLine, RiArrowRightSLine } from 'react-icons/ri';
 import { Client } from '../../types';
 import { Input } from '../Input';
 import { DatePicker } from '../DatePicker';
@@ -82,7 +82,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
           name="invoiceNumber"
           value={form.invoiceNumber}
           onChange={(val) => onChange({ invoiceNumber: val })}
-          icon={<TbHash className="w-4 h-4" />}
+          icon={<RiHashtag className="w-4 h-4" />}
           placeholder="INV-001"
         />
         <div className="grid grid-cols-2 gap-3">
@@ -124,10 +124,10 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
                 setSearchQuery('');
               }}
               placeholder="Search client by name, business..."
-              icon={<TbUser className="w-4 h-4" />}
+              icon={<RiUserLine className="w-4 h-4" />}
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">
-              <TbChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+              <RiArrowDownSLine className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
             </div>
 
             {isOpen && (
@@ -187,8 +187,8 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
           {form.items
             .filter(item => item.type === 'labour')
             .map((item) => (
-              <div 
-                key={item.id} 
+              <div
+                key={item.id}
                 className="flex flex-col gap-3 p-4 bg-stone-100 border border-stone-200/60 rounded-2xl shadow-sm"
               >
                 {/* Row 1: Description & Delete */}
@@ -208,7 +208,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
                     className="flex items-center justify-center w-10 h-10 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors border border-transparent hover:border-red-100 flex-shrink-0 mb-0.5"
                     title="Remove item"
                   >
-                    <TbTrash className="w-4.5 h-4.5" />
+                    <RiDeleteBinLine className="w-4.5 h-4.5" />
                   </button>
                 </div>
 
@@ -247,7 +247,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
             type="button"
             variant="secondary"
             size="sm"
-            leftIcon={<TbPlus className="w-3.5 h-3.5" />}
+            leftIcon={<RiAddLine className="w-3.5 h-3.5" />}
             onClick={() => addItem('labour')}
           >
             Add Labour Item
@@ -298,7 +298,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
                 onClick={() => removeItem(item.id)}
                 className="flex items-center justify-center w-8 h-8 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
               >
-                <TbTrash className="w-4 h-4" />
+                <RiDeleteBinLine className="w-4 h-4" />
               </button>
             </div>
           ))}
@@ -310,7 +310,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
             type="button"
             variant="secondary"
             size="sm"
-            leftIcon={<TbPlus className="w-3.5 h-3.5" />}
+            leftIcon={<RiAddLine className="w-3.5 h-3.5" />}
             onClick={() => addItem('materials')}
           >
             Add Material Item
@@ -329,14 +329,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
               <button
                 type="button"
                 onClick={() => onChange({ gstEnabled: !form.gstEnabled })}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out shadow-3 ${
-                  form.gstEnabled ? 'bg-stone-800' : 'bg-stone-200'
-                }`}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out shadow-3 ${form.gstEnabled ? 'bg-stone-800' : 'bg-stone-200'
+                  }`}
               >
                 <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-1 ring-0 transition duration-200 ease-in-out ${
-                    form.gstEnabled ? 'translate-x-5' : 'translate-x-0'
-                  }`}
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-1 ring-0 transition duration-200 ease-in-out ${form.gstEnabled ? 'translate-x-5' : 'translate-x-0'
+                    }`}
                 />
               </button>
               <span className="text-sm font-medium text-stone-700 ml-3 select-none">
@@ -365,9 +363,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
           className="flex items-center gap-2 text-sm font-semibold text-stone-900 w-full text-left cursor-pointer select-none border-0 bg-transparent"
         >
           {isAdditionalSettingsOpen ? (
-            <TbChevronDown className="w-4 h-4 text-stone-550" />
+            <RiArrowDownSLine className="w-4 h-4 text-stone-550" />
           ) : (
-            <TbChevronRight className="w-4 h-4 text-stone-550" />
+            <RiArrowRightSLine className="w-4 h-4 text-stone-550" />
           )}
           <span>Additional settings</span>
         </button>
@@ -381,14 +379,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
                 <button
                   type="button"
                   onClick={() => onChange({ displayDueDate: !form.displayDueDate })}
-                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out shadow-3 ${
-                    form.displayDueDate ? 'bg-stone-800' : 'bg-stone-200'
-                  }`}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out shadow-3 ${form.displayDueDate ? 'bg-stone-800' : 'bg-stone-200'
+                    }`}
                 >
                   <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-1 ring-0 transition duration-200 ease-in-out ${
-                      form.displayDueDate ? 'translate-x-5' : 'translate-x-0'
-                    }`}
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-1 ring-0 transition duration-200 ease-in-out ${form.displayDueDate ? 'translate-x-5' : 'translate-x-0'
+                      }`}
                   />
                 </button>
                 <span className="text-sm font-medium text-stone-700 ml-3 select-none">

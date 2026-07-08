@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { TbCalendar, TbChevronLeft, TbChevronRight } from 'react-icons/tb';
+import { RiCalendarLine, RiArrowLeftSLine, RiArrowRightSLine } from 'react-icons/ri';
 
 interface DatePickerProps {
   label?: string;
@@ -86,7 +86,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     if (!isOpen) return;
     const handleScroll = () => setIsOpen(false);
     const handleResize = () => setIsOpen(false);
-    
+
     window.addEventListener('scroll', handleScroll, true);
     window.addEventListener('resize', handleResize);
     return () => {
@@ -154,13 +154,13 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   // Days of the current month
   for (let day = 1; day <= daysInMonth; day++) {
     const isSelected = selectedDate.getDate() === day &&
-                       selectedDate.getMonth() === viewMonth &&
-                       selectedDate.getFullYear() === viewYear;
+      selectedDate.getMonth() === viewMonth &&
+      selectedDate.getFullYear() === viewYear;
 
     const today = new Date();
     const isToday = today.getDate() === day &&
-                    today.getMonth() === viewMonth &&
-                    today.getFullYear() === viewYear;
+      today.getMonth() === viewMonth &&
+      today.getFullYear() === viewYear;
 
     dayCells.push(
       <button
@@ -168,8 +168,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         type="button"
         onClick={() => handleSelectDay(day)}
         className={`h-8 w-8 text-xs font-medium rounded-xl flex items-center justify-center transition-all duration-100
-          ${isSelected 
-            ? 'bg-stone-900 text-stone-50 shadow-1 hover:bg-stone-950' 
+          ${isSelected
+            ? 'bg-stone-900 text-stone-50 shadow-1 hover:bg-stone-950'
             : 'text-stone-700 hover:bg-stone-200/60'
           }
           ${isToday && !isSelected ? 'border border-stone-300' : ''}
@@ -192,7 +192,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       <div className="relative w-full">
         {(() => {
           const isPlaceholder = !value;
-          const textClass = isPlaceholder ? 'text-stone-300 font-normal' : 'text-stone-900 font-medium';
+          const textClass = isPlaceholder ? 'text-stone-300 font-regular' : 'text-stone-900 font-regular';
           return (
             <button
               ref={buttonRef}
@@ -201,13 +201,13 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               className={`w-full h-10 px-3 text-left text-sm bg-white border border-transparent rounded-xl shadow-1 transition-all duration-150 focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-400 focus:ring-offset-1 flex items-center justify-between cursor-pointer ${textClass}`}
             >
               <span>{formatDisplayString(value) || 'Select date…'}</span>
-              <TbCalendar className="w-4 h-4 text-stone-400 flex-shrink-0" />
+              <RiCalendarLine className="w-4 h-4 text-stone-400 flex-shrink-0" />
             </button>
           );
         })()}
 
         {isOpen && createPortal(
-          <div 
+          <div
             ref={popupRef}
             style={{ top: coords.top, left: coords.left }}
             className="fixed z-[9999] w-64 bg-stone-100 border border-stone-200/80 rounded-2xl shadow-22 p-4 animate-in fade-in slide-in-from-top-2 duration-150 select-none"
@@ -219,9 +219,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 onClick={handlePrevMonth}
                 className="p-1 hover:bg-stone-200 rounded-lg text-stone-600 transition-colors"
               >
-                <TbChevronLeft className="w-4 h-4" />
+                <RiArrowLeftSLine className="w-4 h-4" />
               </button>
-              
+
               <span className="text-xs font-semibold text-stone-800">
                 {MONTH_NAMES[viewMonth]} {viewYear}
               </span>
@@ -231,7 +231,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 onClick={handleNextMonth}
                 className="p-1 hover:bg-stone-200 rounded-lg text-stone-600 transition-colors"
               >
-                <TbChevronRight className="w-4 h-4" />
+                <RiArrowRightSLine className="w-4 h-4" />
               </button>
             </div>
 

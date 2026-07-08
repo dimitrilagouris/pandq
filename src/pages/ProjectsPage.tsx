@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { TbPlus, TbMinus, TbSearch, TbTrash, TbReceipt, TbMail, TbDotsVertical, TbCheck } from 'react-icons/tb';
+import { RiAddLine, RiSubtractLine, RiSearchLine, RiDeleteBinLine, RiReceiptLine, RiMailLine, RiMore2Fill, RiCheckLine } from 'react-icons/ri';
 import { Invoice, Client } from '../types';
 import { Page } from '../App';
 import { InvoicePreview, computeTotals, buildTemplateData } from '../components/invoice/InvoicePreview';
@@ -9,6 +9,7 @@ import { getTemplate } from '../components/invoice/templates/registry';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Dropdown } from '../components/Dropdown';
+import { Badge } from '../components/Badge';
 
 /** Format a date string YYYY-MM-DD into a nicer layout. */
 function formatDate(dateStr: string): string {
@@ -302,7 +303,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
             <Button
               variant="secondary"
               size="sm"
-              leftIcon={<TbMail className="w-4 h-4" />}
+              leftIcon={<RiMailLine className="w-4 h-4" />}
               onClick={handleSendSelected}
               disabled={isSending}
             >
@@ -325,7 +326,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           <Button
             variant="primary"
             size="sm"
-            leftIcon={<TbPlus className="w-4 h-4" />}
+            leftIcon={<RiAddLine className="w-4 h-4" />}
             onClick={() => onNavigate('invoices')}
           >
             New Invoice
@@ -383,7 +384,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           value={search}
           onChange={setSearch}
           placeholder="Search invoices…"
-          icon={<TbSearch className="w-4 h-4" />}
+          icon={<RiSearchLine className="w-4 h-4" />}
           className="max-w-xs"
         />
       </div>
@@ -397,112 +398,111 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
 
       {/* Main 2-Column Layout */}
       <div className="flex-1 flex gap-6 overflow-hidden min-h-0 px-6 pt-2 pb-6">
-        {/* Left Column: Invoice Cards List */}
-        <div className="w-[384px] flex-shrink-0 flex flex-col gap-3 overflow-y-auto px-1 pt-1 pr-3 pb-10 custom-scrollbar">
-          {isLoading ? (
-            <div className="flex items-center justify-center h-32">
-              <p className="text-sm text-stone-400">Loading invoices…</p>
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="flex items-center justify-center h-32 border border-dashed border-stone-200 rounded-2xl">
-              <p className="text-sm text-stone-400">
-                {search ? 'No invoices match your search.' : 'No invoices yet. Add your first one!'}
-              </p>
-            </div>
-          ) : (
-            filtered.map((inv) => {
-              const parts = inv.status.split('|');
-              const status = parts[0] || 'draft';
+        {/* Left Column: Wrapper with Gradient Overlay */}
+        <div className="w-[384px] flex-shrink-0 relative flex flex-col overflow-hidden">
+          {/* Scrollable list */}
+          <div className="flex-1 flex flex-col gap-3 overflow-y-auto px-1 pt-1 pr-3 pb-24 custom-scrollbar">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <p className="text-sm text-stone-400">Loading invoices…</p>
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="flex items-center justify-center h-32 border border-dashed border-stone-200 rounded-2xl">
+                <p className="text-sm text-stone-400">
+                  {search ? 'No invoices match your search.' : 'No invoices yet. Add your first one!'}
+                </p>
+              </div>
+            ) : (
+              filtered.map((inv) => {
+                const parts = inv.status.split('|');
+                const status = parts[0] || 'draft';
 
-              let badgeClass = 'text-stone-800 bg-stone-100';
-              if (status === 'sent') {
-                badgeClass = 'text-blue-800 bg-blue-100';
-              } else if (status === 'paid') {
-                badgeClass = 'text-lime-800 bg-lime-100';
-              } else if (status === 'cancelled') {
-                badgeClass = 'text-red-800 bg-red-100';
-              }
+                // Dropdown Actions
+                const actionOptions = [
+                  { value: 'edit', label: 'Edit' },
+                  { value: 'delete', label: 'Delete', className: 'text-red-600 hover:bg-red-50' }
+                ];
 
-              // Dropdown Actions
-              const actionOptions = [
-                { value: 'edit', label: 'Edit' },
-                { value: 'delete', label: 'Delete', className: 'text-red-600 hover:bg-red-50' }
-              ];
+                const handleAction = (val: string) => {
+                  if (val === 'edit') onEditInvoice(inv.id);
+                  if (val === 'delete') handleDelete(inv);
+                };
 
-              const handleAction = (val: string) => {
-                if (val === 'edit') onEditInvoice(inv.id);
-                if (val === 'delete') handleDelete(inv);
-              };
+                const isSelected = isSelectionMode ? selectedIds.has(inv.id) : selectedPreviewId === inv.id;
 
-              const isSelected = isSelectionMode ? selectedIds.has(inv.id) : selectedPreviewId === inv.id;
+                // Last Updated date
+                let displayDate = inv.updated_at ? formatDate(inv.updated_at.split('T')[0]) : formatDate(inv.date);
 
-              // Last Updated date
-              let displayDate = inv.updated_at ? formatDate(inv.updated_at.split('T')[0]) : formatDate(inv.date);
-
-              return (
-                <div
-                  key={inv.id}
-                  onClick={() => handleCardClick(inv)}
-                  className={`border rounded-2xl p-3 shadow-sm transition-all flex flex-col justify-between relative group h-[80px] hover:z-50 focus-within:z-50 cursor-pointer hover:border-stone-300 ${isSelected ? 'z-10 bg-white border-stone-400 ring-2 ring-stone-400 ring-offset-1' : 'z-0 bg-stone-50 border-stone-200/60'
-                    }`}
-                >
-                  {/* Selection Checkbox (transitions opacity) */}
-                  <div className={`absolute top-3 left-3 z-10 transition-all duration-300 ease-out ${isSelectionMode ? 'opacity-100 pointer-events-auto scale-100' : 'opacity-0 pointer-events-none scale-95'
-                    }`}>
-                    <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${isSelected ? 'bg-stone-800 border-stone-800 text-white' : 'border-stone-300 bg-white group-hover:border-stone-400'
+                return (
+                  <div
+                    key={inv.id}
+                    onClick={() => handleCardClick(inv)}
+                    className={`scroll-animate-card border rounded-2xl p-3 shadow-sm transition-colors flex flex-col justify-between relative group h-[80px] hover:z-50 focus-within:z-50 cursor-pointer hover:border-stone-300 ${isSelected ? 'z-10 bg-white border-stone-400 ring-2 ring-stone-400 ring-offset-1' : 'z-0 bg-stone-50 border-stone-200/60'
+                      }`}
+                  >
+                    {/* Selection Checkbox (transitions opacity) */}
+                    <div className={`absolute top-3 left-3 z-10 transition-all duration-300 ease-out ${isSelectionMode ? 'opacity-100 pointer-events-auto scale-100' : 'opacity-0 pointer-events-none scale-95'
                       }`}>
-                      {isSelected && <TbCheck className="w-3.5 h-3.5" />}
+                      <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${isSelected ? 'bg-stone-800 border-stone-800 text-white' : 'border-stone-300 bg-white group-hover:border-stone-400'
+                        }`}>
+                        {isSelected && <RiCheckLine className="w-3.5 h-3.5" />}
+                      </div>
+                    </div>
+
+                    <div className={`flex flex-col h-full justify-between transition-all duration-300 ease-out ${isSelectionMode ? 'pl-8' : 'pl-0'}`}>
+                      {/* Top Row: Client Name, Status, Date */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className={`font-medium text-base truncate max-w-[120px] ${inv.client_name ? 'text-stone-900' : 'text-stone-400 italic'}`}>
+                            {inv.client_name || 'No Client'}
+                          </span>
+                          <Badge invoiceStatus={status}>
+                            {status}
+                          </Badge>
+                        </div>
+                        <span className="text-xs text-stone-400 whitespace-nowrap">
+                          {displayDate}
+                        </span>
+                      </div>
+
+                      {/* Bottom Row: Invoice ID, Client Address, More Menu */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <span className="font-normal text-stone-600 text-sm leading-none tracking-tight flex-shrink-0">
+                            {inv.invoice_number}
+                          </span>
+                          <span className="text-xs font-normal text-stone-500 truncate max-w-[160px]">
+                            {inv.client_address || ''}
+                          </span>
+                        </div>
+
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCardClick(inv);
+                          }}
+                          className={`flex-shrink-0 transition-opacity duration-300 ${isSelectionMode ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}
+                        >
+                          <Dropdown
+                            variant="badge"
+                            options={actionOptions}
+                            onSelect={handleAction}
+                            triggerLabel=""
+                            icon={<RiMore2Fill className="w-4 h-4 text-stone-550 group-hover:text-stone-800 transition-colors" />}
+                            triggerClassName="w-7 h-7 flex items-center justify-center bg-transparent border border-stone-200 shadow-sm hover:bg-stone-50 hover:border-stone-300 rounded-md cursor-pointer !p-0 [&>span]:hidden"
+                            widthClass="w-32"
+                            align="right"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
-
-                  <div className={`flex flex-col h-full justify-between transition-all duration-300 ease-out ${isSelectionMode ? 'pl-8' : 'pl-0'}`}>
-                    {/* Top Row: Client Name, Status, Date */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className={`font-medium text-base truncate max-w-[120px] ${inv.client_name ? 'text-stone-900' : 'text-stone-400 italic'}`}>
-                          {inv.client_name || 'No Client'}
-                        </span>
-                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium uppercase tracking-wide ${badgeClass}`}>
-                          {status}
-                        </span>
-                      </div>
-                      <span className="text-xs text-stone-400 whitespace-nowrap">
-                        {displayDate}
-                      </span>
-                    </div>
-
-                    {/* Bottom Row: Invoice ID, Client Address, More Menu */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        <span className="font-normal text-stone-600 text-sm leading-none tracking-tight flex-shrink-0">
-                          {inv.invoice_number}
-                        </span>
-                        <span className="text-xs font-normal text-stone-500 truncate max-w-[160px]">
-                          {inv.client_address || ''}
-                        </span>
-                      </div>
-
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        className={`flex-shrink-0 transition-opacity duration-300 ${isSelectionMode ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}
-                      >
-                        <Dropdown
-                          variant="badge"
-                          options={actionOptions}
-                          onSelect={handleAction}
-                          triggerLabel=""
-                          icon={<TbDotsVertical className="w-4 h-4 text-stone-500 group-hover:text-stone-800 transition-colors" />}
-                          triggerClassName="w-7 h-7 flex items-center justify-center bg-transparent border border-stone-200 shadow-sm hover:bg-stone-50 hover:border-stone-300 rounded-md cursor-pointer !p-0 [&>span]:hidden"
-                          widthClass="w-32"
-                          align="right"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
+                );
+              })
+            )}
+          </div>
+          {/* Bottom gradient overlay matching the background color (bg-stone-100) */}
+          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-stone-100 to-transparent pointer-events-none z-10" />
         </div>
 
         {/* Right Column: Details Pane */}
@@ -519,7 +519,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                     className="px-2 py-1.5 text-stone-600 hover:text-stone-900 transition-colors"
                     title="Zoom Out"
                   >
-                    <TbMinus className="w-3.5 h-3.5" />
+                    <RiSubtractLine className="w-3.5 h-3.5" />
                   </button>
                   <span className="w-12 text-center text-xs text-stone-700 select-none font-medium">
                     {Math.round(canvasScale * 100)}%
@@ -530,7 +530,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                     className="px-2 py-1.5 text-stone-600 hover:text-stone-900 transition-colors"
                     title="Zoom In"
                   >
-                    <TbPlus className="w-3.5 h-3.5" />
+                    <RiAddLine className="w-3.5 h-3.5" />
                   </button>
                   <button
                     type="button"
@@ -555,7 +555,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-stone-100 mb-4">
-                <TbReceipt className="w-6 h-6 text-stone-300" />
+                <RiReceiptLine className="w-6 h-6 text-stone-300" />
               </div>
               <h3 className="text-stone-500 font-medium mb-1">No invoice selected</h3>
               <p className="text-stone-400 text-sm">Select an invoice from the list to view its details</p>

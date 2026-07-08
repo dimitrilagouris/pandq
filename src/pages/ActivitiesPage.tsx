@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { TbChevronDown } from 'react-icons/tb';
+import { RiArrowDownSLine } from 'react-icons/ri';
 import { Table, ColumnDef } from '../components/Table';
 import { Input } from '../components/Input';
 import { Dropdown, DropdownOption } from '../components/Dropdown';
+import { Badge } from '../components/Badge';
 import { DatePicker } from '../components/DatePicker';
 
 interface ActivityLog {
@@ -42,8 +43,8 @@ const SearchableInvoiceDropdown: React.FC<SearchableInvoiceDropdownProps> = ({ v
     opt.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const displayValue = isOpen 
-    ? searchQuery 
+  const displayValue = isOpen
+    ? searchQuery
     : (value === 'all' ? '' : value);
 
   return (
@@ -69,7 +70,7 @@ const SearchableInvoiceDropdown: React.FC<SearchableInvoiceDropdownProps> = ({ v
           className="w-full"
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">
-          <TbChevronDown className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+          <RiArrowDownSLine className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
         </div>
 
         {isOpen && (
@@ -120,7 +121,7 @@ const SearchableInvoiceDropdown: React.FC<SearchableInvoiceDropdownProps> = ({ v
 export default function ActivitiesPage(): React.JSX.Element {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  
+
   // Advanced filters
   const [selectedInvoice, setSelectedInvoice] = useState<string>('all');
   const [activityType, setActivityType] = useState<string>('all');
@@ -174,7 +175,7 @@ export default function ActivitiesPage(): React.JSX.Element {
     if (startDate || endDate) {
       const logDate = new Date(log.timestamp.replace(' ', 'T') + 'Z');
       const timeMs = logDate.getTime();
-      
+
       if (startDate) {
         const start = new Date(startDate + 'T00:00:00');
         if (timeMs < start.getTime()) return false;
@@ -210,8 +211,8 @@ export default function ActivitiesPage(): React.JSX.Element {
             const pad = (n: number) => String(n).padStart(2, '0');
             formattedDate = `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}, ${pad(date.getHours())}:${pad(date.getMinutes())}`;
           }
-        } catch {}
-        return <span className="text-stone-500 whitespace-nowrap">{formattedDate}</span>;
+        } catch { }
+        return <span className="whitespace-nowrap">{formattedDate}</span>;
       }
     },
     {
@@ -219,7 +220,7 @@ export default function ActivitiesPage(): React.JSX.Element {
       accessor: 'invoice_number',
       width: '1.2fr',
       render: (log) => (
-        <span className="font-mono font-medium text-stone-900">{log.invoice_number || 'N/A'}</span>
+        <span>{log.invoice_number || '—'}</span>
       )
     },
     {
@@ -227,25 +228,11 @@ export default function ActivitiesPage(): React.JSX.Element {
       accessor: 'action_label',
       width: '1.5fr',
       render: (log) => {
-        let badgeClass = 'text-stone-700 bg-stone-100';
         const code = log.action_code || '';
-        
-        if (code.includes('created')) {
-          badgeClass = 'text-blue-700 bg-blue-50';
-        } else if (code.includes('updated') || code.includes('toggled')) {
-          badgeClass = 'text-purple-700 bg-purple-50';
-        } else if (code.includes('sent')) {
-          badgeClass = 'text-orange-700 bg-orange-50';
-        } else if (code.includes('status_updated')) {
-          badgeClass = 'text-lime-700 bg-lime-50';
-        } else if (code.includes('deleted') || code.includes('removed')) {
-          badgeClass = 'text-red-700 bg-red-50';
-        }
-
         return (
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium uppercase tracking-wide ${badgeClass}`}>
+          <Badge activityAction={code}>
             {log.action_label || 'Activity'}
-          </span>
+          </Badge>
         );
       }
     },
@@ -254,7 +241,7 @@ export default function ActivitiesPage(): React.JSX.Element {
       accessor: 'details',
       width: '4fr',
       render: (log) => (
-        <span className="text-stone-600 leading-normal">{log.details || ''}</span>
+        <span className="leading-normal">{log.details || ''}</span>
       )
     }
   ];

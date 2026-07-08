@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { TbPlus, TbSearch, TbTrash, TbPencil, TbUser } from 'react-icons/tb';
+import { RiAddLine, RiSearchLine, RiDeleteBinLine, RiPencilLine, RiUser3Line } from 'react-icons/ri';
 import { Client } from '../types';
 import { Table, ColumnDef } from '../components/Table';
 import { Button } from '../components/Button';
@@ -65,13 +65,28 @@ export default function ClientsPage(): React.JSX.Element {
       render: (c) => (
         <div className="flex items-center gap-3">
           <div className="flex-shrink-0 w-7 h-7 rounded-full bg-stone-200 flex items-center justify-center text-stone-500">
-            <TbUser className="w-4 h-4" />
+            <RiUser3Line className="w-4 h-4" />
           </div>
-          <span className="font-medium text-stone-900">{c.name}</span>
+          <span className="font-regular text-stone-900">{c.name}</span>
         </div>
       ),
     },
-    { key: 'business_name', header: 'Business', width: '1.5fr', sortable: true },
+    {
+      key: 'business_name',
+      header: 'Business',
+      width: '1.5fr',
+      sortable: true,
+      render: (c) => (
+        <div className="flex flex-col">
+          <span className="font-regular text-stone-900">{c.business_name || '—'}</span>
+          {c.address && (
+            <span className="text-xs text-stone-400 font-normal mt-0.5">
+              {c.address}
+            </span>
+          )}
+        </div>
+      ),
+    },
     { key: 'email', header: 'Email', width: '2fr', sortable: true },
     { key: 'phone', header: 'Phone', width: '1fr' },
     {
@@ -84,13 +99,13 @@ export default function ClientsPage(): React.JSX.Element {
             onClick={() => setModalClient(c)}
             className="p-1.5 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-lg transition-colors"
           >
-            <TbPencil className="w-4 h-4" />
+            <RiPencilLine className="w-4 h-4" />
           </button>
           <button
             onClick={() => handleDelete(c)}
             className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
           >
-            <TbTrash className="w-4 h-4" />
+            <RiDeleteBinLine className="w-4 h-4" />
           </button>
         </div>
       ),
@@ -107,7 +122,7 @@ export default function ClientsPage(): React.JSX.Element {
         </div>
         <Button
           variant="primary"
-          leftIcon={<TbPlus className="w-5 h-5" />}
+          leftIcon={<RiAddLine className="w-5 h-5" />}
           onClick={() => setModalClient(null)}
         >
           New Client
@@ -119,7 +134,7 @@ export default function ClientsPage(): React.JSX.Element {
         value={search}
         onChange={setSearch}
         placeholder="Search clients…"
-        icon={<TbSearch className="w-4 h-4" />}
+        icon={<RiSearchLine className="w-4 h-4" />}
         className="max-w-sm"
       />
 

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  TbPalette,
-  TbBuilding,
-  TbReceipt,
-  TbMail,
-  TbCreditCard,
-  TbCheck
-} from 'react-icons/tb';
+  RiPaletteLine,
+  RiBuildingLine,
+  RiReceiptLine,
+  RiMailLine,
+  RiBankCardLine,
+  RiCheckLine
+} from 'react-icons/ri';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { TemplatedInput } from '../components/TemplatedInput';
@@ -166,9 +166,9 @@ export default function SettingsPage(): React.JSX.Element {
               label="Organisation Name"
               value={orgName}
               onChange={setOrgName}
-              placeholder="e.g. Telos"
+              placeholder="e.g. PandQ"
             />
-             <Input
+            <Input
               label={
                 <span className="inline-flex items-center gap-1.5">
                   <span>Business Number / ABN</span>
@@ -198,7 +198,7 @@ export default function SettingsPage(): React.JSX.Element {
                 label="Public/Billing Email"
                 value={orgEmail}
                 onChange={setOrgEmail}
-                placeholder="e.g. accounts@telos.com"
+                placeholder="e.g. accounts@pandq.com"
                 type="email"
               />
             </div>
@@ -230,7 +230,7 @@ export default function SettingsPage(): React.JSX.Element {
             />
 
             {/* Toggle: Default GST Enabled */}
-             <div className="flex items-center justify-between py-2.5 border-b border-stone-100">
+            <div className="flex items-center justify-between py-2.5 border-b border-stone-100">
               <div className="flex flex-col gap-0.5 max-w-[80%]">
                 <span className="text-sm font-medium text-stone-700 inline-flex items-center gap-1.5">
                   <span>Enable GST by default</span>
@@ -287,11 +287,10 @@ export default function SettingsPage(): React.JSX.Element {
                       key={t.id}
                       type="button"
                       onClick={() => setDefaultTemplateId(t.id)}
-                      className={`flex flex-col text-left rounded-xl border p-4 transition-all duration-200 cursor-pointer ${
-                        isSelected
+                      className={`flex flex-col text-left rounded-xl border p-4 transition-all duration-200 cursor-pointer ${isSelected
                           ? 'border-stone-800 bg-stone-50/50 shadow-sm ring-1 ring-stone-800'
                           : 'border-stone-200 bg-white hover:border-stone-400 hover:shadow-sm'
-                      }`}
+                        }`}
                     >
                       {/* Mini visual mockup of the template */}
                       <div className="h-24 w-full rounded-lg bg-stone-50 border border-stone-200/60 overflow-hidden mb-3 flex flex-col relative">
@@ -363,15 +362,15 @@ export default function SettingsPage(): React.JSX.Element {
                             </div>
                           </>
                         )}
-                        
+
                         {/* Selected overlay check badge */}
                         {isSelected && (
                           <span className="absolute top-2 right-2 bg-stone-800 text-white rounded-full p-0.5 flex items-center justify-center shadow-sm">
-                            <TbCheck className="w-2.5 h-2.5" />
+                            <RiCheckLine className="w-2.5 h-2.5" />
                           </span>
                         )}
                       </div>
-                      
+
                       <span className="text-xs font-semibold text-stone-900">{t.name}</span>
                       <span className="text-[10px] text-stone-500 mt-1 line-clamp-2 leading-relaxed">{t.description}</span>
                     </button>
@@ -388,9 +387,9 @@ export default function SettingsPage(): React.JSX.Element {
               label="Default Sender Name"
               value={senderName}
               onChange={setSenderName}
-              placeholder="e.g. Telos Billing"
+              placeholder="e.g. PandQ Billing"
             />
-             <TemplatedInput
+            <TemplatedInput
               label={
                 <span className="inline-flex items-center gap-1.5">
                   <span>Default Subject Template</span>
@@ -439,7 +438,7 @@ export default function SettingsPage(): React.JSX.Element {
                 placeholder="e.g. 1234 5678"
               />
             </div>
-             <Input
+            <Input
               label={
                 <span className="inline-flex items-center gap-1.5">
                   <span>Additional Payment Instructions</span>
@@ -470,24 +469,24 @@ export default function SettingsPage(): React.JSX.Element {
           <nav className="flex flex-col gap-0.5">
             <button
               onClick={() => { setActiveTab('organisation'); setSaveSuccess(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-regular text-left
                 ${activeTab === 'organisation'
                   ? 'bg-stone-200 text-stone-900'
                   : 'text-stone-600 hover:bg-stone-200/50 hover:text-stone-900'}
               `}
             >
-              <TbBuilding className={`w-4 h-4 flex-shrink-0 ${activeTab === 'organisation' ? 'text-stone-900' : 'text-stone-400'}`} />
+              <RiBuildingLine className={`w-4 h-4 flex-shrink-0 ${activeTab === 'organisation' ? 'text-stone-900' : 'text-stone-400'}`} />
               <span>My Organisation</span>
             </button>
             <button
               onClick={() => { setActiveTab('payment'); setSaveSuccess(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-regular text-left
                 ${activeTab === 'payment'
                   ? 'bg-stone-200 text-stone-900'
                   : 'text-stone-600 hover:bg-stone-200/50 hover:text-stone-900'}
               `}
             >
-              <TbCreditCard className={`w-4 h-4 flex-shrink-0 ${activeTab === 'payment' ? 'text-stone-900' : 'text-stone-400'}`} />
+              <RiBankCardLine className={`w-4 h-4 flex-shrink-0 ${activeTab === 'payment' ? 'text-stone-900' : 'text-stone-400'}`} />
               <span>Payment Details</span>
             </button>
           </nav>
@@ -501,35 +500,35 @@ export default function SettingsPage(): React.JSX.Element {
           <nav className="flex flex-col gap-0.5">
             <button
               onClick={() => { setActiveTab('personalisation'); setSaveSuccess(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-regular text-left
                 ${activeTab === 'personalisation'
                   ? 'bg-stone-200 text-stone-900'
                   : 'text-stone-600 hover:bg-stone-200/50 hover:text-stone-900'}
               `}
             >
-              <TbPalette className={`w-4 h-4 flex-shrink-0 ${activeTab === 'personalisation' ? 'text-stone-900' : 'text-stone-400'}`} />
+              <RiPaletteLine className={`w-4 h-4 flex-shrink-0 ${activeTab === 'personalisation' ? 'text-stone-900' : 'text-stone-400'}`} />
               <span>Personalisation</span>
             </button>
             <button
               onClick={() => { setActiveTab('invoice'); setSaveSuccess(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-regular text-left
                 ${activeTab === 'invoice'
                   ? 'bg-stone-200 text-stone-900'
                   : 'text-stone-600 hover:bg-stone-200/50 hover:text-stone-900'}
               `}
             >
-              <TbReceipt className={`w-4 h-4 flex-shrink-0 ${activeTab === 'invoice' ? 'text-stone-900' : 'text-stone-400'}`} />
+              <RiReceiptLine className={`w-4 h-4 flex-shrink-0 ${activeTab === 'invoice' ? 'text-stone-900' : 'text-stone-400'}`} />
               <span>Invoice Creation</span>
             </button>
             <button
               onClick={() => { setActiveTab('email'); setSaveSuccess(false); }}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium text-left
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 text-sm font-regular text-left
                 ${activeTab === 'email'
                   ? 'bg-stone-200 text-stone-900'
                   : 'text-stone-600 hover:bg-stone-200/50 hover:text-stone-900'}
               `}
             >
-              <TbMail className={`w-4 h-4 flex-shrink-0 ${activeTab === 'email' ? 'text-stone-900' : 'text-stone-400'}`} />
+              <RiMailLine className={`w-4 h-4 flex-shrink-0 ${activeTab === 'email' ? 'text-stone-900' : 'text-stone-400'}`} />
               <span>Email Preference</span>
             </button>
           </nav>
@@ -558,25 +557,25 @@ export default function SettingsPage(): React.JSX.Element {
           </div>
 
           <div className="flex items-center gap-3">
-              {/* Animated slide-out "Settings saved" indicator */}
-              {saveSuccess && (
-                <div className="flex items-center gap-2 animate-slide-out-right select-none">
-                  <div className="w-5 h-5 rounded-full bg-lime-100 flex items-center justify-center flex-shrink-0 animate-pop-in">
-                    <svg className="w-3 h-3 text-lime-600" viewBox="0 0 12 10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="1.5 5 4.5 8 10.5 2" className="animate-draw-check" />
-                    </svg>
-                  </div>
-                  <span className="text-xs text-lime-600 font-medium">Settings saved</span>
+            {/* Animated slide-out "Settings saved" indicator */}
+            {saveSuccess && (
+              <div className="flex items-center gap-2 animate-slide-out-right select-none">
+                <div className="w-5 h-5 rounded-full bg-lime-100 flex items-center justify-center flex-shrink-0 animate-pop-in">
+                  <svg className="w-3 h-3 text-lime-600" viewBox="0 0 12 10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="1.5 5 4.5 8 10.5 2" className="animate-draw-check" />
+                  </svg>
                 </div>
-              )}
-              <Button
-                variant={saveSuccess ? 'secondary' : 'primary'}
-                onClick={handleSave}
-                disabled={isSaving}
-              >
-                {isSaving ? 'Saving...' : 'Save settings'}
-              </Button>
-            </div>
+                <span className="text-xs text-lime-600 font-medium">Settings saved</span>
+              </div>
+            )}
+            <Button
+              variant={saveSuccess ? 'secondary' : 'primary'}
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? 'Saving...' : 'Save settings'}
+            </Button>
+          </div>
         </div>
 
         <div className="flex-1">

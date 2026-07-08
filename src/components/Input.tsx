@@ -62,7 +62,7 @@ export const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputPro
   }, [value, multiline, autoGrow]);
 
   const wrapperClass = `flex flex-col gap-1 w-full ${className}`.trim();
-  const inputBaseClass = `w-full px-3 py-2 text-sm text-stone-900 bg-white border rounded-xl shadow-1 transition-all duration-150 focus:outline-none placeholder-stone-300 disabled:opacity-50 disabled:bg-stone-100/50
+  const inputBaseClass = `w-full px-3 py-2 text-sm font-regular text-stone-900 bg-white border rounded-xl shadow-1 transition-all duration-150 focus:outline-none placeholder-stone-300 disabled:opacity-50 disabled:bg-stone-100/50
     ${error
       ? 'border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-400 focus:ring-offset-1'
       : 'border-transparent focus:border-stone-400 focus:ring-2 focus:ring-stone-400 focus:ring-offset-1'

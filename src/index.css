@@ -1,4 +1,3 @@
-@import '@fontsource-variable/tasa-orbiter';
 @import './shadows.css';
 
 @tailwind base;
@@ -24,7 +23,9 @@ body {
   user-select: none;
 }
 
-input, textarea, [contenteditable="true"] {
+input,
+textarea,
+[contenteditable="true"] {
   -webkit-user-select: text;
   user-select: text;
 }
@@ -45,6 +46,7 @@ input, textarea, [contenteditable="true"] {
     opacity: 0;
     transform: translateX(12px);
   }
+
   100% {
     width: 122px;
     opacity: 1;
@@ -61,9 +63,20 @@ input, textarea, [contenteditable="true"] {
 
 /* Settings save: bouncy pop-in for the tick circle */
 @keyframes pop-in {
-  0% { transform: scale(0); opacity: 0; }
-  70% { transform: scale(1.15); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  70% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .animate-slide-out-right {
@@ -98,13 +111,11 @@ input, textarea, [contenteditable="true"] {
   right: 0;
   bottom: 0;
   pointer-events: none;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent,
-    transparent calc(297mm - 1px),
-    #cbd5e1 calc(297mm - 1px),
-    #cbd5e1 297mm
-  );
+  background-image: repeating-linear-gradient(to bottom,
+      transparent,
+      transparent calc(297mm - 1px),
+      #cbd5e1 calc(297mm - 1px),
+      #cbd5e1 297mm);
   background-size: 100% 297mm;
   z-index: 20;
 }
@@ -131,4 +142,32 @@ input, textarea, [contenteditable="true"] {
   left: 0;
   transform-origin: 0 0;
   will-change: transform;
+}
+
+/* Scroll-driven card entrance and exit animations */
+@keyframes card-scroll-in-out {
+  0% {
+    transform: scale(0.94);
+    opacity: 0.5;
+  }
+  12%, 88% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.94);
+    opacity: 0.5;
+  }
+}
+
+.scroll-animate-card {
+  animation: card-scroll-in-out linear both;
+  animation-timeline: view();
+  animation-range: entry 0% exit 100%;
+  will-change: transform, opacity;
+}
+
+/* Ensure the card containing the open dropdown sits on top of all other cards and hover effects */
+.scroll-animate-card:has(.dropdown-menu-open) {
+  z-index: 60 !important;
 }

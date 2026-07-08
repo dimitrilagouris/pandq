@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { TbArrowUp, TbArrowDown, TbArrowsUpDown, TbMinus } from 'react-icons/tb';
+import { RiArrowUpLine, RiArrowDownLine, RiArrowUpDownLine, RiSubtractLine } from 'react-icons/ri';
 
 export interface ColumnDef<T> {
   key: keyof T | string;
@@ -194,7 +194,7 @@ const Checkbox: React.FC<CheckboxProps> = ({ checked, indeterminate, onChange })
         }`}
     >
       {indeterminate && !checked
-        ? <TbMinus className="w-3 h-3" strokeWidth={3} />
+        ? <RiSubtractLine className="w-3 h-3" />
         : checked
           ? <svg viewBox="0 0 10 8" className="w-2.5 h-2.5 fill-none stroke-current" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 4 7 9 1" /></svg>
           : null}
@@ -209,9 +209,9 @@ interface SortIconProps {
 
 const SortIcon: React.FC<SortIconProps> = ({ sortKey, sort }) => {
   if (sort?.key !== sortKey) {
-    return <TbArrowsUpDown className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />;
+    return <RiArrowUpDownLine className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />;
   }
   return sort.dir === 'asc'
-    ? <TbArrowUp className="w-3 h-3 text-stone-700" />
-    : <TbArrowDown className="w-3 h-3 text-stone-700" />;
+    ? <RiArrowUpLine className="w-3 h-3 text-stone-700" />
+    : <RiArrowDownLine className="w-3 h-3 text-stone-700" />;
 };

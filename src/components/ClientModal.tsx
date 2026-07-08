@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Client } from '../types';
 import { Input } from './Input';
 import { Button } from './Button';
-import { TbX, TbChevronDown, TbUser, TbBuilding, TbPhone, TbMail, TbMapPin } from 'react-icons/tb';
+import { RiCloseLine, RiArrowDownSLine, RiUser3Line, RiBuildingLine, RiPhoneLine, RiMailLine, RiMapPinLine } from 'react-icons/ri';
 
 interface ClientFormData {
   name: string;
@@ -109,16 +109,16 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
     /* Backdrop (no blur, no click-outside close) */
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/40">
       <div
-        className="w-full max-w-md bg-stone-100 border border-stone-200/80 rounded-2xl shadow-22 mx-4 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        className="w-full max-w-md bg-stone-100 border border-stone-200/80 rounded-2xl shadow-22 mx-4 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-[14px]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-2">
-          <h2 className="text-base font-semibold text-stone-900">
+          <h2 className="text-[20px] font-semibold text-stone-900">
             {isEditing ? 'Edit Client' : 'New Client'}
           </h2>
           <button onClick={onClose} className="text-stone-400 hover:text-stone-600 transition-colors">
-            <TbX className="w-5 h-5" />
+            <RiCloseLine className="w-5 h-5" />
           </button>
         </div>
 
@@ -134,7 +134,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
             <Input
               label={
                 <span className="inline-flex items-center gap-1.5">
-                  <TbUser className="w-3.5 h-3.5 text-stone-450" />
+                  <RiUser3Line className="w-3.5 h-3.5 text-stone-450" />
                   <span>Name</span>
                 </span>
               }
@@ -148,7 +148,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
             <Input
               label={
                 <span className="inline-flex items-center gap-1.5">
-                  <TbBuilding className="w-3.5 h-3.5 text-stone-450" />
+                  <RiBuildingLine className="w-3.5 h-3.5 text-stone-450" />
                   <span>Business Name</span>
                 </span>
               }
@@ -159,7 +159,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
 
             <div className="flex flex-col gap-1 w-full">
               <label htmlFor="phone" className="text-xs font-medium text-stone-500 tracking-wide inline-flex items-center gap-1.5">
-                <TbPhone className="w-3.5 h-3.5 text-stone-450" />
+                <RiPhoneLine className="w-3.5 h-3.5 text-stone-450" />
                 <span>Phone</span>
               </label>
               <div className="flex gap-2">
@@ -167,7 +167,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
                   <select
                     value={countryCode}
                     onChange={(e) => setCountryCode(e.target.value)}
-                    className="h-9 px-3 text-sm text-stone-900 bg-white border border-transparent rounded-xl shadow-1 focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-400 focus:ring-offset-1 appearance-none pr-8 cursor-pointer transition-all duration-150"
+                    className="h-9 px-3 text-[14px] text-stone-900 bg-white border border-transparent rounded-xl shadow-1 focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-400 focus:ring-offset-1 appearance-none pr-8 cursor-pointer transition-all duration-150"
                   >
                     <option value="+61">🇦🇺 +61</option>
                     <option value="+1">🇺🇸 +1</option>
@@ -176,7 +176,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
                     <option value="+81">🇯🇵 +81</option>
                   </select>
                   <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-stone-400">
-                    <TbChevronDown className="w-4 h-4" />
+                    <RiArrowDownSLine className="w-4 h-4" />
                   </div>
                 </div>
                 <Input
@@ -193,7 +193,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
             <Input
               label={
                 <span className="inline-flex items-center gap-1.5">
-                  <TbMail className="w-3.5 h-3.5 text-stone-450" />
+                  <RiMailLine className="w-3.5 h-3.5 text-stone-450" />
                   <span>Email</span>
                 </span>
               }
@@ -206,7 +206,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
             <Input
               label={
                 <span className="inline-flex items-center gap-1.5">
-                  <TbMapPin className="w-3.5 h-3.5 text-stone-450" />
+                  <RiMapPinLine className="w-3.5 h-3.5 text-stone-450" />
                   <span>Address</span>
                 </span>
               }
@@ -224,6 +224,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
             <Button
               variant="secondary"
               type="button"
+              size="sm"
               onClick={onClose}
             >
               Cancel
@@ -231,6 +232,7 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
             <Button
               variant="primary"
               type="submit"
+              size="sm"
               disabled={isSaving}
             >
               {isSaving ? 'Saving…' : isEditing ? 'Save Changes' : 'Continue'}

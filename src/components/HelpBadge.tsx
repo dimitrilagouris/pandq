@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TbHelpCircle } from 'react-icons/tb';
+import { RiQuestionLine } from 'react-icons/ri';
 
 interface HelpBadgeProps {
   tooltipText: string;
@@ -29,11 +29,11 @@ export const HelpBadge: React.FC<HelpBadgeProps> = ({ tooltipText, onClick }) =>
         onKeyDown={handleKeyDown}
         aria-label="Help information"
       >
-        <TbHelpCircle className="w-3.5 h-3.5" />
+        <RiQuestionLine className="w-3.5 h-3.5" />
       </button>
 
       {showTooltip && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-stone-900 text-white text-[11px] leading-normal rounded-xl p-2.5 shadow-22 z-50 text-center animate-in fade-in zoom-in-95 duration-100 pointer-events-none">
+        <div className="font-light absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-stone-900 text-white text-[11px] leading-normal rounded-xl p-2.5 shadow-22 z-50 text-center animate-in fade-in zoom-in-95 duration-100 pointer-events-none">
           <div>{tooltipText}</div>
           {onClick && (
             <div className="mt-1 font-semibold text-stone-300 border-t border-white/10 pt-1 text-[10px]">

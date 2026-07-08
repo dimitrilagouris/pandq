@@ -102,12 +102,12 @@ export default function App(): React.JSX.Element {
       {showDiscardModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/40">
           <div
-            className="w-full max-w-sm bg-stone-100 border border-stone-200/80 rounded-2xl shadow-22 mx-4 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+            className="w-full max-w-sm bg-stone-100 border border-stone-200/80 rounded-2xl shadow-22 mx-4 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-[14px]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6 flex flex-col gap-2">
-              <h3 className="text-base font-semibold text-stone-900">Unsaved Changes</h3>
-              <p className="text-xs text-stone-500 leading-relaxed">
+              <h3 className="text-[20px] font-semibold text-stone-900">Unsaved Changes</h3>
+              <p className="text-[14px] text-stone-500 leading-relaxed">
                 You have unsaved changes on this invoice. If you leave now, your changes will be discarded.
               </p>
             </div>
@@ -115,6 +115,7 @@ export default function App(): React.JSX.Element {
               <Button
                 variant="secondary"
                 type="button"
+                size="sm"
                 onClick={() => setShowDiscardModal(false)}
               >
                 Keep Editing
@@ -122,6 +123,7 @@ export default function App(): React.JSX.Element {
               <Button
                 variant="danger"
                 type="button"
+                size="sm"
                 onClick={() => {
                   setHasUnsavedChanges(false);
                   setShowDiscardModal(false);

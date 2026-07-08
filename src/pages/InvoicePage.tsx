@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { TbMail, TbFileText, TbDeviceFloppy, TbArrowUpRight, TbChevronRight, TbPlus, TbMinus } from 'react-icons/tb';
+import { RiMailLine, RiFileTextLine, RiSaveLine, RiShareBoxLine, RiArrowRightSLine, RiAddLine, RiSubtractLine } from 'react-icons/ri';
 import { Client } from '../types';
 import { Button } from '../components/Button';
 import { InvoiceForm } from '../components/invoice/InvoiceForm';
@@ -507,11 +507,11 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
             >
               Invoices
             </span>
-            <TbChevronRight className="w-3 h-3 text-stone-300" />
+            <RiArrowRightSLine className="w-3 h-3 text-stone-300" />
             <span className="text-stone-500">Create</span>
           </div>
           {/* Title */}
-          <h1 className="text-xl font-bold text-stone-900 mt-1 select-none">
+          <h1 className="text-xl font-semibold text-stone-900 mt-1 select-none">
             Create New Invoice
           </h1>
         </div>
@@ -524,7 +524,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           <Button
             variant="secondary"
             size="sm"
-            leftIcon={<TbDeviceFloppy className="w-4 h-4" />}
+            leftIcon={<RiSaveLine className="w-4 h-4" />}
             onClick={() => handleSave('draft')}
             disabled={isSaving}
           >
@@ -533,7 +533,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           <Button
             variant="primary"
             size="sm"
-            leftIcon={<TbArrowUpRight className="w-4 h-4" />}
+            leftIcon={<RiShareBoxLine className="w-4 h-4" />}
             onClick={exportType === 'email' ? handleSendEmail : handleExportPDF}
             disabled={isSaving}
           >
@@ -579,7 +579,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
                   className="px-2 py-1.5 text-stone-600 hover:text-stone-900 transition-colors"
                   title="Zoom Out"
                 >
-                  <TbMinus className="w-3.5 h-3.5" />
+                  <RiSubtractLine className="w-3.5 h-3.5" />
                 </button>
                 <span className="w-12 text-center text-xs text-stone-700 select-none font-medium">
                   {Math.round(canvasScale * 100)}%
@@ -590,7 +590,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
                   className="px-2 py-1.5 text-stone-600 hover:text-stone-900 transition-colors"
                   title="Zoom In"
                 >
-                  <TbPlus className="w-3.5 h-3.5" />
+                  <RiAddLine className="w-3.5 h-3.5" />
                 </button>
                 <button
                   type="button"
@@ -614,7 +614,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
                     : 'text-stone-500 hover:text-stone-900'
                     }`}
                 >
-                  <TbMail className="w-3.5 h-3.5" />
+                  <RiMailLine className="w-3.5 h-3.5" />
                   <span>Email</span>
                 </button>
                 <button
@@ -625,7 +625,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
                     : 'text-stone-500 hover:text-stone-900'
                     }`}
                 >
-                  <TbFileText className="w-3.5 h-3.5" />
+                  <RiFileTextLine className="w-3.5 h-3.5" />
                   <span>PDF</span>
                 </button>
               </div>

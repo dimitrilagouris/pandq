@@ -701,6 +701,22 @@ app.whenReady().then(() => {
     `).all();
   });
 
+  ipcMain.handle('db-get-invoice-activity-logs', (_event, invoiceId: number): unknown[] => {
+    if (!db) throw new Error('Database not initialised');
+    return db.prepare(`
+      SELECT 
+        l.*, 
+        a.label AS action_label, 
+        a.category AS action_category,
+        i.status AS invoice_status
+      FROM activity_logs l
+      LEFT JOIN activity_actions a ON l.action_code = a.code
+      LEFT JOIN invoices i ON l.invoice_id = i.id
+      WHERE l.invoice_id = ?
+      ORDER BY l.id DESC LIMIT 100
+    `).all(invoiceId);
+  });
+
   ipcMain.handle('email-invoice', async (
     _event,
     invoiceNumber: string,

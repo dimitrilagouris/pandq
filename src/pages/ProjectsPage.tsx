@@ -10,6 +10,7 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Dropdown } from '../components/Dropdown';
 import { Badge } from '../components/Badge';
+import { InvoiceHistoryModal } from '../components/invoice/InvoiceHistoryModal';
 
 /** Format a date string YYYY-MM-DD into a nicer layout. */
 function formatDate(dateStr: string): string {
@@ -52,6 +53,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
   const [previewForm, setPreviewForm] = useState<InvoiceFormState | null>(null);
   const [previewClient, setPreviewClient] = useState<Client | null>(null);
   const [canvasScale, setCanvasScale] = useState(0.85);
+  const [historyInvoiceId, setHistoryInvoiceId] = useState<number | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -419,12 +421,14 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
 
                 // Dropdown Actions
                 const actionOptions = [
+                  { value: 'history', label: 'View History' },
                   { value: 'edit', label: 'Edit' },
                   ...(status !== 'paid' ? [{ value: 'mark_paid', label: 'Mark as paid' }] : []),
                   { value: 'delete', label: 'Delete', className: 'text-red-600 hover:bg-red-50' }
                 ];
 
                 const handleAction = async (val: string) => {
+                  if (val === 'history') setHistoryInvoiceId(inv.id);
                   if (val === 'edit') onEditInvoice(inv.id);
                   if (val === 'delete') handleDelete(inv);
                   if (val === 'mark_paid') {
@@ -497,7 +501,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                             options={actionOptions}
                             onSelect={handleAction}
                             triggerLabel=""
-                            icon={<RiMore2Fill className="w-4 h-4 text-stone-550 group-hover:text-stone-800 transition-colors" />}
+                            icon={<RiMore2Fill className="w-4 h-4 text-stone-500 group-hover:text-stone-800 transition-colors" />}
                             triggerClassName="w-7 h-7 flex items-center justify-center bg-transparent border border-stone-200 shadow-sm hover:bg-stone-50 hover:border-stone-300 rounded-md cursor-pointer !p-0 [&>span]:hidden"
                             widthClass="w-32"
                             align="right"
@@ -562,15 +566,21 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-stone-50/50">
               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-stone-100 mb-4">
-                <RiReceiptLine className="w-6 h-6 text-stone-300" />
+                <RiReceiptLine className="w-8 h-8 text-stone-300" />
               </div>
               <h3 className="text-stone-500 font-medium mb-1">No invoice selected</h3>
-              <p className="text-stone-400 text-sm">Select an invoice from the list to view its details</p>
+              <p className="text-stone-400 text-sm mt-1">Select an invoice from the list to view its details</p>
             </div>
           )}
         </div>
+          {historyInvoiceId && (
+            <InvoiceHistoryModal
+              invoiceId={historyInvoiceId}
+              onClose={() => setHistoryInvoiceId(null)}
+            />
+          )}
       </div>
     </div>
   );

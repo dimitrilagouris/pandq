@@ -106,4 +106,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getActivityLogs: (): Promise<unknown[]> => {
     return ipcRenderer.invoke('db-get-activity-logs');
   },
+  getInvoiceActivityLogs: (invoiceId: number): Promise<unknown[]> => {
+    return ipcRenderer.invoke('db-get-invoice-activity-logs', invoiceId);
+  },
 });

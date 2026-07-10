@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { RiAddLine, RiDeleteBinLine, RiPencilLine, RiDraggable, RiUserLine, RiHashtag, RiArrowDownSLine } from 'react-icons/ri';
+import { RiAddLine, RiDeleteBinLine, RiPencilLine, RiDraggable, RiUserLine, RiHashtag, RiArrowDownSLine, RiCheckLine, RiCalendarEventLine, RiTimeLine, RiMoneyDollarCircleLine, RiArchiveLine } from 'react-icons/ri';
 import {
   DndContext,
   closestCenter,
@@ -25,6 +25,7 @@ import { Dropdown } from '../Dropdown';
 import { Button } from '../Button';
 import { InvoiceFormState, LineItem } from './invoiceTypes';
 import { templates } from './templates/registry';
+import { TemplateSelector } from './TemplateSelector';
 
 interface InvoiceFormProps {
   form: InvoiceFormState;
@@ -56,6 +57,13 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  
+  // Section toggle states
+  const [isDetailsOpen, setIsDetailsOpen] = useState(true);
+  const [isItemsOpen, setIsItemsOpen] = useState(true);
+  const [isTemplateOpen, setIsTemplateOpen] = useState(true);
+  const [isOptionsOpen, setIsOptionsOpen] = useState(true);
+  
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(
@@ -129,8 +137,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
     }
   };
 
-  const templateOptions = templates.map(t => ({ value: t.id, label: t.name }));
-  const selectedTemplateName = templates.find(t => t.id === form.templateId)?.name || 'Classic';
+
 
   const labourItems = form.items.filter(item => item.type === 'labour');
   const materialItems = form.items.filter(item => item.type === 'materials');
@@ -139,72 +146,57 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
     <div className="flex flex-col gap-5">
       {/* ── Invoice Details ── */}
       <div className="flex flex-col gap-3">
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            label="Invoice number"
-            name="invoiceNumber"
-            value={form.invoiceNumber}
-            onChange={(val) => onChange({ invoiceNumber: val })}
-            icon={<RiHashtag className="w-4 h-4" />}
-            placeholder="INV-001"
-          />
-          <Dropdown
-            options={templateOptions}
-            onSelect={(val) => onChange({ templateId: val })}
-            triggerLabel={selectedTemplateName}
-            variant="input"
-            value={form.templateId}
-            placeholder="Select template…"
-            widthClass="w-full"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <DatePicker
-            label="Date issued"
-            value={form.dateIssued}
-            onChange={(val) => onChange({ dateIssued: val })}
-          />
-          <div className="flex flex-col gap-1">
-            <DatePicker
-              label="Due date"
-              value={form.dueDate}
-              onChange={(val) => onChange({ dueDate: val })}
-            />
-            <label className="flex items-center gap-2 cursor-pointer select-none mt-1 pl-0.5">
-              <button
-                type="button"
-                onClick={() => onChange({ displayDueDate: !form.displayDueDate })}
-                className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${form.displayDueDate ? 'bg-stone-800' : 'bg-stone-300'}`}
-              >
-                <span className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${form.displayDueDate ? 'translate-x-3' : 'translate-x-0'}`} />
-              </button>
-              <span className="text-[11px] text-stone-450 font-regular">
-                {form.displayDueDate ? 'Shown on invoice' : 'Hidden from invoice'}
-              </span>
-            </label>
-          </div>
-        </div>
-
+        <button type="button" onClick={() => setIsDetailsOpen(!isDetailsOpen)} className="flex items-center justify-between group outline-none w-full">
+          <h2 className="text-base text-black font-medium">Invoice Details</h2>
+          <RiArrowDownSLine className={`w-5 h-5 text-stone-400 transition-transform ${isDetailsOpen ? 'rotate-180' : ''}`} />
+        </button>
+        {isDetailsOpen && (
+          <div className="flex flex-col gap-3">
         {/* Client selector */}
         <div className="flex flex-col gap-1 w-full" ref={dropdownRef}>
-          <label className="text-xs font-medium text-stone-500 tracking-wide">Client</label>
+          <label className="text-xs font-medium text-stone-500 tracking-wide">Bill To</label>
           <div className="relative">
-            <Input
-              value={isOpen ? searchQuery : (selectedClient ? (selectedClient.business_name ? `${selectedClient.name} · ${selectedClient.business_name}` : selectedClient.name) : '')}
-              onChange={(val) => {
-                setSearchQuery(val);
-                if (!isOpen) setIsOpen(true);
+            <div 
+              className={`w-full bg-white border rounded-xl shadow-1 p-3 flex items-center gap-3 transition-all cursor-text ${isOpen ? 'border-stone-400 ring-2 ring-stone-400 ring-offset-1' : 'border-transparent hover:border-stone-300'}`}
+              onClick={() => {
+                if (!isOpen) {
+                  setIsOpen(true);
+                  setSearchQuery('');
+                }
               }}
-              onFocus={() => {
-                setIsOpen(true);
-                setSearchQuery('');
-              }}
-              placeholder="Search client by name, business..."
-              icon={<RiUserLine className="w-4 h-4" />}
-            />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none">
-              <RiArrowDownSLine className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+            >
+              <div className="w-10 h-10 rounded-full bg-stone-200 flex items-center justify-center flex-shrink-0">
+                {(!isOpen && selectedClient) ? (
+                  <span className="text-stone-500 font-medium text-sm">{selectedClient.name.charAt(0).toUpperCase()}</span>
+                ) : (
+                  <RiUserLine className="w-5 h-5 text-stone-400" />
+                )}
+              </div>
+              <div className="flex flex-col flex-1 min-w-0 justify-center">
+                {(!isOpen && selectedClient) ? (
+                  <div className="flex flex-col cursor-pointer">
+                    <span className="text-sm font-medium text-stone-900 truncate">{selectedClient.business_name || selectedClient.name}</span>
+                    {(selectedClient.email || selectedClient.address) && (
+                      <span className="text-xs text-stone-500 truncate mt-0.5">
+                        {[selectedClient.email, selectedClient.address].filter(Boolean).join(' • ')}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    className="w-full bg-transparent outline-none text-sm font-regular text-stone-900 placeholder-stone-400"
+                    placeholder={selectedClient ? "Search to change client..." : "Search client by name, business..."}
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      if (!isOpen) setIsOpen(true);
+                    }}
+                    autoFocus
+                  />
+                )}
+              </div>
+              <RiArrowDownSLine className={`w-4 h-4 text-stone-400 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
             </div>
 
             {isOpen && (
@@ -239,28 +231,57 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
               </div>
             )}
           </div>
-
-          {selectedClient && (
-            <div className="mt-1 rounded-xl bg-stone-200 px-4 py-2.5 flex flex-col gap-0.5">
-              <span className="text-sm font-medium text-stone-950">
-                {selectedClient.business_name || selectedClient.name}
-              </span>
-              {selectedClient.email && (
-                <span className="text-xs text-stone-600">{selectedClient.email}</span>
-              )}
-              {selectedClient.address && (
-                <span className="text-xs text-stone-600">{selectedClient.address}</span>
-              )}
-            </div>
-          )}
         </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            label="Invoice number"
+            name="invoiceNumber"
+            value={form.invoiceNumber}
+            onChange={(val) => onChange({ invoiceNumber: val })}
+            icon={<RiHashtag className="w-4 h-4" />}
+            placeholder="INV-001"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <DatePicker
+            label="Date issued"
+            value={form.dateIssued}
+            onChange={(val) => onChange({ dateIssued: val })}
+          />
+          <DatePicker
+            label="Due date"
+            value={form.dueDate}
+            onChange={(val) => onChange({ dueDate: val })}
+          />
+        </div>
+        </div>
+        )}
       </div>
 
       {/* ── Divider ── */}
       <div className="h-px bg-stone-200/80" />
 
       {/* ── Line Items ── */}
-      <DndContext
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between group cursor-pointer outline-none w-full" onClick={() => setIsItemsOpen(!isItemsOpen)}>
+          <div className="flex items-center gap-4">
+            <h2 className="text-base text-black font-medium select-none">Invoice Items</h2>
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="ghost" size="sm" leftIcon={<RiAddLine className="w-3.5 h-3.5" />} onClick={(e) => { e.stopPropagation(); addItem('labour'); }}>
+                Labour
+              </Button>
+              <Button type="button" variant="ghost" size="sm" leftIcon={<RiAddLine className="w-3.5 h-3.5" />} onClick={(e) => { e.stopPropagation(); addItem('materials'); }}>
+                Material
+              </Button>
+            </div>
+          </div>
+          <RiArrowDownSLine className={`w-5 h-5 text-stone-400 transition-transform ${isItemsOpen ? 'rotate-180' : ''}`} />
+        </div>
+        {isItemsOpen && (
+          <div className="flex flex-col gap-3">
+            <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
@@ -310,58 +331,97 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
             </div>
           )}
 
-          {/* Add buttons */}
-          <div className="flex items-center gap-2 pt-1">
-            <Button type="button" variant="ghost" size="sm" leftIcon={<RiAddLine className="w-3.5 h-3.5" />} onClick={() => addItem('labour')}>
-              Labour
-            </Button>
-            <span className="text-stone-300 text-xs select-none">·</span>
-            <Button type="button" variant="ghost" size="sm" leftIcon={<RiAddLine className="w-3.5 h-3.5" />} onClick={() => addItem('materials')}>
-              Material
-            </Button>
-          </div>
         </div>
       </DndContext>
+          </div>
+        )}
+      </div>
 
       {/* ── Divider ── */}
       <div className="h-px bg-stone-200/80" />
 
-      {/* ── Totals Bar ── */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => onChange({ gstEnabled: !form.gstEnabled })}
-            className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${form.gstEnabled ? 'bg-stone-800' : 'bg-stone-300'}`}
-          >
-            <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${form.gstEnabled ? 'translate-x-4' : 'translate-x-0'}`} />
-          </button>
-          <span className="text-xs font-regular text-stone-600 select-none">GST (10%)</span>
-        </div>
-        <div className="h-4 w-px bg-stone-200" />
-        <div className="flex items-center gap-2 flex-1">
-          <span className="text-xs font-regular text-stone-600 select-none flex-shrink-0">Discount</span>
-          <Input
-            name="discount"
-            type="number"
-            value={form.discount > 0 ? String(form.discount) : ''}
-            onChange={(val) => onChange({ discount: Number(val) || 0 })}
-            placeholder="$0.00"
-            className="max-w-[120px]"
-          />
-        </div>
+      {/* ── Template ── */}
+      <div className="flex flex-col gap-3">
+        <button type="button" onClick={() => setIsTemplateOpen(!isTemplateOpen)} className="flex items-center justify-between group outline-none w-full">
+          <h2 className="text-base text-black font-medium">Template</h2>
+          <RiArrowDownSLine className={`w-5 h-5 text-stone-400 transition-transform ${isTemplateOpen ? 'rotate-180' : ''}`} />
+        </button>
+        {isTemplateOpen && (
+          <div className="flex flex-col gap-3">
+            <TemplateSelector
+              selectedTemplateId={form.templateId}
+              onSelect={(val) => onChange({ templateId: val })}
+            />
+          </div>
+        )}
       </div>
 
-      {/* ── Notes ── */}
-      <Input
-        label="Notes"
-        name="notes"
-        value={form.notes}
-        onChange={(val) => onChange({ notes: val })}
-        multiline
-        autoGrow
-        placeholder="Payment terms, bank details, or any other notes…"
-      />
+      {/* ── Divider ── */}
+      <div className="h-px bg-stone-200/80" />
+
+      {/* ── Additional Options ── */}
+      <div className="flex flex-col gap-3">
+        <button type="button" onClick={() => setIsOptionsOpen(!isOptionsOpen)} className="flex items-center justify-between group outline-none w-full">
+          <h2 className="text-base text-black font-medium">Additional Options</h2>
+          <RiArrowDownSLine className={`w-5 h-5 text-stone-400 transition-transform ${isOptionsOpen ? 'rotate-180' : ''}`} />
+        </button>
+        {isOptionsOpen && (
+          <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+            <div className="flex flex-col gap-4">
+              <Input
+                label="Discount"
+                name="discount"
+                type="number"
+                value={form.discount > 0 ? String(form.discount) : ''}
+                onChange={(val) => onChange({ discount: Number(val) || 0 })}
+                placeholder="$0.00"
+                icon={<span className="text-stone-400 font-medium">$</span>}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1 w-full">
+              <label className="text-xs font-medium text-stone-500 tracking-wide select-none">Preferences</label>
+              <div className="flex flex-col rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+                <label className="flex items-center justify-between p-3 border-b border-stone-100 cursor-pointer hover:bg-stone-50 transition-colors">
+                  <span className="text-sm font-medium text-stone-700 select-none">Apply GST (10%)</span>
+                  <button
+                    type="button"
+                    onClick={() => onChange({ gstEnabled: !form.gstEnabled })}
+                    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${form.gstEnabled ? 'bg-stone-800' : 'bg-stone-300'}`}
+                  >
+                    <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${form.gstEnabled ? 'translate-x-4' : 'translate-x-0'}`} />
+                  </button>
+                </label>
+                
+                <label className="flex items-center justify-between p-3 cursor-pointer hover:bg-stone-50 transition-colors">
+                  <span className="text-sm font-medium text-stone-700 select-none">Show Due Date</span>
+                  <button
+                    type="button"
+                    onClick={() => onChange({ displayDueDate: !form.displayDueDate })}
+                    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${form.displayDueDate ? 'bg-stone-800' : 'bg-stone-300'}`}
+                  >
+                    <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${form.displayDueDate ? 'translate-x-4' : 'translate-x-0'}`} />
+                  </button>
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <Input
+            label="Add Note"
+            name="notes"
+            value={form.notes}
+            onChange={(val) => onChange({ notes: val })}
+            multiline
+            autoGrow
+            placeholder="Payment terms, bank details, or any other notes…"
+          />
+        </div>
+          </div>
+        )}
+      </div>
 
     </div>
   );
@@ -412,121 +472,137 @@ interface LineItemCardProps extends SortableLineItemCardProps {
 const LineItemCard: React.FC<LineItemCardProps> = ({
   item, isEditing, onEdit, onDelete, onUpdate, dragHandleProps, isDragging
 }) => {
-  /** Build a short summary badge string for the collapsed state. */
-  const summaryBadge = item.type === 'labour'
-    ? `${item.hours ?? item.quantity ?? 0} hrs · ${formatCurrency(item.unitPrice)}/hr`
-    : `${item.quantity} × ${formatCurrency(item.unitPrice)}`;
-
   const total = item.type === 'labour'
     ? (item.hours ?? item.quantity ?? 0) * item.unitPrice
     : item.quantity * item.unitPrice;
 
   return (
     <div
-      className={`rounded-xl border bg-white transition-shadow duration-150 ${isDragging ? 'border-stone-400 shadow-md' : 'shadow-sm'} ${isEditing && !isDragging ? 'border-stone-400 ring-2 ring-stone-400 ring-offset-1' : 'border-stone-200/80'}`}
+      className={`group rounded-xl border bg-white transition-all duration-150 ${isDragging ? 'border-stone-400 shadow-md' : 'shadow-sm'} ${isEditing && !isDragging ? 'border-stone-400 ring-2 ring-stone-400 ring-offset-1' : 'border-stone-200/80 hover:border-stone-300'}`}
     >
-      {/* Summary row — always visible */}
-      <div className="flex items-center gap-2 px-3 py-2.5">
+      <div className="flex items-start gap-2 p-3">
         {/* Drag handle */}
         <div
           {...dragHandleProps}
-          className="flex-shrink-0 cursor-grab active:cursor-grabbing text-stone-350 hover:text-stone-500 transition-colors focus:outline-none"
+          className="mt-0.5 flex-shrink-0 cursor-grab active:cursor-grabbing text-stone-300 hover:text-stone-500 transition-colors focus:outline-none"
         >
           <RiDraggable className="w-4 h-4" />
         </div>
 
-        {/* Description + badge */}
-        <div className="flex-1 flex items-center gap-2 min-w-0" onClick={onEdit}>
-          <span className="text-sm font-medium text-stone-900 truncate cursor-pointer">
-            {item.description || 'Untitled'}
-          </span>
-          <span className="text-[11px] font-regular text-stone-500 bg-stone-100 px-2 py-0.5 rounded-lg flex-shrink-0 select-none">
-            {summaryBadge}
-          </span>
-          {total > 0 && (
-            <span className="text-[11px] font-medium text-stone-700 flex-shrink-0 ml-auto select-none">
-              {formatCurrency(total)}
-            </span>
-          )}
+        {/* Content area */}
+        <div className={`flex-1 flex flex-col gap-1.5 min-w-0 ${!isEditing ? 'cursor-pointer' : ''}`} onClick={!isEditing ? onEdit : undefined}>
+          
+          {/* Top row: Description & Badge */}
+          <div className="flex items-center gap-2">
+            {isEditing ? (
+              <input
+                type="text"
+                value={item.description}
+                onChange={(e) => onUpdate({ description: e.target.value })}
+                placeholder={item.type === 'labour' ? "Labour Description" : "Material description"}
+                className="font-medium text-sm text-stone-900 bg-transparent outline-none flex-1 placeholder-stone-300"
+                autoFocus
+              />
+            ) : (
+              <span className="font-medium text-sm text-stone-900 truncate flex-1">
+                {item.description || 'Untitled'}
+              </span>
+            )}
+          </div>
+
+          {/* Bottom row: Details */}
+          <div className="flex items-center gap-4 text-xs text-stone-500">
+             {item.type === 'labour' ? (
+               isEditing ? (
+                 <div className="flex items-center gap-3 flex-wrap">
+                   <div className="flex items-center gap-1.5">
+                     <RiCalendarEventLine className="w-3.5 h-3.5 text-stone-400" />
+                     <input type="date" value={item.date || ''} onChange={e => onUpdate({date: e.target.value})} className="bg-transparent outline-none text-stone-600 w-auto font-medium" />
+                   </div>
+                   <div className="flex items-center gap-1">
+                     <RiTimeLine className="w-3.5 h-3.5 text-stone-400" />
+                     <input type="number" value={item.hours !== undefined ? item.hours : ''} onChange={e => onUpdate({hours: Number(e.target.value) || 0})} className="bg-transparent outline-none text-stone-600 w-10 border-b border-dashed border-stone-300 focus:border-stone-400 font-medium" placeholder="0" />
+                     <span>hrs</span>
+                   </div>
+                   <div className="flex items-center gap-1">
+                     <span className="text-stone-400 font-medium">$</span>
+                     <input type="number" value={item.unitPrice || ''} onChange={e => onUpdate({unitPrice: Number(e.target.value) || 0})} className="bg-transparent outline-none text-stone-600 w-12 border-b border-dashed border-stone-300 focus:border-stone-400 font-medium" placeholder="0.00" />
+                     <span>/hr</span>
+                   </div>
+                 </div>
+               ) : (
+                 <div className="flex items-center gap-3">
+                   {item.date && (
+                     <div className="flex items-center gap-1.5">
+                       <RiCalendarEventLine className="w-3.5 h-3.5 text-stone-400" />
+                       <span className="font-medium text-stone-600">{formatShortDate(item.date)}</span>
+                     </div>
+                   )}
+                   <div className="flex items-center gap-1.5">
+                     <RiTimeLine className="w-3.5 h-3.5 text-stone-400" />
+                     <span className="font-medium text-stone-600">{item.hours ?? 0} hrs</span>
+                   </div>
+                   <div className="flex items-center gap-1.5">
+                     <span className="text-stone-400 font-medium">$</span>
+                     <span className="font-medium text-stone-600">{item.unitPrice}/hr</span>
+                   </div>
+                 </div>
+               )
+             ) : (
+               /* Materials */
+               isEditing ? (
+                 <div className="flex items-center gap-4 flex-wrap">
+                   <div className="flex items-center gap-1.5">
+                     <RiArchiveLine className="w-3.5 h-3.5 text-stone-400" />
+                     <input type="number" value={item.quantity || ''} onChange={e => onUpdate({quantity: Number(e.target.value) || 0})} className="bg-transparent outline-none text-stone-600 w-10 border-b border-dashed border-stone-300 focus:border-stone-400 font-medium" placeholder="1" />
+                     <span>qty</span>
+                   </div>
+                   <div className="flex items-center gap-1">
+                     <span className="text-stone-400 font-medium">$</span>
+                     <input type="number" value={item.unitPrice || ''} onChange={e => onUpdate({unitPrice: Number(e.target.value) || 0})} className="bg-transparent outline-none text-stone-600 w-12 border-b border-dashed border-stone-300 focus:border-stone-400 font-medium" placeholder="0.00" />
+                     <span>ea</span>
+                   </div>
+                 </div>
+               ) : (
+                 <div className="flex items-center gap-3">
+                   <div className="flex items-center gap-1.5">
+                     <RiArchiveLine className="w-3.5 h-3.5 text-stone-400" />
+                     <span className="font-medium text-stone-600">{item.quantity} qty</span>
+                   </div>
+                   <div className="flex items-center gap-1.5">
+                     <span className="text-stone-400 font-medium">$</span>
+                     <span className="font-medium text-stone-600">{item.unitPrice} ea</span>
+                   </div>
+                 </div>
+               )
+             )}
+          </div>
         </div>
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-0.5 flex-shrink-0">
-          <button
-            type="button"
-            onClick={onEdit}
-            className={`p-1.5 rounded-lg transition-colors ${isEditing ? 'text-stone-800 bg-stone-200' : 'text-stone-400 hover:text-stone-700 hover:bg-stone-100'}`}
-          >
-            <RiPencilLine className="w-3.5 h-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            className="p-1.5 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-          >
-            <RiDeleteBinLine className="w-3.5 h-3.5" />
-          </button>
+        {/* Total and Actions */}
+        <div className="flex flex-col items-end justify-between self-stretch ml-2">
+           <div className={`flex items-center gap-0.5 transition-opacity duration-150 ${isEditing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+              {isEditing ? (
+                <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(); }} className="p-1 text-stone-400 hover:text-lime-600 hover:bg-lime-50 rounded-md transition-colors" title="Done">
+                  <RiCheckLine className="w-4 h-4" />
+                </button>
+              ) : (
+                <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(); }} className="p-1 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-md transition-colors" title="Edit">
+                  <RiPencilLine className="w-4 h-4" />
+                </button>
+              )}
+              <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-1 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors" title="Delete">
+                <RiDeleteBinLine className="w-4 h-4" />
+              </button>
+           </div>
+           {total > 0 ? (
+             <span className="text-sm font-medium text-stone-800 mt-2">
+               {formatCurrency(total)}
+             </span>
+           ) : <div />}
         </div>
+
       </div>
-
-      {/* Expanded edit fields — revealed on edit click */}
-      {isEditing && (
-        <div className="px-3 pb-3 pt-1 border-t border-stone-100 flex flex-col gap-2.5 animate-in fade-in slide-in-from-top-1 duration-150">
-          <Input
-            label="Description"
-            value={item.description}
-            onChange={(val) => onUpdate({ description: val })}
-            placeholder={item.type === 'labour' ? 'e.g. Code Review, Wiring...' : 'Material description'}
-            name={`desc-${item.id}`}
-            autoFocus
-          />
-
-          {item.type === 'labour' ? (
-            <div className="grid gap-2" style={{ gridTemplateColumns: '1.5fr 0.75fr 0.75fr' }}>
-              <DatePicker
-                label="Date"
-                value={item.date || ''}
-                onChange={(val) => onUpdate({ date: val })}
-              />
-              <Input
-                label="Hours"
-                value={item.hours !== undefined ? String(item.hours) : String(item.quantity)}
-                onChange={(val) => onUpdate({ hours: Number(val) || 0 })}
-                type="number"
-                name={`hours-${item.id}`}
-                placeholder="0"
-              />
-              <Input
-                label="Rate/hr"
-                value={String(item.unitPrice)}
-                onChange={(val) => onUpdate({ unitPrice: Number(val) || 0 })}
-                type="number"
-                name={`price-${item.id}`}
-                placeholder="0.00"
-              />
-            </div>
-          ) : (
-            <div className="grid gap-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
-              <Input
-                label="Quantity"
-                value={String(item.quantity)}
-                onChange={(val) => onUpdate({ quantity: Number(val) || 0 })}
-                type="number"
-                name={`qty-${item.id}`}
-                placeholder="1"
-              />
-              <Input
-                label="Unit price"
-                value={String(item.unitPrice)}
-                onChange={(val) => onUpdate({ unitPrice: Number(val) || 0 })}
-                type="number"
-                name={`price-${item.id}`}
-                placeholder="0.00"
-              />
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };

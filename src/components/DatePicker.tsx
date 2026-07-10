@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { RiCalendarLine, RiArrowLeftSLine, RiArrowRightSLine } from 'react-icons/ri';
 
 interface DatePickerProps {
-  label?: string;
+  label?: React.ReactNode;
   value: string; // Format: YYYY-MM-DD
   onChange: (value: string) => void;
   required?: boolean;

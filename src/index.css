@@ -171,3 +171,26 @@ textarea,
 .scroll-animate-card:has(.dropdown-menu-open) {
   z-index: 60 !important;
 }
+
+/* Scroll-driven row entrance and exit animations (tuned for shorter elements) */
+@keyframes row-scroll-in-out {
+  0% {
+    transform: scale(0.96);
+    opacity: 0.5;
+  }
+  8%, 95% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.96);
+    opacity: 0.5;
+  }
+}
+
+.scroll-animate-row {
+  animation: row-scroll-in-out linear both;
+  animation-timeline: view();
+  animation-range: entry 0% exit 100%;
+  will-change: transform, opacity;
+}

@@ -90,10 +90,10 @@ export function Table<T>({
   ].join(' ');
 
   return (
-    <div className="w-full flex flex-col gap-2">
+    <div className="w-full flex-1 min-h-0 flex flex-col gap-2 relative">
       {/* Header */}
       <div
-        className="grid items-center bg-stone-200 rounded-xl px-3 py-2.5 shadow-1"
+        className="grid items-center bg-stone-200 rounded-xl px-3 py-2.5 shadow-1 z-10 flex-shrink-0"
         style={{ gridTemplateColumns: colWidths }}
       >
         {selectable && (
@@ -126,11 +126,12 @@ export function Table<T>({
 
       {/* Rows */}
       {sorted.length === 0 ? (
-        <div className="px-4 py-12 text-center bg-white border border-stone-200 rounded-xl shadow-sm">
+        <div className="px-4 py-12 text-center bg-white border border-stone-200 rounded-xl shadow-sm flex-shrink-0">
           <p className="text-sm text-stone-400">{emptyMessage}</p>
         </div>
       ) : (
-        <div className="flex flex-col divide-y divide-stone-200 border-b border-stone-200/80">
+        <div className="flex-1 min-h-0 overflow-y-auto pb-12 pr-2 -mr-2 relative z-0">
+          <div className="flex flex-col divide-y divide-stone-200 border-b border-stone-200/80">
           {sorted.map((row) => {
             const key = keyExtractor(row);
             const isSelected = selected.has(key);
@@ -138,7 +139,7 @@ export function Table<T>({
               <div
                 key={key}
                 onClick={() => onRowClick?.(row)}
-                className={`grid items-center px-3 py-3 transition-colors duration-100
+                className={`scroll-animate-row grid items-center px-3 py-3 transition-colors duration-100
                   ${onRowClick ? 'cursor-pointer' : ''}
                   ${isSelected ? 'bg-stone-200/40' : 'bg-transparent hover:bg-stone-200/10'}
                 `}
@@ -166,6 +167,12 @@ export function Table<T>({
             );
           })}
         </div>
+        </div>
+      )}
+      
+      {/* Bottom gradient overlay */}
+      {sorted.length > 0 && (
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none z-10" />
       )}
     </div>
   );

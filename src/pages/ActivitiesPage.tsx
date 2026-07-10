@@ -209,7 +209,10 @@ export default function ActivitiesPage(): React.JSX.Element {
           const date = new Date(log.timestamp.replace(' ', 'T') + 'Z');
           if (!isNaN(date.getTime())) {
             const pad = (n: number) => String(n).padStart(2, '0');
-            formattedDate = `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}, ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+            const hours = date.getHours();
+            const ampm = hours >= 12 ? 'pm' : 'am';
+            const h = hours % 12 || 12;
+            formattedDate = `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}, ${h}:${pad(date.getMinutes())}${ampm}`;
           }
         } catch { }
         return <span className="whitespace-nowrap">{formattedDate}</span>;

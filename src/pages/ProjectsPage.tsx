@@ -420,12 +420,21 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                 // Dropdown Actions
                 const actionOptions = [
                   { value: 'edit', label: 'Edit' },
+                  ...(status !== 'paid' ? [{ value: 'mark_paid', label: 'Mark as paid' }] : []),
                   { value: 'delete', label: 'Delete', className: 'text-red-600 hover:bg-red-50' }
                 ];
 
-                const handleAction = (val: string) => {
+                const handleAction = async (val: string) => {
                   if (val === 'edit') onEditInvoice(inv.id);
                   if (val === 'delete') handleDelete(inv);
+                  if (val === 'mark_paid') {
+                    try {
+                      await window.electronAPI.updateInvoiceStatus(inv.id, 'paid');
+                      await loadInvoices();
+                    } catch (err) {
+                      setError(err instanceof Error ? err.message : 'Failed to mark as paid.');
+                    }
+                  }
                 };
 
                 const isSelected = isSelectionMode ? selectedIds.has(inv.id) : selectedPreviewId === inv.id;

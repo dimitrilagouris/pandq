@@ -60,6 +60,9 @@ function initDatabase(): void {
           gst_added BOOLEAN,
           display_due_date BOOLEAN DEFAULT 1,
           template_id TEXT DEFAULT 'classic',
+          updated_at TEXT,
+          created_at TEXT,
+          paid_at TEXT,
           FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
         );
 
@@ -180,6 +183,22 @@ function initDatabase(): void {
         console.error('Failed to run invoices template_id migration:', err);
       }
       db.pragma('user_version = 5');
+    }
+
+    // Version 6: Add created_at and paid_at columns to invoices table
+    if (currentVersion < 6) {
+      try {
+        const invoicesTableInfo = db.prepare("PRAGMA table_info(invoices)").all() as Array<{ name: string }>;
+        if (invoicesTableInfo.length > 0 && !invoicesTableInfo.some(col => col.name === 'created_at')) {
+          db.exec("ALTER TABLE invoices ADD COLUMN created_at TEXT;");
+        }
+        if (invoicesTableInfo.length > 0 && !invoicesTableInfo.some(col => col.name === 'paid_at')) {
+          db.exec("ALTER TABLE invoices ADD COLUMN paid_at TEXT;");
+        }
+      } catch (err) {
+        console.error('Failed to run invoices timestamps migration:', err);
+      }
+      db.pragma('user_version = 6');
     }
 
   } catch (err) {
@@ -336,7 +355,11 @@ app.whenReady().then(() => {
     if (!db) throw new Error('Database not initialised');
     const inv = db.prepare('SELECT invoice_number FROM invoices WHERE id = ?').get(id) as { invoice_number: string } | undefined;
     const invoiceNumber = inv?.invoice_number || null;
-    const res = db.prepare('UPDATE invoices SET status = ?, updated_at = ? WHERE id = ?').run(status, new Date().toISOString(), id);
+    
+    const isPaid = status.startsWith('paid');
+    const paidAt = isPaid ? new Date().toISOString() : null;
+
+    const res = db.prepare('UPDATE invoices SET status = ?, updated_at = ?, paid_at = ? WHERE id = ?').run(status, new Date().toISOString(), paidAt, id);
     insertActivityLog(id, invoiceNumber, 'invoice_status_updated', `Status updated to ${status.split('|')[0] || 'draft'}`);
     return res;
   });
@@ -541,7 +564,7 @@ app.whenReady().then(() => {
 
     // Persist invoice, items, and optional discount atomically
     const insertInvoice = db.prepare(
-      'INSERT INTO invoices (client_id, invoice_number, date, due_date, status, price, gst_added, display_due_date, updated_at, template_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO invoices (client_id, invoice_number, date, due_date, status, price, gst_added, display_due_date, updated_at, created_at, template_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     const insertItem = db.prepare(
       'INSERT INTO invoice_items (invoice_id, type, description, hours, rate, quantity, date) VALUES (?, ?, ?, ?, ?, ?, ?)'
@@ -554,7 +577,8 @@ app.whenReady().then(() => {
     );
 
     const transaction = db.transaction(() => {
-      const result = insertInvoice.run(clientId, invoiceNumber, date, dueDate, 'draft', price, gstEnabled ? 1 : 0, displayDueDate ? 1 : 0, new Date().toISOString(), templateId);
+      const now = new Date().toISOString();
+      const result = insertInvoice.run(clientId, invoiceNumber, date, dueDate, 'draft', price, gstEnabled ? 1 : 0, displayDueDate ? 1 : 0, now, now, templateId);
       const invoiceId = result.lastInsertRowid as number;
 
       for (const item of items) {

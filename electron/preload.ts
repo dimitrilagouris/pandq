@@ -30,12 +30,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     gstEnabled: boolean,
     displayDueDate: boolean,
     discount: number,
+    discountType: string,
     price: number,
     items: Array<{ type: string; description: string; quantity: number; rate: number }>,
     notes: string,
     templateId: string,
   ): Promise<unknown> => {
-    return ipcRenderer.invoke('db-create-invoice', clientId, invoiceNumber, date, dueDate, gstEnabled, displayDueDate, discount, price, items, notes, templateId);
+    return ipcRenderer.invoke('db-create-invoice', clientId, invoiceNumber, date, dueDate, gstEnabled, displayDueDate, discount, discountType, price, items, notes, templateId);
   },
 
   deleteInvoice: (id: number): Promise<unknown> => {
@@ -67,12 +68,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     gstEnabled: boolean,
     displayDueDate: boolean,
     discount: number,
+    discountType: string,
     price: number,
     items: Array<{ type: string; description: string; quantity: number; rate: number }>,
     notes: string,
     templateId: string,
   ): Promise<unknown> => {
-    return ipcRenderer.invoke('db-update-invoice', invoiceId, clientId, invoiceNumber, date, dueDate, gstEnabled, displayDueDate, discount, price, items, notes, templateId);
+    return ipcRenderer.invoke('db-update-invoice', invoiceId, clientId, invoiceNumber, date, dueDate, gstEnabled, displayDueDate, discount, discountType, price, items, notes, templateId);
   },
 
   getProjects: (): Promise<any[]> => {
@@ -108,5 +110,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   getInvoiceActivityLogs: (invoiceId: number): Promise<unknown[]> => {
     return ipcRenderer.invoke('db-get-invoice-activity-logs', invoiceId);
+  },
+  getInvoiceStatuses: (): Promise<unknown[]> => {
+    return ipcRenderer.invoke('db-get-invoice-statuses');
+  },
+  createInvoiceStatus: (name: string, color: string): Promise<unknown> => {
+    return ipcRenderer.invoke('db-create-invoice-status', name, color);
+  },
+  updateInvoiceStatusColor: (name: string, color: string): Promise<unknown> => {
+    return ipcRenderer.invoke('db-update-invoice-status-color', name, color);
+  },
+  deleteInvoiceStatus: (name: string): Promise<unknown> => {
+    return ipcRenderer.invoke('db-delete-invoice-status', name);
   },
 });

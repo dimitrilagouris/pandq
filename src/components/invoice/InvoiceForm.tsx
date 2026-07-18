@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { RiAddLine, RiDeleteBinLine, RiPencilLine, RiDraggable, RiUserLine, RiHashtag, RiArrowDownSLine, RiCheckLine, RiCalendarEventLine, RiTimeLine, RiMoneyDollarCircleLine, RiArchiveLine } from 'react-icons/ri';
+import { RiAddLine, RiDeleteBinLine, RiPencilLine, RiDraggable, RiUserLine, RiHashtag, RiArrowDownSLine, RiCheckLine, RiCalendarEventLine, RiTimeLine, RiMoneyDollarCircleLine, RiArchiveLine, RiCloseLine } from 'react-icons/ri';
 import {
   DndContext,
   closestCenter,
@@ -23,6 +23,8 @@ import { Input } from '../Input';
 import { DatePicker } from '../DatePicker';
 import { Dropdown } from '../Dropdown';
 import { Button } from '../Button';
+import { HelpBadge } from '../HelpBadge';
+import { Toggle } from '../Toggle';
 import { InvoiceFormState, LineItem } from './invoiceTypes';
 import { templates } from './templates/registry';
 import { TemplateSelector } from './TemplateSelector';
@@ -52,11 +54,14 @@ function formatShortDate(dateStr: string): string {
  * All state lives in the parent; this component is purely presentational.
  */
 export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChange }) => {
+  const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
   const selectedClient = clients.find(c => c.id === form.clientId) ?? null;
 
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [focusedIndex, setFocusedIndex] = useState(0);
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   
   // Section toggle states
   const [isDetailsOpen, setIsDetailsOpen] = useState(true);
@@ -145,13 +150,13 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
   return (
     <div className="flex flex-col gap-5">
       {/* ── Invoice Details ── */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         <button type="button" onClick={() => setIsDetailsOpen(!isDetailsOpen)} className="flex items-center justify-between group outline-none w-full">
           <h2 className="text-base text-black font-medium">Invoice Details</h2>
           <RiArrowDownSLine className={`w-5 h-5 text-stone-400 transition-transform ${isDetailsOpen ? 'rotate-180' : ''}`} />
         </button>
         {isDetailsOpen && (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
         {/* Client selector */}
         <div className="flex flex-col gap-1 w-full" ref={dropdownRef}>
           <label className="text-xs font-medium text-stone-500 tracking-wide">Bill To</label>
@@ -190,7 +195,38 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
+                      setFocusedIndex(0);
                       if (!isOpen) setIsOpen(true);
+                    }}
+                    onKeyDown={(e) => {
+                      if (!isOpen) {
+                        if (e.key === 'ArrowDown' || e.key === 'Enter') setIsOpen(true);
+                        return;
+                      }
+                      if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        setFocusedIndex(prev => {
+                          const next = prev < filteredClients.length - 1 ? prev + 1 : prev;
+                          itemRefs.current[next]?.scrollIntoView({ block: 'nearest' });
+                          return next;
+                        });
+                      } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        setFocusedIndex(prev => {
+                          const next = prev > 0 ? prev - 1 : prev;
+                          itemRefs.current[next]?.scrollIntoView({ block: 'nearest' });
+                          return next;
+                        });
+                      } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (filteredClients[focusedIndex]) {
+                          onChange({ clientId: filteredClients[focusedIndex].id });
+                          setIsOpen(false);
+                          setSearchQuery('');
+                        }
+                      } else if (e.key === 'Escape') {
+                        setIsOpen(false);
+                      }
                     }}
                     autoFocus
                   />
@@ -200,21 +236,25 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
             </div>
 
             {isOpen && (
-              <div className="absolute z-50 left-0 right-0 mt-1 bg-stone-600/95 backdrop-blur-md border border-white/5 rounded-2xl shadow-2xl max-h-60 overflow-y-auto p-1.5 flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-150">
-                {filteredClients.length > 0 ? (
-                  <div className="flex flex-col gap-0.5">
-                    {filteredClients.map(c => {
+              <div className="absolute z-50 left-0 right-0 mt-1 bg-stone-600/95 backdrop-blur-md border border-white/5 rounded-2xl shadow-2xl p-1.5 flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="flex flex-col gap-0.5 overflow-y-auto max-h-60 custom-scrollbar">
+                  {filteredClients.length > 0 ? (
+                    filteredClients.map((c, idx) => {
                       const isClientSelected = c.id === form.clientId;
+                      const isFocused = idx === focusedIndex;
                       return (
                         <button
                           key={c.id}
+                          ref={(el) => { itemRefs.current[idx] = el; }}
                           type="button"
+                          onMouseEnter={() => setFocusedIndex(idx)}
                           onClick={() => {
                             onChange({ clientId: c.id });
                             setIsOpen(false);
+                            setSearchQuery('');
                           }}
                           className={`w-full text-left px-3 py-1.5 rounded-xl transition-all duration-150 flex flex-col gap-0.5
-                            ${isClientSelected ? 'bg-white/10 text-white shadow-sm' : 'text-stone-200 hover:bg-white/5'}
+                            ${isClientSelected ? 'bg-white/20 text-white shadow-sm' : isFocused ? 'bg-white/10 text-white' : 'text-stone-200 hover:bg-white/5'}
                           `}
                         >
                           <span className="text-xs font-normal">{c.name}</span>
@@ -223,17 +263,35 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
                           )}
                         </button>
                       );
-                    })}
+                    })
+                  ) : (
+                    <p className="text-xs text-stone-300 py-3 text-center select-none">No clients found</p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-4 px-2 py-2 mt-0.5 border-t border-white/10 text-[10px] text-stone-300 select-none bg-stone-700/30 rounded-b-xl -mx-1.5 -mb-1.5 flex-shrink-0">
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex gap-0.5">
+                      <kbd className="w-[18px] h-[18px] flex items-center justify-center bg-white/10 rounded-[4px] shadow-sm border border-white/5 text-white/90 font-sans text-[10px]">↑</kbd>
+                      <kbd className="w-[18px] h-[18px] flex items-center justify-center bg-white/10 rounded-[4px] shadow-sm border border-white/5 text-white/90 font-sans text-[10px]">↓</kbd>
+                    </div>
+                    <span>to navigate</span>
                   </div>
-                ) : (
-                  <p className="text-xs text-stone-300 py-3 text-center select-none">No clients found</p>
-                )}
+                  <div className="flex items-center gap-1.5">
+                    <kbd className="w-[18px] h-[18px] flex items-center justify-center bg-white/10 rounded-[4px] shadow-sm border border-white/5 text-white/90 font-sans text-[10px]">↵</kbd>
+                    <span>to select</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 ml-auto">
+                    <kbd className="px-1.5 h-[18px] flex items-center justify-center bg-white/10 rounded-[4px] shadow-sm border border-white/5 text-white/90 font-sans text-[10px]">esc</kbd>
+                    <span>to close</span>
+                  </div>
+                </div>
               </div>
             )}
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <Input
             label="Invoice number"
             name="invoiceNumber"
@@ -244,7 +302,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <DatePicker
             label="Date issued"
             value={form.dateIssued}
@@ -264,7 +322,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
       <div className="h-px bg-stone-200/80" />
 
       {/* ── Line Items ── */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between group cursor-pointer outline-none w-full" onClick={() => setIsItemsOpen(!isItemsOpen)}>
           <div className="flex items-center gap-4">
             <h2 className="text-base text-black font-medium select-none">Invoice Items</h2>
@@ -280,13 +338,13 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
           <RiArrowDownSLine className={`w-5 h-5 text-stone-400 transition-transform ${isItemsOpen ? 'rotate-180' : ''}`} />
         </div>
         {isItemsOpen && (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-6">
           {/* Labour items */}
           {labourItems.length > 0 && (
             <div className="flex flex-col gap-1.5">
@@ -341,13 +399,13 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
       <div className="h-px bg-stone-200/80" />
 
       {/* ── Template ── */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         <button type="button" onClick={() => setIsTemplateOpen(!isTemplateOpen)} className="flex items-center justify-between group outline-none w-full">
           <h2 className="text-base text-black font-medium">Template</h2>
           <RiArrowDownSLine className={`w-5 h-5 text-stone-400 transition-transform ${isTemplateOpen ? 'rotate-180' : ''}`} />
         </button>
         {isTemplateOpen && (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             <TemplateSelector
               selectedTemplateId={form.templateId}
               onSelect={(val) => onChange({ templateId: val })}
@@ -360,24 +418,41 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
       <div className="h-px bg-stone-200/80" />
 
       {/* ── Additional Options ── */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         <button type="button" onClick={() => setIsOptionsOpen(!isOptionsOpen)} className="flex items-center justify-between group outline-none w-full">
           <h2 className="text-base text-black font-medium">Additional Options</h2>
           <RiArrowDownSLine className={`w-5 h-5 text-stone-400 transition-transform ${isOptionsOpen ? 'rotate-180' : ''}`} />
         </button>
         {isOptionsOpen && (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
             <div className="flex flex-col gap-4">
               <Input
-                label="Discount"
+                label={
+                  <span className="inline-flex items-center gap-1.5 select-none">
+                    <span>Discount</span>
+                    <HelpBadge 
+                      tooltipText="Click to learn how flat and percentage discounts work." 
+                      onClick={() => setIsDiscountModalOpen(true)} 
+                    />
+                  </span>
+                }
                 name="discount"
                 type="number"
                 value={form.discount > 0 ? String(form.discount) : ''}
                 onChange={(val) => onChange({ discount: Number(val) || 0 })}
-                placeholder="$0.00"
-                icon={<span className="text-stone-400 font-medium">$</span>}
+                placeholder={form.discountType === 'percentage' ? '0' : '0.00'}
+                icon={
+                  <button
+                    type="button"
+                    onClick={() => onChange({ discountType: form.discountType === 'percentage' ? 'flat' : 'percentage' })}
+                    className="pointer-events-auto text-stone-400 font-medium hover:text-stone-600 transition-colors bg-stone-100 hover:bg-stone-200 rounded px-1.5 py-0.5 text-xs -ml-1 relative z-10 cursor-pointer"
+                    title="Toggle discount type"
+                  >
+                    {form.discountType === 'percentage' ? '%' : '$'}
+                  </button>
+                }
               />
             </div>
 
@@ -386,24 +461,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
               <div className="flex flex-col rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
                 <label className="flex items-center justify-between p-3 border-b border-stone-100 cursor-pointer hover:bg-stone-50 transition-colors">
                   <span className="text-sm font-medium text-stone-700 select-none">Apply GST (10%)</span>
-                  <button
-                    type="button"
-                    onClick={() => onChange({ gstEnabled: !form.gstEnabled })}
-                    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${form.gstEnabled ? 'bg-stone-800' : 'bg-stone-300'}`}
-                  >
-                    <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${form.gstEnabled ? 'translate-x-4' : 'translate-x-0'}`} />
-                  </button>
+                  <Toggle enabled={form.gstEnabled} onChange={(val) => onChange({ gstEnabled: val })} />
                 </label>
                 
                 <label className="flex items-center justify-between p-3 cursor-pointer hover:bg-stone-50 transition-colors">
                   <span className="text-sm font-medium text-stone-700 select-none">Show Due Date</span>
-                  <button
-                    type="button"
-                    onClick={() => onChange({ displayDueDate: !form.displayDueDate })}
-                    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${form.displayDueDate ? 'bg-stone-800' : 'bg-stone-300'}`}
-                  >
-                    <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${form.displayDueDate ? 'translate-x-4' : 'translate-x-0'}`} />
-                  </button>
+                  <Toggle enabled={form.displayDueDate} onChange={(val) => onChange({ displayDueDate: val })} />
                 </label>
               </div>
             </div>
@@ -423,6 +486,47 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
         )}
       </div>
 
+      {isDiscountModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/40" onClick={() => setIsDiscountModalOpen(false)}>
+          <div
+            className="w-full max-w-sm bg-stone-50 border border-stone-200/80 rounded-2xl shadow-22 mx-4 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-[14px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 pt-5 pb-2">
+              <h2 className="text-base font-semibold text-stone-900">
+                Discount Help
+              </h2>
+              <button 
+                type="button" 
+                onClick={() => setIsDiscountModalOpen(false)} 
+                className="text-stone-400 hover:text-stone-600 transition-colors cursor-pointer"
+              >
+                <RiCloseLine className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="px-6 py-3 text-stone-600 leading-relaxed text-xs">
+              <p>
+                Click on the <kbd className="inline-flex items-center justify-center w-5 h-5 bg-white rounded-md shadow-1 text-stone-900 font-bold border border-stone-200/50 text-[12px] mx-1 align-middle select-none">$</kbd> or <kbd className="inline-flex items-center justify-center w-5 h-5 bg-white rounded-md shadow-1 text-stone-900 font-bold border border-stone-200/50 text-[12px] mx-1 align-middle select-none">%</kbd> button inside the input field to toggle between a flat discount amount (e.g. $10.00 off) and a percentage discount (e.g. 10% off).
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 pb-5 pt-2 flex justify-end">
+              <Button
+                variant="primary"
+                type="button"
+                size="sm"
+                onClick={() => setIsDiscountModalOpen(false)}
+              >
+                Got it
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -493,31 +597,35 @@ const LineItemCard: React.FC<LineItemCardProps> = ({
         <div className={`flex-1 flex flex-col gap-1.5 min-w-0 ${!isEditing ? 'cursor-pointer' : ''}`} onClick={!isEditing ? onEdit : undefined}>
           
           {/* Top row: Description & Badge */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-start gap-2">
             {isEditing ? (
-              <input
-                type="text"
+              <textarea
                 value={item.description}
                 onChange={(e) => onUpdate({ description: e.target.value })}
-                placeholder={item.type === 'labour' ? "Labour Description" : "Material description"}
-                className="font-medium text-sm text-stone-900 bg-transparent outline-none flex-1 placeholder-stone-300"
+                placeholder={item.type === 'labour' ? "Labour description" : "Material description"}
+                className="font-medium text-sm text-stone-900 bg-transparent outline-none flex-1 placeholder-stone-300 resize-none h-[40px] leading-tight"
+                rows={2}
                 autoFocus
               />
             ) : (
-              <span className="font-medium text-sm text-stone-900 truncate flex-1">
+              <span className="font-medium text-sm text-stone-900 line-clamp-2 flex-1 leading-tight">
                 {item.description || 'Untitled'}
               </span>
             )}
           </div>
 
           {/* Bottom row: Details */}
-          <div className="flex items-center gap-4 text-xs text-stone-500">
+          <div className="flex items-center gap-4 text-xs text-stone-500 mt-0.5">
              {item.type === 'labour' ? (
                isEditing ? (
-                 <div className="flex items-center gap-3 flex-wrap">
+                 <div className="flex items-center gap-6 flex-wrap">
                    <div className="flex items-center gap-1.5">
                      <RiCalendarEventLine className="w-3.5 h-3.5 text-stone-400" />
-                     <input type="date" value={item.date || ''} onChange={e => onUpdate({date: e.target.value})} className="bg-transparent outline-none text-stone-600 w-auto font-medium" />
+                     <DatePicker 
+                       variant="inline" 
+                       value={item.date || ''} 
+                       onChange={(val) => onUpdate({date: val})} 
+                     />
                    </div>
                    <div className="flex items-center gap-1">
                      <RiTimeLine className="w-3.5 h-3.5 text-stone-400" />
@@ -531,7 +639,7 @@ const LineItemCard: React.FC<LineItemCardProps> = ({
                    </div>
                  </div>
                ) : (
-                 <div className="flex items-center gap-3">
+                 <div className="flex items-center gap-6">
                    {item.date && (
                      <div className="flex items-center gap-1.5">
                        <RiCalendarEventLine className="w-3.5 h-3.5 text-stone-400" />
@@ -551,7 +659,7 @@ const LineItemCard: React.FC<LineItemCardProps> = ({
              ) : (
                /* Materials */
                isEditing ? (
-                 <div className="flex items-center gap-4 flex-wrap">
+                 <div className="flex items-center gap-6 flex-wrap">
                    <div className="flex items-center gap-1.5">
                      <RiArchiveLine className="w-3.5 h-3.5 text-stone-400" />
                      <input type="number" value={item.quantity || ''} onChange={e => onUpdate({quantity: Number(e.target.value) || 0})} className="bg-transparent outline-none text-stone-600 w-10 border-b border-dashed border-stone-300 focus:border-stone-400 font-medium" placeholder="1" />
@@ -564,7 +672,7 @@ const LineItemCard: React.FC<LineItemCardProps> = ({
                    </div>
                  </div>
                ) : (
-                 <div className="flex items-center gap-3">
+                 <div className="flex items-center gap-6">
                    <div className="flex items-center gap-1.5">
                      <RiArchiveLine className="w-3.5 h-3.5 text-stone-400" />
                      <span className="font-medium text-stone-600">{item.quantity} qty</span>

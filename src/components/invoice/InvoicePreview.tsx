@@ -13,7 +13,11 @@ export function computeTotals(form: InvoiceFormState): InvoiceTotals {
     return sum + qty * item.unitPrice;
   }, 0);
   const gst = form.gstEnabled ? subtotal * GST_RATE : 0;
-  const discount = form.discount ?? 0;
+  
+  const discount = form.discountType === 'percentage'
+    ? subtotal * ((form.discount ?? 0) / 100)
+    : (form.discount ?? 0);
+    
   const grandTotal = subtotal + gst - discount;
   return { subtotal, gst, discount, grandTotal };
 }

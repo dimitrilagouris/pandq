@@ -114,9 +114,9 @@ const ClassicPreview: React.FC<TemplateData> = ({ form, totals, client, org, pay
               <span>SUBTOTAL</span>
               <span className="font-normal">{formatCurrency(totals.subtotal)}</span>
             </div>
-            {totals.discount > 0 && (
+            {form.discount > 0 && (
               <div className="flex justify-between">
-                <span>DISCOUNT</span>
+                <span>{form.discountType === 'percentage' ? `DISCOUNT (${form.discount}%)` : 'DISCOUNT'}</span>
                 <span className="font-normal" style={{ color: BLUE }}>-{formatCurrency(totals.discount)}</span>
               </div>
             )}
@@ -294,9 +294,9 @@ function classicBuildHtml(data: TemplateData): string {
             <span>SUBTOTAL</span>
             <span style="font-weight: 400;">${formatCurrency(totals.subtotal)}</span>
           </div>
-          ${totals.discount > 0 ? `
+          ${form.discount > 0 ? `
           <div style="display: flex; justify-content: space-between;">
-            <span>DISCOUNT</span>
+            <span>${form.discountType === 'percentage' ? `DISCOUNT (${form.discount}%)` : 'DISCOUNT'}</span>
             <span style="font-weight: 400; color: ${BLUE};">-${formatCurrency(totals.discount)}</span>
           </div>` : ''}
           ${form.gstEnabled ? `

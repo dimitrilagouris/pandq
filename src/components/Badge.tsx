@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type BadgeVariant = 'gray' | 'blue' | 'purple' | 'orange' | 'lime' | 'red';
+export type BadgeVariant = 'gray' | 'blue' | 'purple' | 'orange' | 'lime' | 'red' | 'amber' | 'emerald' | 'rose' | 'stone';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   /** The theme variant of the badge. Defaults to 'gray'. */
@@ -9,6 +9,8 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   invoiceStatus?: string;
   /** Optional activity action code to automatically resolve the variant. */
   activityAction?: string;
+  /** Optional size of the badge. Defaults to 'sm'. */
+  size?: 'sm' | 'lg';
 }
 
 /**
@@ -19,6 +21,7 @@ export function getInvoiceStatusVariant(status: string): BadgeVariant {
   if (normalized.startsWith('sent')) return 'blue';
   if (normalized.startsWith('paid')) return 'lime';
   if (normalized.startsWith('cancelled')) return 'red';
+  if (normalized.startsWith('overdue')) return 'amber';
   return 'gray';
 }
 
@@ -43,6 +46,7 @@ export const Badge: React.FC<BadgeProps> = ({
   variant,
   invoiceStatus,
   activityAction,
+  size = 'sm',
   className = '',
   ...props
 }) => {
@@ -56,15 +60,23 @@ export const Badge: React.FC<BadgeProps> = ({
     resolvedVariant = getActivityActionVariant(activityAction);
   }
 
-  const baseStyles: string = 'inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-medium uppercase tracking-wide';
+  const sizeStyles = size === 'lg' 
+    ? 'px-3 py-1 rounded-md text-xs font-medium uppercase'
+    : 'px-2 py-0.5 rounded-md text-[10px] font-medium uppercase';
+
+  const baseStyles: string = `inline-flex items-center tracking-wider ${sizeStyles}`;
 
   const variants: Record<BadgeVariant, string> = {
-    gray: 'text-stone-700 bg-stone-200',
+    gray: 'text-stone-700 bg-stone-100',
     blue: 'text-blue-700 bg-blue-100',
     purple: 'text-purple-700 bg-purple-100',
     orange: 'text-orange-700 bg-orange-100',
     lime: 'text-lime-700 bg-lime-100',
     red: 'text-red-700 bg-red-100',
+    amber: 'text-amber-700 bg-amber-100',
+    emerald: 'text-emerald-700 bg-emerald-100',
+    rose: 'text-rose-700 bg-rose-100',
+    stone: 'text-stone-700 bg-stone-100',
   };
 
   const combinedClasses: string = `${baseStyles} ${variants[resolvedVariant]} ${className}`.trim();

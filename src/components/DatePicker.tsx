@@ -7,6 +7,7 @@ interface DatePickerProps {
   value: string; // Format: YYYY-MM-DD
   onChange: (value: string) => void;
   required?: boolean;
+  variant?: 'default' | 'inline';
 }
 
 const MONTH_NAMES = [
@@ -24,7 +25,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   label,
   value,
   onChange,
-  required = false
+  required = false,
+  variant = 'default'
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -193,6 +195,20 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         {(() => {
           const isPlaceholder = !value;
           const textClass = isPlaceholder ? 'text-stone-300 font-regular' : 'text-stone-900 font-regular';
+          
+          if (variant === 'inline') {
+            return (
+              <button
+                ref={buttonRef}
+                type="button"
+                onClick={handleOpen}
+                className={`bg-transparent outline-none cursor-pointer flex items-center justify-start ${isPlaceholder ? 'text-stone-400 font-medium' : 'text-stone-600 font-medium'}`}
+              >
+                <span>{value ? formatDisplayString(value) : 'Select date'}</span>
+              </button>
+            );
+          }
+
           return (
             <button
               ref={buttonRef}

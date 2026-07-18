@@ -20,6 +20,7 @@ export interface InvoiceFormState {
   gstEnabled: boolean;
   displayDueDate: boolean;
   discount: number;
+  discountType: 'flat' | 'percentage';
   notes: string;
   templateId: string;
 }

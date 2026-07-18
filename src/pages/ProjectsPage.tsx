@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { RiAddLine, RiSubtractLine, RiSearchLine, RiDeleteBinLine, RiReceiptLine, RiMailLine, RiMore2Fill, RiCheckLine } from 'react-icons/ri';
+import { RiAddLine, RiSubtractLine, RiSearchLine, RiDeleteBinLine, RiReceiptLine, RiMailLine, RiCheckLine, RiHistoryLine, RiEdit2Line, RiCheckboxCircleLine, RiMailSendLine, RiFilePdfLine, RiFileList3Line } from 'react-icons/ri';
 import { Invoice, Client, InvoiceStatus } from '../types';
 import { Page } from '../App';
 import { InvoicePreview, computeTotals, buildTemplateData } from '../components/invoice/InvoicePreview';
@@ -8,7 +8,7 @@ import { InvoiceFormState } from '../components/invoice/invoiceTypes';
 import { getTemplate } from '../components/invoice/templates/registry';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
-import { Dropdown } from '../components/Dropdown';
+import { DropdownFooter } from '../components/Dropdown';
 import { Badge, BadgeVariant } from '../components/Badge';
 import { InvoiceHistoryModal } from '../components/invoice/InvoiceHistoryModal';
 import { EmptyState } from '../components/EmptyState';
@@ -55,11 +55,14 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
   const [previewClient, setPreviewClient] = useState<Client | null>(null);
   const [canvasScale, setCanvasScale] = useState(0.85);
   const [historyInvoiceId, setHistoryInvoiceId] = useState<number | null>(null);
+  const [historyDefaultTab, setHistoryDefaultTab] = useState<'summary' | 'history'>('summary');
   const [invoiceStatuses, setInvoiceStatuses] = useState<InvoiceStatus[]>([]);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; invoice: Invoice } | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const canvasRef = useRef<PreviewCanvasHandle>(null);
+  const lastClickedIndexRef = useRef<number>(-1);
 
   useEffect(() => {
     const activeBtn = buttonRefs.current[statusFilter];
@@ -106,6 +109,73 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
     }
   };
 
+  /** Build template HTML for a single invoice and either email or PDF-export it. */
+  const handleSingleInvoiceAction = async (inv: Invoice, action: 'send' | 'pdf'): Promise<void> => {
+    try {
+      const fullData = await window.electronAPI.getInvoiceById(inv.id);
+      if (!fullData) return;
+
+      const statusStr = fullData.status || '';
+      const notesStr = statusStr.includes('|') ? statusStr.split('|').slice(1).join('|') : '';
+      const templateId = fullData.template_id || 'classic';
+
+      const formState: InvoiceFormState = {
+        invoiceNumber: fullData.invoice_number,
+        dateIssued: fullData.date,
+        dueDate: fullData.due_date,
+        clientId: fullData.client_id,
+        items: (fullData.items || []).map((item: any) => ({
+          id: item.id || String(Math.random()),
+          type: (item.type || 'labour') as 'labour' | 'materials',
+          description: item.description,
+          quantity: item.quantity,
+          hours: item.hours !== null ? item.hours : undefined,
+          date: item.date || undefined,
+          unitPrice: item.rate,
+        })),
+        gstEnabled: Boolean(fullData.gst_added),
+        displayDueDate: fullData.display_due_date !== undefined ? Boolean(fullData.display_due_date) : true,
+        discount: fullData.discounts && fullData.discounts[0] ? fullData.discounts[0].amount : 0,
+        discountType: fullData.discounts && fullData.discounts[0] && fullData.discounts[0].type === 'percentage' ? 'percentage' : 'flat',
+        notes: notesStr,
+        templateId,
+      };
+
+      const client: Client = clients.find(c => c.id === fullData.client_id) || {
+        id: fullData.client_id,
+        name: inv.client_name || '',
+        business_name: inv.client_business_name || '',
+        email: inv.client_email || '',
+        phone: '',
+        address: inv.client_address || '',
+      };
+
+      const templateData = buildTemplateData(formState, client, settings);
+      const template = getTemplate(templateId);
+      const htmlContent = template.buildHtml(templateData);
+
+      if (action === 'send') {
+        await window.electronAPI.emailInvoice(
+          fullData.invoice_number,
+          htmlContent,
+          client.email,
+          client.name || client.business_name,
+          inv.price,
+          inv.due_date || '',
+        );
+        const autoUpdate = settings['setting_email_auto_update_status'] !== 'false';
+        if (autoUpdate) {
+          await window.electronAPI.updateInvoiceStatus(inv.id, 'sent');
+          await loadInvoices();
+        }
+      } else {
+        await window.electronAPI.printToPDF(fullData.invoice_number, htmlContent);
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : `Failed to ${action === 'send' ? 'send' : 'export'} invoice.`);
+    }
+  };
+
   /* ── Selection logic ── */
   const selectedInvoices = invoices.filter(inv => selectedIds.has(inv.id));
   const allSameClient = selectedInvoices.length > 0
@@ -122,9 +192,59 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
     setSelectedIds(newSelected);
   };
 
-  const handleCardClick = async (inv: Invoice) => {
+  /** Close context menu on outside click or scroll. */
+  useEffect(() => {
+    if (!contextMenu) return;
+    const close = () => setContextMenu(null);
+    document.addEventListener('mousedown', close);
+    window.addEventListener('scroll', close, true);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      window.removeEventListener('scroll', close, true);
+    };
+  }, [contextMenu]);
+
+  /** Press Escape to exit selection mode and deselect all. */
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isSelectionMode) {
+        setIsSelectionMode(false);
+        setSelectedIds(new Set());
+        lastClickedIndexRef.current = -1;
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isSelectionMode]);
+
+  const handleCardClick = async (inv: Invoice, e?: React.MouseEvent) => {
+    // Shift+click enters selection mode and selects a range
+    if (e?.shiftKey) {
+      const currentIndex = filtered.findIndex(f => f.id === inv.id);
+      if (!isSelectionMode) {
+        // First shift+click: enter selection mode with this card selected
+        setIsSelectionMode(true);
+        setSelectedIds(new Set([inv.id]));
+        lastClickedIndexRef.current = currentIndex;
+        return;
+      }
+      // Subsequent shift+click: select range from last clicked to current
+      const lastIndex = lastClickedIndexRef.current;
+      if (lastIndex >= 0 && currentIndex >= 0) {
+        const start = Math.min(lastIndex, currentIndex);
+        const end = Math.max(lastIndex, currentIndex);
+        const rangeIds = filtered.slice(start, end + 1).map(f => f.id);
+        const newSelected = new Set(selectedIds);
+        for (const id of rangeIds) newSelected.add(id);
+        setSelectedIds(newSelected);
+      }
+      lastClickedIndexRef.current = currentIndex;
+      return;
+    }
+
     if (isSelectionMode) {
       handleToggleSelection(inv.id);
+      lastClickedIndexRef.current = filtered.findIndex(f => f.id === inv.id);
       return;
     }
 
@@ -438,28 +558,6 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                 const parts = inv.status.split('|');
                 const status = parts[0] || 'draft';
 
-                // Dropdown Actions
-                const actionOptions = [
-                  { value: 'history', label: 'View History' },
-                  { value: 'edit', label: 'Edit' },
-                  ...(status !== 'paid' ? [{ value: 'mark_paid', label: 'Mark as paid' }] : []),
-                  { value: 'delete', label: 'Delete', className: 'text-red-600 hover:bg-red-50' }
-                ];
-
-                const handleAction = async (val: string) => {
-                  if (val === 'history') setHistoryInvoiceId(inv.id);
-                  if (val === 'edit') onEditInvoice(inv.id);
-                  if (val === 'delete') handleDelete(inv);
-                  if (val === 'mark_paid') {
-                    try {
-                      await window.electronAPI.updateInvoiceStatus(inv.id, 'paid');
-                      await loadInvoices();
-                    } catch (err) {
-                      setError(err instanceof Error ? err.message : 'Failed to mark as paid.');
-                    }
-                  }
-                };
-
                 const isSelected = isSelectionMode ? selectedIds.has(inv.id) : selectedPreviewId === inv.id;
 
                 // Last Updated date
@@ -468,7 +566,11 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                 return (
                   <div
                     key={inv.id}
-                    onClick={() => handleCardClick(inv)}
+                    onClick={(e) => handleCardClick(inv, e)}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setContextMenu({ x: e.clientX, y: e.clientY, invoice: inv });
+                    }}
                     className={`scroll-animate-card border rounded-2xl p-3 shadow-sm transition-colors flex flex-col justify-between relative group h-[80px] hover:z-50 focus-within:z-50 cursor-pointer hover:border-stone-300 ${isSelected ? 'z-10 bg-white border-stone-400 ring-2 ring-stone-400 ring-offset-1' : 'z-0 bg-stone-50 border-stone-200/60'
                       }`}
                   >
@@ -499,7 +601,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                         </span>
                       </div>
 
-                      {/* Bottom Row: Invoice ID, Client Address, More Menu */}
+                      {/* Bottom Row: Invoice ID, Client Address */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3 overflow-hidden">
                           <span className="font-normal text-stone-600 text-sm leading-none tracking-tight flex-shrink-0">
@@ -508,25 +610,6 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                           <span className="text-xs font-normal text-stone-500 truncate max-w-[160px]">
                             {inv.client_address || ''}
                           </span>
-                        </div>
-
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCardClick(inv);
-                          }}
-                          className={`flex-shrink-0 transition-opacity duration-300 ${isSelectionMode ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}
-                        >
-                          <Dropdown
-                            variant="badge"
-                            options={actionOptions}
-                            onSelect={handleAction}
-                            triggerLabel=""
-                            icon={<RiMore2Fill className="w-4 h-4 text-stone-500 group-hover:text-stone-800 transition-colors" />}
-                            triggerClassName="w-7 h-7 flex items-center justify-center bg-transparent border border-stone-200 shadow-1 hover:bg-stone-50 hover:border-stone-300 rounded-md cursor-pointer !p-0 [&>span]:hidden"
-                            widthClass="w-32"
-                            align="right"
-                          />
                         </div>
                       </div>
                     </div>
@@ -538,6 +621,113 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           {/* Bottom gradient overlay matching the background color (bg-stone-100) */}
           <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-stone-100 to-transparent pointer-events-none z-10" />
         </div>
+
+        {/* Right-click Context Menu */}
+        {contextMenu && (() => {
+          const inv = contextMenu.invoice;
+          const ctxStatus = (inv.status.split('|')[0]) || 'draft';
+
+          const ctxOptions = [
+            { value: 'summary', label: 'View Summary', icon: <RiFileList3Line className="w-4 h-4" /> },
+            { value: 'history', label: 'View History', icon: <RiHistoryLine className="w-4 h-4" /> },
+            { value: 'edit', label: 'Edit', icon: <RiEdit2Line className="w-4 h-4" /> },
+            { value: 'send', label: 'Send', icon: <RiMailSendLine className="w-4 h-4" />, divider: true },
+            { value: 'save_pdf', label: 'Save as PDF', icon: <RiFilePdfLine className="w-4 h-4" /> },
+            ...(ctxStatus !== 'paid' ? [{ value: 'mark_paid', label: 'Mark as Paid', icon: <RiCheckboxCircleLine className="w-4 h-4" />, divider: true }] : []),
+            { value: 'delete', label: 'Delete', icon: <RiDeleteBinLine className="w-4 h-4" />, danger: true, divider: ctxStatus === 'paid' }
+          ];
+
+          const ctxFooter: DropdownFooter | undefined = inv.updated_at ? (() => {
+            const d = new Date(inv.updated_at!.includes('T') ? inv.updated_at! : inv.updated_at! + 'Z');
+            const today = new Date();
+            const isToday = d.toDateString() === today.toDateString();
+            const dateLabel = isToday ? 'Today' : d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+            const timeLabel = d.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' });
+            return { label: 'Last edited', sublabel: `${dateLabel} at ${timeLabel}` };
+          })() : undefined;
+
+          const handleCtxAction = async (val: string) => {
+            setContextMenu(null);
+            if (val === 'summary') {
+              setHistoryDefaultTab('summary');
+              setHistoryInvoiceId(inv.id);
+            }
+            if (val === 'history') {
+              setHistoryDefaultTab('history');
+              setHistoryInvoiceId(inv.id);
+            }
+            if (val === 'edit') onEditInvoice(inv.id);
+            if (val === 'delete') handleDelete(inv);
+            if (val === 'send') await handleSingleInvoiceAction(inv, 'send');
+            if (val === 'save_pdf') await handleSingleInvoiceAction(inv, 'pdf');
+            if (val === 'mark_paid') {
+              try {
+                await window.electronAPI.updateInvoiceStatus(inv.id, 'paid');
+                await loadInvoices();
+              } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to mark as paid.');
+              }
+            }
+          };
+
+          const menuWidth = 208;
+          const menuHeight = 330;
+          const menuLeft = contextMenu.x + menuWidth > window.innerWidth ? Math.max(0, contextMenu.x - menuWidth) : contextMenu.x;
+          const menuTop = contextMenu.y + menuHeight > window.innerHeight ? Math.max(0, contextMenu.y - menuHeight) : contextMenu.y;
+
+          return (
+            <div
+              className="fixed inset-0 z-[200]"
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                setContextMenu(null);
+              }}
+              onContextMenu={(e) => e.preventDefault()}
+            >
+              <div
+                className="fixed z-[201] bg-stone-700/95 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-22 py-1.5 flex flex-col w-52 animate-in fade-in zoom-in-95 duration-100"
+                style={{ left: menuLeft, top: menuTop }}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <div className="flex flex-col overflow-y-auto max-h-60">
+                  {ctxOptions.map((opt) => (
+                    <React.Fragment key={opt.value}>
+                      {opt.divider && (
+                        <div className="border-t border-white/[0.08] my-1 mx-2" />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleCtxAction(opt.value)}
+                        className={`flex items-center gap-3 px-3 py-2 text-left text-[13px] font-medium rounded-lg transition-colors border-0 cursor-pointer ${
+                          opt.danger
+                            ? 'text-red-400 bg-transparent hover:bg-red-500/15'
+                            : 'text-stone-200 bg-transparent hover:bg-white/10'
+                        }`}
+                        style={{ width: 'calc(100% - 8px)', marginLeft: '4px', marginRight: '4px' }}
+                      >
+                        {opt.icon && (
+                          <span className="flex-shrink-0 w-4 h-4 flex items-center justify-center opacity-80">
+                            {opt.icon}
+                          </span>
+                        )}
+                        <span>{opt.label}</span>
+                      </button>
+                    </React.Fragment>
+                  ))}
+                </div>
+
+                {ctxFooter && (
+                  <div className="border-t border-white/[0.08] mt-1 mx-2 pt-2 pb-1 px-1">
+                    <p className="text-[11.5px] text-stone-300 leading-none">{ctxFooter.label}</p>
+                    {ctxFooter.sublabel && (
+                      <p className="text-[11.5px] text-stone-400 leading-none mt-0.5">{ctxFooter.sublabel}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Right Column: Details Pane */}
         <div className="flex-1 bg-stone-50 rounded-2xl shadow-1 flex flex-col overflow-hidden hidden md:flex relative">
@@ -600,6 +790,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           {historyInvoiceId && (
             <InvoiceHistoryModal
               invoiceId={historyInvoiceId}
+              defaultTab={historyDefaultTab}
               onClose={() => setHistoryInvoiceId(null)}
             />
           )}

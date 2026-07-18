@@ -57,6 +57,12 @@ export interface Project {
   client_business_name?: string;
 }
 
+export interface InvoiceStatus {
+  id: number;
+  name: string;
+  color: string;
+}
+
 export interface ElectronAPI {
   getClients: () => Promise<Client[]>;
   createClient: (name: string, businessName: string, email: string, phone: string, address: string) => Promise<unknown>;
@@ -71,6 +77,7 @@ export interface ElectronAPI {
     gstEnabled: boolean,
     displayDueDate: boolean,
     discount: number,
+    discountType: string,
     price: number,
     items: Array<{ type: string; description: string; quantity: number; rate: number }>,
     notes: string,
@@ -89,6 +96,7 @@ export interface ElectronAPI {
     gstEnabled: boolean,
     displayDueDate: boolean,
     discount: number,
+    discountType: string,
     price: number,
     items: Array<{ type: string; description: string; quantity: number; rate: number }>,
     notes: string,
@@ -102,6 +110,10 @@ export interface ElectronAPI {
   updateInvoiceStatus: (id: number, status: string) => Promise<unknown>;
   getActivityLogs: () => Promise<any[]>;
   getInvoiceActivityLogs: (invoiceId: number) => Promise<any[]>;
+  getInvoiceStatuses: () => Promise<InvoiceStatus[]>;
+  createInvoiceStatus: (name: string, color: string) => Promise<unknown>;
+  updateInvoiceStatusColor: (name: string, color: string) => Promise<unknown>;
+  deleteInvoiceStatus: (name: string) => Promise<unknown>;
 }
 
 declare global {

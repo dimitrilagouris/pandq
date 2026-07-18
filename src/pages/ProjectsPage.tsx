@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { RiAddLine, RiSubtractLine, RiSearchLine, RiDeleteBinLine, RiReceiptLine, RiMailLine, RiMore2Fill, RiCheckLine } from 'react-icons/ri';
-import { Invoice, Client } from '../types';
+import { Invoice, Client, InvoiceStatus } from '../types';
 import { Page } from '../App';
 import { InvoicePreview, computeTotals, buildTemplateData } from '../components/invoice/InvoicePreview';
 import { PreviewCanvas, PreviewCanvasHandle } from '../components/invoice/PreviewCanvas';
@@ -9,8 +9,9 @@ import { getTemplate } from '../components/invoice/templates/registry';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { Dropdown } from '../components/Dropdown';
-import { Badge } from '../components/Badge';
+import { Badge, BadgeVariant } from '../components/Badge';
 import { InvoiceHistoryModal } from '../components/invoice/InvoiceHistoryModal';
+import { EmptyState } from '../components/EmptyState';
 
 /** Format a date string YYYY-MM-DD into a nicer layout. */
 function formatDate(dateStr: string): string {
@@ -54,6 +55,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
   const [previewClient, setPreviewClient] = useState<Client | null>(null);
   const [canvasScale, setCanvasScale] = useState(0.85);
   const [historyInvoiceId, setHistoryInvoiceId] = useState<number | null>(null);
+  const [invoiceStatuses, setInvoiceStatuses] = useState<InvoiceStatus[]>([]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -76,6 +78,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
   useEffect(() => {
     window.electronAPI.getClients().then(setClients).catch(console.error);
     window.electronAPI.getSettings().then(setSettings).catch(console.error);
+    window.electronAPI.getInvoiceStatuses().then(setInvoiceStatuses).catch(console.error);
   }, []);
 
   const loadInvoices = useCallback(async (): Promise<void> => {
@@ -149,6 +152,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           gstEnabled: Boolean(fullData.gst_added),
           displayDueDate: fullData.display_due_date !== undefined ? Boolean(fullData.display_due_date) : true,
           discount: fullData.discounts && fullData.discounts[0] ? fullData.discounts[0].amount : 0,
+          discountType: fullData.discounts && fullData.discounts[0] && fullData.discounts[0].type === 'percentage' ? 'percentage' : 'flat',
           notes: notesStr,
           templateId: fullData.template_id || 'classic',
         });
@@ -191,6 +195,12 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
     return invoices.filter((inv) => (inv.status.split('|')[0] || 'draft') === statusKey).length;
   };
 
+  const getStatusVariant = (statusName: string): BadgeVariant => {
+    const norm = statusName.toLowerCase();
+    const found = invoiceStatuses.find((s) => s.name.toLowerCase() === norm);
+    return (found?.color as BadgeVariant) || 'gray';
+  };
+
   /** Fetch full data for each selected invoice, build HTML, and email as a batch. */
   const handleSendSelected = async (): Promise<void> => {
     if (!canSendBatch) return;
@@ -226,6 +236,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
           gstEnabled: Boolean(fullData.gst_added),
           displayDueDate: fullData.display_due_date !== undefined ? Boolean(fullData.display_due_date) : true,
           discount: fullData.discounts && fullData.discounts[0] ? fullData.discounts[0].amount : 0,
+          discountType: fullData.discounts && fullData.discounts[0] && fullData.discounts[0].type === 'percentage' ? 'percentage' : 'flat',
           notes: notesStr,
           templateId,
         };
@@ -258,6 +269,14 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
       }
 
       await window.electronAPI.emailMultipleInvoices(entries, recipientEmail);
+
+      const autoUpdateSent = settings['setting_email_auto_update_status'] !== 'false';
+      if (autoUpdateSent) {
+        for (const id of Array.from(selectedIds)) {
+          await window.electronAPI.updateInvoiceStatus(Number(id), 'sent');
+        }
+      }
+
       setSelectedIds(new Set());
       setIsSelectionMode(false);
       await loadInvoices(); // Refresh to fetch newly updated_at timestamps
@@ -466,10 +485,12 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                       {/* Top Row: Client Name, Status, Date */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className={`font-medium text-base truncate max-w-[120px] ${inv.client_name ? 'text-stone-900' : 'text-stone-400 italic'}`}>
-                            {inv.client_name || 'No Client'}
+                          <span className={`font-medium text-base truncate max-w-[120px] ${inv.client_name || inv.client_business_name ? 'text-stone-900' : 'text-stone-400 italic'}`}>
+                            {settings['setting_display_client_name_as'] === 'company' && inv.client_business_name 
+                               ? inv.client_business_name 
+                               : (inv.client_name || inv.client_business_name || 'No Client')}
                           </span>
-                          <Badge invoiceStatus={status}>
+                          <Badge variant={getStatusVariant(status)}>
                             {status}
                           </Badge>
                         </div>
@@ -502,7 +523,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                             onSelect={handleAction}
                             triggerLabel=""
                             icon={<RiMore2Fill className="w-4 h-4 text-stone-500 group-hover:text-stone-800 transition-colors" />}
-                            triggerClassName="w-7 h-7 flex items-center justify-center bg-transparent border border-stone-200 shadow-sm hover:bg-stone-50 hover:border-stone-300 rounded-md cursor-pointer !p-0 [&>span]:hidden"
+                            triggerClassName="w-7 h-7 flex items-center justify-center bg-transparent border border-stone-200 shadow-1 hover:bg-stone-50 hover:border-stone-300 rounded-md cursor-pointer !p-0 [&>span]:hidden"
                             widthClass="w-32"
                             align="right"
                           />
@@ -566,13 +587,14 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
               </div>
             </div>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-stone-50/50">
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-stone-100 mb-4">
-                <RiReceiptLine className="w-8 h-8 text-stone-300" />
-              </div>
-              <h3 className="text-stone-500 font-medium mb-1">No invoice selected</h3>
-              <p className="text-stone-400 text-sm mt-1">Select an invoice from the list to view its details</p>
-            </div>
+            <EmptyState
+              icon={<RiReceiptLine className="w-6 h-6 text-stone-400" />}
+              title="No invoice selected"
+              description="Select an invoice from the list to view its details."
+              buttonText="Create new invoice"
+              onButtonClick={() => onNavigate('invoices')}
+              className="rounded-r-2xl"
+            />
           )}
         </div>
           {historyInvoiceId && (

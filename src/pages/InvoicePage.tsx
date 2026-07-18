@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { RiMailLine, RiFileTextLine, RiSaveLine, RiShareBoxLine, RiArrowRightSLine, RiAddLine, RiSubtractLine } from 'react-icons/ri';
+import { RiMailLine, RiFileTextLine, RiSaveLine, RiShareBoxLine, RiArrowRightSLine, RiAddLine, RiSubtractLine, RiArrowLeftLine } from 'react-icons/ri';
 import { Client } from '../types';
 import { Button } from '../components/Button';
 import { InvoiceForm } from '../components/invoice/InvoiceForm';
@@ -35,6 +35,7 @@ const INITIAL_FORM: InvoiceFormState = {
   gstEnabled: true,
   displayDueDate: true,
   discount: 0,
+  discountType: 'flat',
   notes: '',
   templateId: 'classic',
 };
@@ -105,6 +106,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
             gstEnabled: Boolean(data.gst_added),
             displayDueDate: data.display_due_date !== undefined ? Boolean(data.display_due_date) : true,
             discount: data.discounts && data.discounts[0] ? data.discounts[0].amount : 0,
+            discountType: data.discounts && data.discounts[0] && data.discounts[0].type === 'percentage' ? 'percentage' : 'flat',
             notes: notesStr,
             templateId: data.template_id || 'classic',
           };
@@ -221,6 +223,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           form.gstEnabled,
           form.displayDueDate,
           form.discount,
+          form.discountType,
           totals.grandTotal,
           items,
           form.notes,
@@ -235,6 +238,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           form.gstEnabled,
           form.displayDueDate,
           form.discount,
+          form.discountType,
           totals.grandTotal,
           items,
           form.notes,
@@ -290,9 +294,11 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           form.gstEnabled,
           form.displayDueDate,
           form.discount,
+          form.discountType,
           totals.grandTotal,
           items,
           form.notes,
+          form.templateId,
         );
       } else {
         await window.electronAPI.createInvoice(
@@ -303,9 +309,11 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           form.gstEnabled,
           form.displayDueDate,
           form.discount,
+          form.discountType,
           totals.grandTotal,
           items,
           form.notes,
+          form.templateId,
         );
       }
 
@@ -398,9 +406,10 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
       }));
 
       // 1. Auto-save state to database first
-      if (invoiceId) {
+      let currentInvoiceId = invoiceId;
+      if (currentInvoiceId) {
         await window.electronAPI.updateInvoice(
-          invoiceId,
+          currentInvoiceId,
           form.clientId,
           form.invoiceNumber,
           form.dateIssued,
@@ -408,13 +417,14 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           form.gstEnabled,
           form.displayDueDate,
           form.discount,
+          form.discountType,
           totals.grandTotal,
           items,
           form.notes,
           form.templateId,
         );
       } else {
-        await window.electronAPI.createInvoice(
+        const newId = await window.electronAPI.createInvoice(
           form.clientId,
           form.invoiceNumber,
           form.dateIssued,
@@ -422,11 +432,13 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           form.gstEnabled,
           form.displayDueDate,
           form.discount,
+          form.discountType,
           totals.grandTotal,
           items,
           form.notes,
           form.templateId,
         );
+        currentInvoiceId = Number(newId);
       }
 
       // 2. Build high fidelity printable document with styling
@@ -485,6 +497,12 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
         totals.grandTotal,
         form.dueDate
       );
+
+      const autoUpdateSent = settings['setting_email_auto_update_status'] !== 'false';
+      if (autoUpdateSent && currentInvoiceId) {
+        await window.electronAPI.updateInvoiceStatus(currentInvoiceId, 'sent');
+      }
+
       onNavigate('projects', true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to send invoice.');
@@ -498,22 +516,23 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
 
       {/* ── Top Header Bar (Transparent background) ── */}
       <header className="flex items-center justify-between px-6 pt-6 pb-2 bg-transparent flex-shrink-0">
-        <div className="flex flex-col">
-          {/* Breadcrumbs */}
-          <div className="flex items-center gap-1 text-xs font-medium text-stone-400">
-            <span
-              onClick={() => onNavigate('invoices')}
-              className="cursor-pointer hover:text-stone-600 transition-colors"
-            >
-              Invoices
-            </span>
-            <RiArrowRightSLine className="w-3 h-3 text-stone-300" />
-            <span className="text-stone-500">Create</span>
+        <div className="flex items-center gap-3">
+          {/* Back button */}
+          <button
+            type="button"
+            onClick={() => onNavigate('projects')}
+            className="flex items-center justify-center w-8 h-8 rounded-lg bg-stone-100 hover:bg-stone-200 border border-stone-200/80 text-stone-600 hover:text-stone-900 transition-colors shadow-sm cursor-pointer"
+            title="Back to Invoices"
+          >
+            <RiArrowLeftLine className="w-4 h-4" />
+          </button>
+
+          <div className="flex flex-col">
+            {/* Title */}
+            <h1 className="text-xl font-semibold text-stone-900 select-none">
+              {invoiceId ? 'Edit Invoice' : 'Create New Invoice'}
+            </h1>
           </div>
-          {/* Title */}
-          <h1 className="text-xl font-semibold text-stone-900 mt-1 select-none">
-            Create New Invoice
-          </h1>
         </div>
 
         {/* Action Controls */}

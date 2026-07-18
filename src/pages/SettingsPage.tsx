@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   RiPaletteLine,
   RiBuildingLine,
   RiReceiptLine,
   RiMailLine,
   RiBankCardLine,
-  RiCheckLine
+  RiCheckLine,
+  RiCheckboxCircleFill
 } from 'react-icons/ri';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
@@ -13,18 +14,26 @@ import { TemplatedInput } from '../components/TemplatedInput';
 import { TemplateSelector } from '../components/invoice/TemplateSelector';
 import { HelpBadge } from '../components/HelpBadge';
 import { TutorialModal } from '../components/TutorialModal';
+import { CircularProgress } from '../components/CircularProgress';
 import { templates } from '../components/invoice/templates/registry';
+import { Toggle } from '../components/Toggle';
 
 type SettingsTab = 'personalisation' | 'organisation' | 'invoice' | 'email' | 'payment';
+
+interface SettingsPageProps {
+  onDirtyChange?: (isDirty: boolean) => void;
+}
 
 /**
  * SettingsPage - provides user preferences and organisation config with persistent local storage storage.
  */
-export default function SettingsPage(): React.JSX.Element {
+export default function SettingsPage({ onDirtyChange }: SettingsPageProps): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<SettingsTab>('organisation');
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState<boolean>(false);
+  const [initialSettings, setInitialSettings] = useState<Record<string, string>>({});
+  const [isBannerDismissed, setIsBannerDismissed] = useState<boolean>(false);
 
   // My Organisation State
   const [orgName, setOrgName] = useState<string>('Your Business');
@@ -35,6 +44,7 @@ export default function SettingsPage(): React.JSX.Element {
 
   // Personalisation State
   const [language, setLanguage] = useState<string>('en-AU');
+  const [displayClientNameAs, setDisplayClientNameAs] = useState<'name' | 'company'>('name');
 
   // Invoice Creation State
   const [defaultDueDays, setDefaultDueDays] = useState<string>('14');
@@ -48,6 +58,7 @@ export default function SettingsPage(): React.JSX.Element {
   const [senderName, setSenderName] = useState<string>('');
   const [emailSubject, setEmailSubject] = useState<string>('Invoice {invoiceNumber}');
   const [emailBody, setEmailBody] = useState<string>('Hi,\n\nPlease find attached invoice {invoiceNumber}.\n\nKind regards,\nYour Business');
+  const [emailAutoUpdateStatus, setEmailAutoUpdateStatus] = useState<boolean>(true);
 
   // Payment Details State
   const [bankName, setBankName] = useState<string>('');
@@ -58,6 +69,7 @@ export default function SettingsPage(): React.JSX.Element {
   // Load all settings from SQLite database on mount
   useEffect(() => {
     window.electronAPI.getSettings().then((settings) => {
+      setInitialSettings(settings);
       // Org
       setOrgName(settings['setting_org_name'] || 'Your Business');
       setOrgAbn(settings['setting_org_abn'] || '');
@@ -67,6 +79,7 @@ export default function SettingsPage(): React.JSX.Element {
 
       // Personalisation
       setLanguage(settings['setting_language'] || 'en-AU');
+      setDisplayClientNameAs((settings['setting_display_client_name_as'] as 'name' | 'company') || 'name');
 
       // Invoice
       setDefaultDueDays(settings['setting_default_due_days'] || '14');
@@ -80,6 +93,7 @@ export default function SettingsPage(): React.JSX.Element {
       setSenderName(settings['setting_sender_name'] || '');
       setEmailSubject(settings['setting_email_subject'] || 'Invoice {invoiceNumber}');
       setEmailBody(settings['setting_email_body'] || 'Hi,\n\nPlease find attached invoice {invoiceNumber}.\n\nKind regards,\nYour Business');
+      setEmailAutoUpdateStatus(settings['setting_email_auto_update_status'] !== 'false');
 
       // Payment
       setBankName(settings['setting_bank_name'] || '');
@@ -95,10 +109,82 @@ export default function SettingsPage(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     orgName, orgAbn, orgAddress, orgPhone, orgEmail,
+    language, displayClientNameAs,
+    defaultDueDays, invoicePrefix, defaultNotes, defaultGstEnabled, defaultDisplayDueDate, defaultTemplateId,
+    senderName, emailSubject, emailBody, emailAutoUpdateStatus,
+    bankName, bsb, accountNumber, paymentInstructions,
+  ]);
+
+  // Compute dirty state by comparing current state with initial database values
+  useEffect(() => {
+    if (Object.keys(initialSettings).length === 0) {
+      onDirtyChange?.(false);
+      return;
+    }
+
+    const currentSettings: Record<string, string> = {
+      setting_org_name: orgName,
+      setting_org_abn: orgAbn,
+      setting_org_address: orgAddress,
+      setting_org_phone: orgPhone,
+      setting_org_email: orgEmail,
+      setting_language: language,
+      setting_display_client_name_as: displayClientNameAs,
+      setting_default_due_days: defaultDueDays,
+      setting_invoice_prefix: invoicePrefix,
+      setting_default_notes: defaultNotes,
+      setting_default_gst_enabled: String(defaultGstEnabled),
+      setting_default_display_due_date: String(defaultDisplayDueDate),
+      setting_default_template_id: defaultTemplateId,
+      setting_sender_name: senderName,
+      setting_email_subject: emailSubject,
+      setting_email_body: emailBody,
+      setting_email_auto_update_status: String(emailAutoUpdateStatus),
+      setting_bank_name: bankName,
+      setting_bsb: bsb,
+      setting_account_number: accountNumber,
+      setting_payment_instructions: paymentInstructions,
+    };
+
+    let isDirty = false;
+    for (const key of Object.keys(currentSettings)) {
+      const initialVal = initialSettings[key];
+      const currentVal = currentSettings[key];
+
+      // Replicate default fallbacks used in mount loading to avoid false dirty alerts
+      let resolvedInitial = initialVal;
+      if (initialVal === undefined) {
+        if (key === 'setting_org_name') resolvedInitial = 'Your Business';
+        else if (key === 'setting_org_address') resolvedInitial = 'Your address here';
+        else if (key === 'setting_language') resolvedInitial = 'en-AU';
+        else if (key === 'setting_display_client_name_as') resolvedInitial = 'name';
+        else if (key === 'setting_default_due_days') resolvedInitial = '14';
+        else if (key === 'setting_invoice_prefix') resolvedInitial = 'INV-';
+        else if (key === 'setting_default_gst_enabled') resolvedInitial = 'false';
+        else if (key === 'setting_default_display_due_date') resolvedInitial = 'true';
+        else if (key === 'setting_default_template_id') resolvedInitial = 'classic';
+        else if (key === 'setting_email_subject') resolvedInitial = 'Invoice {invoiceNumber}';
+        else if (key === 'setting_email_body') resolvedInitial = 'Hi,\n\nPlease find attached invoice {invoiceNumber}.\n\nKind regards,\nYour Business';
+        else if (key === 'setting_email_auto_update_status') resolvedInitial = 'true';
+        else if (key === 'setting_payment_instructions') resolvedInitial = 'Please pay within terms.';
+        else resolvedInitial = '';
+      }
+
+      if (resolvedInitial !== currentVal) {
+        isDirty = true;
+        break;
+      }
+    }
+
+    onDirtyChange?.(isDirty);
+  }, [
+    initialSettings,
+    orgName, orgAbn, orgAddress, orgPhone, orgEmail,
     language,
     defaultDueDays, invoicePrefix, defaultNotes, defaultGstEnabled, defaultDisplayDueDate, defaultTemplateId,
-    senderName, emailSubject, emailBody,
+    senderName, emailSubject, emailBody, emailAutoUpdateStatus,
     bankName, bsb, accountNumber, paymentInstructions,
+    onDirtyChange, displayClientNameAs
   ]);
 
   /**
@@ -115,6 +201,7 @@ export default function SettingsPage(): React.JSX.Element {
       toSave['setting_org_email'] = orgEmail;
     } else if (activeTab === 'personalisation') {
       toSave['setting_language'] = language;
+      toSave['setting_display_client_name_as'] = displayClientNameAs;
     } else if (activeTab === 'invoice') {
       toSave['setting_default_due_days'] = defaultDueDays;
       toSave['setting_invoice_prefix'] = invoicePrefix;
@@ -126,6 +213,7 @@ export default function SettingsPage(): React.JSX.Element {
       toSave['setting_sender_name'] = senderName;
       toSave['setting_email_subject'] = emailSubject;
       toSave['setting_email_body'] = emailBody;
+      toSave['setting_email_auto_update_status'] = String(emailAutoUpdateStatus);
     } else if (activeTab === 'payment') {
       toSave['setting_bank_name'] = bankName;
       toSave['setting_bsb'] = bsb;
@@ -136,8 +224,15 @@ export default function SettingsPage(): React.JSX.Element {
     try {
       setIsSaving(true);
       await window.electronAPI.saveSettings(toSave);
+      setInitialSettings(prev => ({
+        ...prev,
+        ...toSave
+      }));
       setIsSaving(false);
       setSaveSuccess(true);
+
+      // Dispatch event so other components (like Sidebar) can re-fetch settings
+      window.dispatchEvent(new Event('settings-updated'));
     } catch (err) {
       setIsSaving(false);
       console.error('Failed to save settings:', err);
@@ -158,6 +253,46 @@ export default function SettingsPage(): React.JSX.Element {
               onChange={setLanguage}
               placeholder="e.g. en-AU"
             />
+            <div>
+              <label className="block text-sm font-semibold text-stone-900 mb-1">
+                Invoice Client Display Name
+              </label>
+              <p className="text-xs text-stone-500 mb-3 leading-relaxed">
+                Choose whether to display the client's personal name or their company name on invoice cards.
+              </p>
+              <div className="flex flex-col gap-2.5 mt-2">
+                <label className="flex items-center gap-3 cursor-pointer group w-fit">
+                  <input
+                    type="radio"
+                    name="displayClientNameAs"
+                    value="name"
+                    checked={displayClientNameAs === 'name'}
+                    onChange={() => setDisplayClientNameAs('name')}
+                    className={`appearance-none m-0 w-4 h-4 rounded-full cursor-pointer outline-none transition-all flex-shrink-0 ${
+                      displayClientNameAs === 'name'
+                        ? 'bg-stone-600 shadow-[inset_0_0_0_3px_#fff,0_0_0_1px_#57534e]'
+                        : 'bg-white shadow-1 hover:shadow-md'
+                    }`}
+                  />
+                  <span className="text-[14px] text-stone-800 font-medium select-none group-hover:text-stone-900">Personal Name</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer group w-fit">
+                  <input
+                    type="radio"
+                    name="displayClientNameAs"
+                    value="company"
+                    checked={displayClientNameAs === 'company'}
+                    onChange={() => setDisplayClientNameAs('company')}
+                    className={`appearance-none m-0 w-4 h-4 rounded-full cursor-pointer outline-none transition-all flex-shrink-0 ${
+                      displayClientNameAs === 'company'
+                        ? 'bg-stone-600 shadow-[inset_0_0_0_3px_#fff,0_0_0_1px_#57534e]'
+                        : 'bg-white shadow-1 hover:shadow-md'
+                    }`}
+                  />
+                  <span className="text-[14px] text-stone-800 font-medium select-none group-hover:text-stone-900">Company Name</span>
+                </label>
+              </div>
+            </div>
           </div>
         );
       case 'organisation':
@@ -239,20 +374,7 @@ export default function SettingsPage(): React.JSX.Element {
                 </span>
                 <span className="text-xs text-stone-400">Enable GST calculations automatically on all new invoices.</span>
               </div>
-              <button
-                type="button"
-                onClick={() => setDefaultGstEnabled(!defaultGstEnabled)}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-2
-                  ${defaultGstEnabled ? 'bg-stone-800' : 'bg-stone-200'}
-                `}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out
-                    ${defaultGstEnabled ? 'translate-x-5' : 'translate-x-0'}
-                  `}
-                />
-              </button>
+              <Toggle enabled={defaultGstEnabled} onChange={setDefaultGstEnabled} />
             </div>
 
             {/* Toggle: Default Display Due Date */}
@@ -261,28 +383,15 @@ export default function SettingsPage(): React.JSX.Element {
                 <span className="text-sm font-medium text-stone-700">Display Due Date to client</span>
                 <span className="text-xs text-stone-400">Toggle whether the due date is visible on new client invoices.</span>
               </div>
-              <button
-                type="button"
-                onClick={() => setDefaultDisplayDueDate(!defaultDisplayDueDate)}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-stone-500 focus:ring-offset-2
-                  ${defaultDisplayDueDate ? 'bg-stone-800' : 'bg-stone-200'}
-                `}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out
-                    ${defaultDisplayDueDate ? 'translate-x-5' : 'translate-x-0'}
-                  `}
-                />
-              </button>
+              <Toggle enabled={defaultDisplayDueDate} onChange={setDefaultDisplayDueDate} />
             </div>
 
             {/* Default Template Selector */}
             <div className="flex flex-col gap-2 pt-2">
               <label className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Default Invoice Template</label>
-              <TemplateSelector 
-                selectedTemplateId={defaultTemplateId} 
-                onSelect={setDefaultTemplateId} 
+              <TemplateSelector
+                selectedTemplateId={defaultTemplateId}
+                onSelect={setDefaultTemplateId}
               />
             </div>
           </div>
@@ -320,6 +429,14 @@ export default function SettingsPage(): React.JSX.Element {
               multiline
               rows={5}
             />
+            {/* Toggle: Auto update status to sent */}
+            <div className="flex items-center justify-between py-2.5 mt-2 border-t border-stone-100">
+              <div className="flex flex-col gap-0.5 max-w-[80%]">
+                <span className="text-sm font-medium text-stone-700">Auto-update to "Sent"</span>
+                <span className="text-xs text-stone-400">Automatically mark invoices as Sent when you email them.</span>
+              </div>
+              <Toggle enabled={emailAutoUpdateStatus} onChange={setEmailAutoUpdateStatus} />
+            </div>
           </div>
         );
       case 'payment':
@@ -444,7 +561,67 @@ export default function SettingsPage(): React.JSX.Element {
       </aside>
 
       {/* ── Settings Content Panel (Right side of page) ── */}
-      <main className="flex-1 h-full overflow-y-auto px-10 py-8 flex flex-col">
+      <main className="flex-1 h-full overflow-y-auto px-10 py-8 flex flex-col relative">
+        {(() => {
+          const isOrgNameSet = orgName.trim() !== '' && orgName.trim() !== 'Your Business';
+          const isOrgAbnSet = orgAbn.trim() !== '';
+          const isOrgAddressSet = orgAddress.trim() !== '' && orgAddress.trim() !== 'Your address here';
+          const isOrgEmailSet = orgEmail.trim() !== '';
+          const isBankSet = bsb.trim() !== '' && accountNumber.trim() !== '';
+
+          const completedSteps = [isOrgNameSet, isOrgAbnSet, isOrgAddressSet, isOrgEmailSet, isBankSet].filter(Boolean).length;
+          const totalSteps = 5;
+          const isSetupComplete = completedSteps === totalSteps;
+
+          if (isSetupComplete || isBannerDismissed) return null;
+
+          return (
+            <div className="bg-stone-50 border border-stone-200 rounded-2xl p-6 mb-8 flex flex-row items-center justify-between shadow-sm relative">
+              <button
+                onClick={() => {
+                  setIsBannerDismissed(true);
+                }}
+                className="absolute top-6 right-6 text-stone-400 hover:text-stone-600 transition-colors"
+                title="Dismiss"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <div>
+                <h3 className="text-lg font-semibold text-stone-900 pr-8">Finish setting up</h3>
+                <p className="text-sm text-stone-500 mt-1 mb-4 max-w-md">Complete your organisation details to start sending professional invoices. Click a step to complete it.</p>
+
+                <ul className="text-sm text-stone-600 space-y-2">
+                  <li className="flex items-center gap-2 cursor-pointer hover:text-stone-900 transition-colors" onClick={() => setActiveTab('organisation')}>
+                    {isOrgNameSet ? <RiCheckboxCircleFill className="text-lime-500 w-4 h-4 flex-shrink-0" /> : <div className="w-4 h-4 rounded-full border border-stone-300 flex-shrink-0" />}
+                    Organisation Name
+                  </li>
+                  <li className="flex items-center gap-2 cursor-pointer hover:text-stone-900 transition-colors" onClick={() => setActiveTab('organisation')}>
+                    {isOrgAbnSet ? <RiCheckboxCircleFill className="text-lime-500 w-4 h-4 flex-shrink-0" /> : <div className="w-4 h-4 rounded-full border border-stone-300 flex-shrink-0" />}
+                    Business Number (ABN/VAT)
+                  </li>
+                  <li className="flex items-center gap-2 cursor-pointer hover:text-stone-900 transition-colors" onClick={() => setActiveTab('organisation')}>
+                    {isOrgAddressSet ? <RiCheckboxCircleFill className="text-lime-500 w-4 h-4 flex-shrink-0" /> : <div className="w-4 h-4 rounded-full border border-stone-300 flex-shrink-0" />}
+                    Business Address
+                  </li>
+                  <li className="flex items-center gap-2 cursor-pointer hover:text-stone-900 transition-colors" onClick={() => setActiveTab('organisation')}>
+                    {isOrgEmailSet ? <RiCheckboxCircleFill className="text-lime-500 w-4 h-4 flex-shrink-0" /> : <div className="w-4 h-4 rounded-full border border-stone-300 flex-shrink-0" />}
+                    Contact Email
+                  </li>
+                  <li className="flex items-center gap-2 cursor-pointer hover:text-stone-900 transition-colors" onClick={() => setActiveTab('payment')}>
+                    {isBankSet ? <RiCheckboxCircleFill className="text-lime-500 w-4 h-4 flex-shrink-0" /> : <div className="w-4 h-4 rounded-full border border-stone-300 flex-shrink-0" />}
+                    Bank Details
+                  </li>
+                </ul>
+              </div>
+              <div className="pr-4 mt-2">
+                <CircularProgress current={completedSteps} total={totalSteps} />
+              </div>
+            </div>
+          );
+        })()}
+
         <div className="flex items-center justify-between border-b border-stone-100 pb-5 mb-8">
           <div>
             <h1 className="text-xl font-semibold text-stone-900 select-none">

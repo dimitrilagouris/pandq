@@ -5,6 +5,8 @@ import { Table, ColumnDef } from '../components/Table';
 import { Button } from '../components/Button';
 import { ClientModal } from '../components/ClientModal';
 import { Input } from '../components/Input';
+import { EmptyState } from '../components/EmptyState';
+import { Tooltip } from '../components/Tooltip';
 
 /**
  * Clients page — lists all clients with search, add, edit, delete actions.
@@ -80,9 +82,17 @@ export default function ClientsPage(): React.JSX.Element {
         <div className="flex flex-col">
           <span className="font-regular text-stone-900">{c.business_name || '—'}</span>
           {c.address && (
-            <span className="text-xs text-stone-400 font-normal mt-0.5">
-              {c.address}
-            </span>
+            <Tooltip content="Click to view in Google Maps" className="mt-0.5">
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.address)}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-xs text-stone-400 font-normal hover:text-stone-600 hover:underline inline-flex w-fit transition-colors"
+              >
+                {c.address}
+              </a>
+            </Tooltip>
           )}
         </div>
       ),
@@ -148,6 +158,15 @@ export default function ClientsPage(): React.JSX.Element {
         <div className="flex-1 flex items-center justify-center">
           <p className="text-sm text-stone-400">Loading clients…</p>
         </div>
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon={<RiUser3Line className="w-6 h-6 text-stone-400" />}
+          title="No clients found"
+          description={search ? 'No clients match your search.' : 'No clients yet. Add your first one!'}
+          buttonText={search ? 'Clear search' : 'New Client'}
+          onButtonClick={search ? () => setSearch('') : () => setModalClient(null)}
+          className="rounded-2xl border border-stone-200 shadow-sm"
+        />
       ) : (
         <Table
           columns={columns}
@@ -155,7 +174,7 @@ export default function ClientsPage(): React.JSX.Element {
           keyExtractor={(c) => c.id}
           onRowClick={(c) => setModalClient(c)}
           onSelectionChange={setSelectedIds}
-          emptyMessage={search ? 'No clients match your search.' : 'No clients yet. Add your first one!'}
+          emptyMessage=""
         />
       )}
 

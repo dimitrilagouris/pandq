@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { RiAddLine, RiSubtractLine, RiSearchLine, RiDeleteBinLine, RiReceiptLine, RiMailLine, RiCheckLine, RiHistoryLine, RiEdit2Line, RiCheckboxCircleLine, RiMailSendLine, RiFilePdfLine, RiFileList3Line } from 'react-icons/ri';
-import { Invoice, Client, InvoiceStatus } from '../types';
+import { RiAddLine, RiSubtractLine, RiSearchLine, RiDeleteBinLine, RiReceiptLine, RiMailLine, RiCheckLine, RiHistoryLine, RiEdit2Line, RiCheckboxCircleLine, RiMailSendLine, RiFilePdfLine, RiFileList3Line, RiFlagFill, RiFlagLine, RiFilter3Line } from 'react-icons/ri';
+import { Invoice, Client, InvoiceStatus, Flag } from '../types';
 import { Page } from '../App';
 import { InvoicePreview, computeTotals, buildTemplateData } from '../components/invoice/InvoicePreview';
 import { PreviewCanvas, PreviewCanvasHandle } from '../components/invoice/PreviewCanvas';
@@ -8,7 +8,7 @@ import { InvoiceFormState } from '../components/invoice/invoiceTypes';
 import { getTemplate } from '../components/invoice/templates/registry';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
-import { DropdownFooter } from '../components/Dropdown';
+import { Dropdown, DropdownFooter, DropdownOption } from '../components/Dropdown';
 import { Badge, BadgeVariant } from '../components/Badge';
 import { InvoiceHistoryModal } from '../components/invoice/InvoiceHistoryModal';
 import { EmptyState } from '../components/EmptyState';
@@ -57,6 +57,8 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
   const [historyInvoiceId, setHistoryInvoiceId] = useState<number | null>(null);
   const [historyDefaultTab, setHistoryDefaultTab] = useState<'summary' | 'history'>('summary');
   const [invoiceStatuses, setInvoiceStatuses] = useState<InvoiceStatus[]>([]);
+  const [flags, setFlags] = useState<Flag[]>([]);
+  const [flagFilter, setFlagFilter] = useState<number | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; invoice: Invoice } | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -82,6 +84,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
     window.electronAPI.getClients().then(setClients).catch(console.error);
     window.electronAPI.getSettings().then(setSettings).catch(console.error);
     window.electronAPI.getInvoiceStatuses().then(setInvoiceStatuses).catch(console.error);
+    window.electronAPI.getFlags?.().then(setFlags).catch(console.error);
   }, []);
 
   const loadInvoices = useCallback(async (): Promise<void> => {
@@ -427,8 +430,20 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
 
     const matchesSearch = matchesNumber || matchesClient || matchesAddress || matchesNotes || matchesItems;
 
-    if (statusFilter === 'all') return matchesSearch;
-    return invStatus === statusFilter && matchesSearch;
+    // Flag filter
+    let matchesFlag = true;
+    if (flagFilter !== null) {
+      const selectedFlag = flags.find(f => Number(f.id) === Number(flagFilter));
+      if (selectedFlag) {
+        const invoiceFlagsStr = typeof inv.flags === 'string' ? inv.flags : '';
+        matchesFlag = invoiceFlagsStr.includes(selectedFlag.color);
+      } else {
+        matchesFlag = false;
+      }
+    }
+
+    if (statusFilter === 'all') return matchesSearch && matchesFlag;
+    return invStatus === statusFilter && matchesSearch && matchesFlag;
   });
 
   return (
@@ -477,49 +492,73 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
 
       {/* Filters & Search Row */}
       <div className="flex items-center justify-between gap-4 flex-shrink-0 px-6 pb-2">
-        {/* Status Filters Pill Navigation */}
-        <div
-          ref={containerRef}
-          className="relative flex bg-stone-200 p-0.5 rounded-xl w-fit shadow-sm text-xs font-medium select-none items-center gap-0.5"
-        >
-          {/* Sliding background highlight */}
+        <div className="flex items-center gap-2">
+          {/* Status Filters Pill Navigation */}
           <div
-            style={{
-              transform: `translateX(${sliderStyle.left}px)`,
-              width: `${sliderStyle.width}px`,
-              opacity: sliderStyle.opacity,
-            }}
-            className="absolute top-0.5 bottom-0.5 left-0 bg-white rounded-lg shadow-1 transition-all duration-300 ease-out pointer-events-none"
-          />
+            ref={containerRef}
+            className="relative flex bg-stone-200 p-0.5 rounded-xl w-fit shadow-sm text-xs font-medium select-none items-center gap-0.5"
+          >
+            {/* Sliding background highlight */}
+            <div
+              style={{
+                transform: `translateX(${sliderStyle.left}px)`,
+                width: `${sliderStyle.width}px`,
+                opacity: sliderStyle.opacity,
+              }}
+              className="absolute top-0.5 bottom-0.5 left-0 bg-white rounded-lg shadow-1 transition-all duration-300 ease-out pointer-events-none"
+            />
 
-          {statusOptions.map((opt) => {
-            const isSelected = statusFilter === opt;
-            const count = getStatusCount(opt);
-            const displayLabel = opt === 'all' ? 'All' : opt.charAt(0).toUpperCase() + opt.slice(1);
+            {statusOptions.map((opt) => {
+              const isSelected = statusFilter === opt;
+              const count = getStatusCount(opt);
+              const displayLabel = opt === 'all' ? 'All' : opt.charAt(0).toUpperCase() + opt.slice(1);
 
-            return (
-              <button
-                key={opt}
-                ref={(el) => { buttonRefs.current[opt] = el; }}
-                type="button"
-                onClick={() => setStatusFilter(opt)}
-                className={`relative z-10 flex items-center px-3 py-1.5 rounded-lg transition-all duration-150 border-0 cursor-pointer text-xs font-medium bg-transparent ${isSelected
-                  ? 'text-stone-900'
-                  : 'text-stone-500 hover:text-stone-900'
-                  }`}
-              >
-                <span>{displayLabel}</span>
-                <span className={`ml-1.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full transition-all duration-150 ${isSelected
-                  ? 'bg-stone-100 text-stone-855'
-                  : 'bg-stone-300 text-stone-600'
-                  }`}>
-                  {count}
-                </span>
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={opt}
+                  ref={(el) => { buttonRefs.current[opt] = el; }}
+                  type="button"
+                  onClick={() => setStatusFilter(opt)}
+                  className={`relative z-10 flex items-center px-3 py-1.5 rounded-lg transition-all duration-150 border-0 cursor-pointer text-xs font-medium bg-transparent ${isSelected
+                    ? 'text-stone-900'
+                    : 'text-stone-500 hover:text-stone-900'
+                    }`}
+                >
+                  <span>{displayLabel}</span>
+                  <span className={`ml-1.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full transition-all duration-150 ${isSelected
+                    ? 'bg-stone-100 text-stone-855'
+                    : 'bg-stone-300 text-stone-600'
+                    }`}>
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Flag filter button */}
+          <div className="flex items-center border-l border-stone-300 pl-2 h-6">
+            <Dropdown
+              options={[
+                { value: 'all', label: 'All Flags', icon: <RiFlagLine className="w-4 h-4 text-stone-500" /> },
+                ...flags.map(f => ({
+                  value: f.id.toString(),
+                  label: f.color.replace('bg-', '').replace('-500', '').charAt(0).toUpperCase() + f.color.replace('bg-', '').replace('-500', '').slice(1),
+                  icon: <RiFlagFill className={`w-4 h-4 ${f.color.replace('bg-', 'text-')}`} />
+                }))
+              ]}
+              onSelect={(val) => setFlagFilter(val === 'all' ? null : parseInt(val, 10))}
+              triggerLabel=""
+              icon={flagFilter === null 
+                ? <RiFlagLine className="w-4 h-4 text-stone-900" /> 
+                : <RiFlagFill className={`w-4 h-4 ${flags.find(f => f.id === flagFilter)?.color.replace('bg-', 'text-')}`} />
+              }
+              widthClass="w-36"
+              triggerClassName={`w-8 h-8 !px-0 !gap-0 flex items-center justify-center rounded-xl transition-colors border border-stone-200/80 shadow-1 ${flagFilter !== null ? 'bg-stone-300 text-stone-900' : 'bg-stone-200 text-stone-900 hover:bg-stone-300'}`}
+            />
+          </div>
         </div>
-
+        
         {/* Search */}
         <Input
           value={search}
@@ -558,6 +597,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                 const parts = inv.status.split('|');
                 const status = parts[0] || 'draft';
 
+                const flagColors = (typeof inv.flags === 'string' ? inv.flags : '').split(',').filter(Boolean);
                 const isSelected = isSelectionMode ? selectedIds.has(inv.id) : selectedPreviewId === inv.id;
 
                 // Last Updated date
@@ -571,7 +611,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                       e.preventDefault();
                       setContextMenu({ x: e.clientX, y: e.clientY, invoice: inv });
                     }}
-                    className={`scroll-animate-card border rounded-2xl p-3 shadow-sm transition-colors flex flex-col justify-between relative group h-[80px] hover:z-50 focus-within:z-50 cursor-pointer hover:border-stone-300 ${isSelected ? 'z-10 bg-white border-stone-400 ring-2 ring-stone-400 ring-offset-1' : 'z-0 bg-stone-50 border-stone-200/60'
+                    className={`scroll-animate-card border rounded-2xl p-3 shadow-sm transition-colors flex flex-col justify-between relative group hover:z-50 focus-within:z-50 cursor-pointer hover:border-stone-300 ${isSelected ? 'z-10 bg-white border-stone-400 ring-2 ring-stone-400 ring-offset-1' : 'z-0 bg-stone-50 border-stone-200/60'
                       }`}
                   >
                     {/* Selection Checkbox (transitions opacity) */}
@@ -587,14 +627,29 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                       {/* Top Row: Client Name, Status, Date */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className={`font-medium text-base truncate max-w-[120px] ${inv.client_name || inv.client_business_name ? 'text-stone-900' : 'text-stone-400 italic'}`}>
-                            {settings['setting_display_client_name_as'] === 'company' && inv.client_business_name 
-                               ? inv.client_business_name 
-                               : (inv.client_name || inv.client_business_name || 'No Client')}
+                           <span className={`font-medium text-base truncate max-w-[150px] ${inv.client_name || inv.client_business_name ? 'text-stone-900' : 'text-stone-400 italic'}`}>
+                            {settings['setting_display_client_name_as'] === 'company' && inv.client_business_name
+                              ? inv.client_business_name
+                              : (inv.client_name || inv.client_business_name || 'No Client')}
                           </span>
-                          <Badge variant={getStatusVariant(status)}>
-                            {status}
-                          </Badge>
+                          <div className="flex items-center gap-1">
+                            <Badge variant={getStatusVariant(status)}>
+                              {status}
+                            </Badge>
+                            {flagColors.length > 0 && (
+                              <div className="flex items-center gap-0.5 px-1 py-0.5 rounded border border-stone-200 bg-white shadow-sm">
+                                {/* Safelist helper: bg-red-500 bg-blue-500 bg-green-500 bg-yellow-500 bg-purple-500 bg-orange-500 bg-emerald-500 bg-amber-500 bg-pink-500 bg-teal-500 text-red-500 text-blue-500 text-green-500 text-yellow-500 text-purple-500 text-orange-500 text-emerald-500 text-amber-500 text-pink-500 text-teal-500 */}
+                                {flagColors.slice(0, 3).map(color => (
+                                  <RiFlagFill key={color} className={`w-[11px] h-[11px] ${color.replace('bg-', 'text-')}`} />
+                                ))}
+                                {flagColors.length > 3 && (
+                                  <span className="text-[9px] text-stone-400 font-bold leading-none select-none px-0.5 -mt-0.5">
+                                    ...
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <span className="text-xs text-stone-400 whitespace-nowrap">
                           {displayDate}
@@ -631,6 +686,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
             { value: 'summary', label: 'View Summary', icon: <RiFileList3Line className="w-4 h-4" /> },
             { value: 'history', label: 'View History', icon: <RiHistoryLine className="w-4 h-4" /> },
             { value: 'edit', label: 'Edit', icon: <RiEdit2Line className="w-4 h-4" /> },
+            { value: 'flags_row', isFlagsRow: true, divider: true },
             { value: 'send', label: 'Send', icon: <RiMailSendLine className="w-4 h-4" />, divider: true },
             { value: 'save_pdf', label: 'Save as PDF', icon: <RiFilePdfLine className="w-4 h-4" /> },
             ...(ctxStatus !== 'paid' ? [{ value: 'mark_paid', label: 'Mark as Paid', icon: <RiCheckboxCircleLine className="w-4 h-4" />, divider: true }] : []),
@@ -689,29 +745,63 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                 style={{ left: menuLeft, top: menuTop }}
                 onMouseDown={(e) => e.stopPropagation()}
               >
-                <div className="flex flex-col overflow-y-auto max-h-60">
+                <div className="flex flex-col overflow-y-auto max-h-96">
                   {ctxOptions.map((opt) => (
                     <React.Fragment key={opt.value}>
                       {opt.divider && (
                         <div className="border-t border-white/[0.08] my-1 mx-2" />
                       )}
-                      <button
-                        type="button"
-                        onClick={() => handleCtxAction(opt.value)}
-                        className={`flex items-center gap-3 px-3 py-2 text-left text-[13px] font-medium rounded-lg transition-colors border-0 cursor-pointer ${
-                          opt.danger
+                      
+                      {opt.isFlagsRow ? (
+                        <div className="flex items-center justify-between px-3 py-1 mb-1">
+                          {flags.map((flag) => {
+                            const invoiceFlags = (typeof inv.flags === 'string' ? inv.flags : '').split(',');
+                            const isSet = invoiceFlags.includes(flag.color);
+                            return (
+                              <button
+                                key={flag.id}
+                                type="button"
+                                onClick={async (e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  try {
+                                    await window.electronAPI.toggleInvoiceFlag?.(inv.id, flag.id);
+                                    await loadInvoices();
+                                  } catch (err) {
+                                    console.error('Failed to toggle flag', err);
+                                    setError(err instanceof Error ? err.message : 'Failed to toggle flag');
+                                  } finally {
+                                    setContextMenu(null);
+                                  }
+                                }}
+                                className="p-1 hover:bg-white/10 rounded-md transition-colors border-0 bg-transparent cursor-pointer"
+                                title={flag.color.replace('bg-', '').replace('-500', '')}
+                              >
+                                {
+                                   // Safelist helper: bg-red-500 bg-blue-500 bg-green-500 bg-yellow-500 bg-purple-500 bg-orange-500 bg-emerald-500 bg-amber-500 bg-pink-500 bg-teal-500 text-red-500 text-blue-500 text-green-500 text-yellow-500 text-purple-500 text-orange-500 text-emerald-500 text-amber-500 text-pink-500 text-teal-500
+                                  isSet ? (
+                                    <RiFlagFill className={`w-4 h-4 ${flag.color.replace('bg-', 'text-')}`} />
+                                  ) : (
+                                    <RiFlagLine className={`w-4 h-4 ${flag.color.replace('bg-', 'text-')} opacity-40 hover:opacity-80`} />
+                                  )
+                                }
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleCtxAction(opt.value)}
+                          className={`flex items-center gap-3 px-3 py-2 text-left text-[13px] font-medium rounded-lg transition-colors border-0 cursor-pointer ${opt.danger
                             ? 'text-red-400 bg-transparent hover:bg-red-500/15'
-                            : 'text-stone-200 bg-transparent hover:bg-white/10'
-                        }`}
-                        style={{ width: 'calc(100% - 8px)', marginLeft: '4px', marginRight: '4px' }}
-                      >
-                        {opt.icon && (
-                          <span className="flex-shrink-0 w-4 h-4 flex items-center justify-center opacity-80">
-                            {opt.icon}
-                          </span>
-                        )}
-                        <span>{opt.label}</span>
-                      </button>
+                            : 'text-stone-300 bg-transparent hover:bg-white/10'
+                            }`}
+                        >
+                          <span className="flex-shrink-0 opacity-80">{opt.icon}</span>
+                          <span className="truncate">{opt.label}</span>
+                        </button>
+                      )}
                     </React.Fragment>
                   ))}
                 </div>
@@ -736,36 +826,47 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
               {/* Header with zoom controls */}
               <div className="flex items-center justify-between px-6 pt-4 pb-2 flex-shrink-0">
                 <span className="text-sm font-semibold text-stone-900">Preview</span>
-                <div className="flex items-center bg-stone-200 p-0.5 rounded-xl shadow-1 text-xs font-medium">
-                  <button
+                <div className="flex items-center gap-2">
+                  <Button
                     type="button"
-                    onClick={() => setCanvasScale(s => Math.max(0.2, s - 0.1))}
-                    className="px-2 py-1.5 text-stone-600 hover:text-stone-900 transition-colors"
-                    title="Zoom Out"
+                    variant="outline"
+                    size="sm"
+                    leftIcon={<RiEdit2Line className="w-3.5 h-3.5" />}
+                    onClick={() => onEditInvoice(previewForm.id!)}
                   >
-                    <RiSubtractLine className="w-3.5 h-3.5" />
-                  </button>
-                  <span className="w-12 text-center text-xs text-stone-700 select-none font-medium">
-                    {Math.round(canvasScale * 100)}%
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setCanvasScale(s => Math.min(2.0, s + 0.1))}
-                    className="px-2 py-1.5 text-stone-600 hover:text-stone-900 transition-colors"
-                    title="Zoom In"
-                  >
-                    <RiAddLine className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCanvasScale(0.85);
-                      canvasRef.current?.resetView(0.85);
-                    }}
-                    className="px-3 py-1.5 text-xs text-stone-600 hover:text-stone-900 border-l border-stone-300 transition-colors font-medium"
-                  >
-                    Reset
-                  </button>
+                    Open in Editor
+                  </Button>
+                  <div className="flex items-center bg-stone-200 p-0.5 rounded-xl shadow-1 text-xs font-medium">
+                    <button
+                      type="button"
+                      onClick={() => setCanvasScale(s => Math.max(0.2, s - 0.1))}
+                      className="px-2 py-1.5 text-stone-600 hover:text-stone-900 transition-colors"
+                      title="Zoom Out"
+                    >
+                      <RiSubtractLine className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="w-12 text-center text-xs text-stone-700 select-none font-medium">
+                      {Math.round(canvasScale * 100)}%
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCanvasScale(s => Math.min(2.0, s + 0.1))}
+                      className="px-2 py-1.5 text-stone-600 hover:text-stone-900 transition-colors"
+                      title="Zoom In"
+                    >
+                      <RiAddLine className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCanvasScale(0.85);
+                        canvasRef.current?.resetView(0.85);
+                      }}
+                      className="px-3 py-1.5 text-xs text-stone-600 hover:text-stone-900 border-l border-stone-300 transition-colors font-medium"
+                    >
+                      Reset
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -787,13 +888,13 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
             />
           )}
         </div>
-          {historyInvoiceId && (
-            <InvoiceHistoryModal
-              invoiceId={historyInvoiceId}
-              defaultTab={historyDefaultTab}
-              onClose={() => setHistoryInvoiceId(null)}
-            />
-          )}
+        {historyInvoiceId && (
+          <InvoiceHistoryModal
+            invoiceId={historyInvoiceId}
+            defaultTab={historyDefaultTab}
+            onClose={() => setHistoryInvoiceId(null)}
+          />
+        )}
       </div>
     </div>
   );

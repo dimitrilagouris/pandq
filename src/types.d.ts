@@ -26,6 +26,12 @@ export interface Invoice {
   client_address?: string;
   items_description?: string;
   template_id?: string;
+  flags?: string; // Comma separated flag colors
+}
+
+export interface Flag {
+  id: number;
+  color: string;
 }
 
 export interface InvoiceItem {
@@ -114,6 +120,8 @@ export interface ElectronAPI {
   createInvoiceStatus: (name: string, color: string) => Promise<unknown>;
   updateInvoiceStatusColor: (name: string, color: string) => Promise<unknown>;
   deleteInvoiceStatus: (name: string) => Promise<unknown>;
+  getFlags: () => Promise<Flag[]>;
+  toggleInvoiceFlag: (invoiceId: number, flagId: number) => Promise<boolean>;
 }
 
 declare global {

@@ -7,7 +7,8 @@ export function registerInvoiceHandlers(): void {
     const db = getDb();
     return db.prepare(`
       SELECT i.*, c.name AS client_name, c.business_name AS client_business_name, c.email AS client_email, c.address AS client_address,
-             (SELECT GROUP_CONCAT(type || ' ' || description, ' ') FROM invoice_items WHERE invoice_id = i.id) AS items_description
+             (SELECT GROUP_CONCAT(type || ' ' || description, ' ') FROM invoice_items WHERE invoice_id = i.id) AS items_description,
+             (SELECT GROUP_CONCAT(f.color, ',') FROM invoice_flags jf JOIN flags f ON jf.flag_id = f.id WHERE jf.invoice_id = i.id) AS flags
       FROM invoices i 
       LEFT JOIN clients c ON i.client_id = c.id 
       ORDER BY i.id DESC
@@ -27,7 +28,7 @@ export function registerInvoiceHandlers(): void {
     const db = getDb();
     const inv = db.prepare('SELECT invoice_number FROM invoices WHERE id = ?').get(id) as { invoice_number: string } | undefined;
     const invoiceNumber = inv?.invoice_number || null;
-    
+
     const isPaid = status.startsWith('paid');
     const paidAt = isPaid ? new Date().toISOString() : null;
 
@@ -39,7 +40,8 @@ export function registerInvoiceHandlers(): void {
   ipcMain.handle('db-get-invoice-by-id', (_event, id: number): unknown => {
     const db = getDb();
     const invoice = db.prepare(`
-      SELECT i.*, c.name AS client_name, c.business_name AS client_business_name, c.email AS client_email, c.address AS client_address, c.phone AS client_phone
+      SELECT i.*, c.name AS client_name, c.business_name AS client_business_name, c.email AS client_email, c.address AS client_address, c.phone AS client_phone,
+             (SELECT GROUP_CONCAT(f.color, ',') FROM invoice_flags jf JOIN flags f ON jf.flag_id = f.id WHERE jf.invoice_id = i.id) AS flags
       FROM invoices i
       LEFT JOIN clients c ON i.client_id = c.id
       WHERE i.id = ?
@@ -48,6 +50,26 @@ export function registerInvoiceHandlers(): void {
     const items = db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ?').all(id);
     const discounts = db.prepare('SELECT * FROM discounts WHERE invoice_id = ?').all(id);
     return { ...invoice, items, discounts };
+  });
+
+  ipcMain.handle('db-get-flags', (): unknown[] => {
+    const db = getDb();
+    return db.prepare('SELECT * FROM flags ORDER BY id ASC').all();
+  });
+
+  ipcMain.handle('db-toggle-invoice-flag', (_event, invoiceId: number, flagId: number): boolean => {
+    // Rebuild trigger
+    const db = getDb();
+    // Check if the flag already exists
+    const exists = db.prepare('SELECT 1 FROM invoice_flags WHERE invoice_id = ? AND flag_id = ?').get(invoiceId, flagId);
+    
+    if (exists) {
+      db.prepare('DELETE FROM invoice_flags WHERE invoice_id = ? AND flag_id = ?').run(invoiceId, flagId);
+      return false; // indicates it was removed
+    } else {
+      db.prepare('INSERT INTO invoice_flags (invoice_id, flag_id) VALUES (?, ?)').run(invoiceId, flagId);
+      return true; // indicates it was added
+    }
   });
 
   ipcMain.handle('db-update-invoice', (
@@ -72,7 +94,7 @@ export function registerInvoiceHandlers(): void {
     const oldInv = db.prepare('SELECT * FROM invoices WHERE id = ?').get(invoiceId) as any;
     const oldItems = db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ?').all(invoiceId) as any[];
     const oldDiscounts = db.prepare('SELECT * FROM discounts WHERE invoice_id = ?').all(invoiceId) as any[];
-    
+
     const updateInvoice = db.prepare(
       'UPDATE invoices SET client_id = ?, invoice_number = ?, date = ?, due_date = ?, price = ?, gst_added = ?, display_due_date = ?, updated_at = ?, template_id = ? WHERE id = ?'
     );
@@ -90,7 +112,7 @@ export function registerInvoiceHandlers(): void {
 
     const transaction = db.transaction(() => {
       updateInvoice.run(clientId ?? null, invoiceNumber ?? null, date ?? null, dueDate ?? null, price ?? null, gstEnabled ? 1 : 0, displayDueDate ? 1 : 0, new Date().toISOString(), templateId ?? null, invoiceId);
-      
+
       deleteItems.run(invoiceId);
       for (const item of items) {
         insertItem.run(invoiceId, item.type ?? null, item.description ?? null, item.hours ?? null, item.rate ?? null, item.quantity ?? null, item.date ?? null);

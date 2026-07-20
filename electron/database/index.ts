@@ -14,7 +14,7 @@ export function initDatabase(basePath: string): void {
     : path.join(basePath, '../database.sqlite');
 
   db = new Database(dbPath);
-  
+
   // Enforce foreign key constraints
   db.pragma('foreign_keys = ON');
 
@@ -218,8 +218,109 @@ export function initDatabase(basePath: string): void {
       db.pragma('user_version = 7');
     }
 
+    // Version 8: Create flags and invoice_flags tables
+    if (currentVersion < 8) {
+      try {
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS flags (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            color TEXT UNIQUE NOT NULL
+          );
+
+          CREATE TABLE IF NOT EXISTS invoice_flags (
+            invoice_id INTEGER NOT NULL,
+            flag_id INTEGER NOT NULL,
+            PRIMARY KEY (invoice_id, flag_id),
+            FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
+            FOREIGN KEY (flag_id) REFERENCES flags(id) ON DELETE CASCADE
+          );
+        `);
+        // Seed default flags
+        const stmt = db.prepare('INSERT OR IGNORE INTO flags (color) VALUES (?)');
+        const defaultFlags = [
+          'bg-red-500',
+          'bg-blue-500',
+          'bg-green-500',
+          'bg-yellow-500',
+          'bg-purple-500',
+          'bg-orange-500'
+        ];
+        for (const color of defaultFlags) {
+          stmt.run(color);
+        }
+      } catch (err) {
+        console.error('Failed to run Version 8 migration (flags):', err);
+      }
+      db.pragma('user_version = 8');
+    }
+
+    // Version 9: Re-seed flags table in specific order: Orange, Red, Pink, Teal, Yellow, Green
+    if (currentVersion < 9) {
+      try {
+        db.exec('DELETE FROM invoice_flags');
+        db.exec('DELETE FROM flags');
+        db.exec("DELETE FROM sqlite_sequence WHERE name='flags'");
+
+        const newFlags = [
+          'bg-orange-500',
+          'bg-red-500',
+          'bg-pink-500',
+          'bg-teal-500',
+          'bg-yellow-500',
+          'bg-green-500'
+        ];
+        const stmt = db.prepare('INSERT INTO flags (color) VALUES (?)');
+        for (const color of newFlags) {
+          stmt.run(color);
+        }
+        db.pragma('user_version = 9');
+      } catch (err) {
+        console.error('Failed to run Version 9 migration (re-seed flags):', err);
+      }
+    }
+
   } catch (err) {
     console.error('Failed to run schema migrations:', err);
+  }
+
+  // Always ensure the canonical flag set exists in the correct order.
+  // Uses INSERT OR IGNORE so existing rows are untouched and no invoice_flags are lost.
+  try {
+    const desiredFlags: string[] = [
+      'bg-orange-500',
+      'bg-red-500',
+      'bg-pink-500',
+      'bg-teal-500',
+      'bg-yellow-500',
+      'bg-green-500',
+    ];
+
+    // Remove any colors that are no longer in the desired set
+    const placeholders = desiredFlags.map(() => '?').join(', ');
+    db.prepare(`DELETE FROM flags WHERE color NOT IN (${placeholders})`).run(...desiredFlags);
+
+    // Check if the legacy 'name' column exists
+    const tableInfo = db.pragma('table_info(flags)') as any[];
+    const hasNameColumn = tableInfo.some(col => col.name === 'name');
+
+    if (hasNameColumn) {
+      const insertFlag = db.prepare('INSERT OR IGNORE INTO flags (name, color) VALUES (?, ?)');
+      for (const color of desiredFlags) {
+        // extract 'orange' from 'bg-orange-500'
+        const colorName = color.split('-')[1] || color;
+        insertFlag.run(colorName, color);
+      }
+    } else {
+      const insertFlag = db.prepare('INSERT OR IGNORE INTO flags (color) VALUES (?)');
+      for (const color of desiredFlags) {
+        insertFlag.run(color);
+      }
+    }
+  } catch (err: any) {
+    console.error('Failed to seed flags:', err);
+    try {
+      require('fs').writeFileSync('/Users/dimitrilagouris/Desktop/Personal Projects/By myself/mikovoice/seed_error.json', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
+    } catch (e) {}
   }
 
   // Pre-populate activity_actions

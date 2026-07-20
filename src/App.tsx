@@ -6,6 +6,7 @@ import InvoicePage from './pages/InvoicePage';
 import ProjectsPage from './pages/ProjectsPage';
 import SettingsPage from './pages/SettingsPage';
 import ActivitiesPage from './pages/ActivitiesPage';
+import { DashboardPage } from './pages/DashboardPage';
 
 export type Page = 'dashboard' | 'invoices' | 'clients' | 'activities' | 'settings' | 'projects';
 
@@ -13,7 +14,7 @@ export type Page = 'dashboard' | 'invoices' | 'clients' | 'activities' | 'settin
  * Main application component — manages active page and layout.
  */
 export default function App(): React.JSX.Element {
-  const [activePage, setActivePage] = useState<Page>('clients');
+  const [activePage, setActivePage] = useState<Page>('projects');
   const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [pendingPage, setPendingPage] = useState<Page | null>(null);
@@ -52,6 +53,8 @@ export default function App(): React.JSX.Element {
 
   const renderPage = (): React.ReactNode => {
     switch (activePage) {
+      case 'dashboard':
+        return <DashboardPage onNavigate={handleNavigate} />;
       case 'clients':
         return <ClientsPage />;
       case 'invoices':
@@ -63,7 +66,7 @@ export default function App(): React.JSX.Element {
           />
         );
       case 'settings':
-        return <SettingsPage />;
+        return <SettingsPage onDirtyChange={setHasUnsavedChanges} />;
       case 'activities':
         return <ActivitiesPage />;
       case 'projects':
@@ -108,7 +111,9 @@ export default function App(): React.JSX.Element {
             <div className="p-6 flex flex-col gap-2">
               <h3 className="text-[20px] font-semibold text-stone-900">Unsaved Changes</h3>
               <p className="text-[14px] text-stone-500 leading-relaxed">
-                You have unsaved changes on this invoice. If you leave now, your changes will be discarded.
+                {activePage === 'settings'
+                  ? 'You have unsaved changes in your settings. If you leave now, your changes will be discarded.'
+                  : 'You have unsaved changes on this invoice. If you leave now, your changes will be discarded.'}
               </p>
             </div>
             <div className="px-6 pb-6 pt-2 flex justify-end gap-3">

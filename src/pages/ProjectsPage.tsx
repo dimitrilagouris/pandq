@@ -623,50 +623,51 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
                       </div>
                     </div>
 
-                    <div className={`flex flex-col h-full justify-between transition-all duration-300 ease-out ${isSelectionMode ? 'pl-8' : 'pl-0'}`}>
-                      {/* Top Row: Client Name, Status, Date */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                           <span className={`font-medium text-base truncate max-w-[150px] ${inv.client_name || inv.client_business_name ? 'text-stone-900' : 'text-stone-400 italic'}`}>
-                            {settings['setting_display_client_name_as'] === 'company' && inv.client_business_name
-                              ? inv.client_business_name
-                              : (inv.client_name || inv.client_business_name || 'No Client')}
-                          </span>
-                          <div className="flex items-center gap-1">
-                            <Badge variant={getStatusVariant(status)}>
-                              {status}
-                            </Badge>
-                            {flagColors.length > 0 && (
-                              <div className="flex items-center gap-0.5 px-1 py-0.5 rounded border border-stone-200 bg-white shadow-sm">
-                                {/* Safelist helper: bg-red-500 bg-blue-500 bg-green-500 bg-yellow-500 bg-purple-500 bg-orange-500 bg-emerald-500 bg-amber-500 bg-pink-500 bg-teal-500 text-red-500 text-blue-500 text-green-500 text-yellow-500 text-purple-500 text-orange-500 text-emerald-500 text-amber-500 text-pink-500 text-teal-500 */}
-                                {flagColors.slice(0, 3).map(color => (
-                                  <RiFlagFill key={color} className={`w-[11px] h-[11px] ${color.replace('bg-', 'text-')}`} />
-                                ))}
-                                {flagColors.length > 3 && (
-                                  <span className="text-[9px] text-stone-400 font-bold leading-none select-none px-0.5 -mt-0.5">
-                                    ...
-                                  </span>
-                                )}
-                              </div>
-                            )}
+                      <div className={`flex flex-col h-full justify-between transition-all duration-300 ease-out ${isSelectionMode ? 'pl-8' : 'pl-0'}`}>
+                        {/* Top Row: Client Name, Status, Date */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                             <span className={`font-medium text-base truncate max-w-[220px] ${inv.client_name || inv.client_business_name ? 'text-stone-900' : 'text-stone-400 italic'}`}>
+                              {settings['setting_display_client_name_as'] === 'company' && inv.client_business_name
+                                ? inv.client_business_name
+                                : (inv.client_name || inv.client_business_name || 'No Client')}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <Badge variant={getStatusVariant(status)}>
+                                {status}
+                              </Badge>
+                            </div>
                           </div>
+                          <span className="text-xs text-stone-400 whitespace-nowrap">
+                            {displayDate}
+                          </span>
                         </div>
-                        <span className="text-xs text-stone-400 whitespace-nowrap">
-                          {displayDate}
-                        </span>
-                      </div>
 
-                      {/* Bottom Row: Invoice ID, Client Address */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 overflow-hidden">
-                          <span className="font-normal text-stone-600 text-sm leading-none tracking-tight flex-shrink-0">
-                            {inv.invoice_number}
-                          </span>
-                          <span className="text-xs font-normal text-stone-500 truncate max-w-[160px]">
-                            {inv.client_address || ''}
-                          </span>
+                        {/* Bottom Row: Invoice ID, Client Address, Flags */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            <span className="font-normal text-stone-600 text-sm leading-none tracking-tight flex-shrink-0">
+                              {inv.invoice_number}
+                            </span>
+                            <span className="text-xs font-normal text-stone-500 truncate max-w-[160px]">
+                              {inv.client_address || ''}
+                            </span>
+                          </div>
+                          
+                          {flagColors.length > 0 && (
+                            <div className="flex items-center gap-0.5 px-1 py-0.5 rounded border border-stone-200 bg-white shadow-sm ml-2 flex-shrink-0">
+                              {/* Safelist helper: bg-red-500 bg-blue-500 bg-green-500 bg-yellow-500 bg-purple-500 bg-orange-500 bg-emerald-500 bg-amber-500 bg-pink-500 bg-teal-500 text-red-500 text-blue-500 text-green-500 text-yellow-500 text-purple-500 text-orange-500 text-emerald-500 text-amber-500 text-pink-500 text-teal-500 */}
+                              {flagColors.slice(0, 3).map(color => (
+                                <RiFlagFill key={color} className={`w-[11px] h-[11px] ${color.replace('bg-', 'text-')}`} />
+                              ))}
+                              {flagColors.length > 3 && (
+                                <span className="text-[9px] text-stone-400 font-bold leading-none select-none px-0.5 -mt-0.5">
+                                  ...
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      </div>
                     </div>
                   </div>
                 );

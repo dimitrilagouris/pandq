@@ -213,9 +213,10 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
               name="address"
               value={form.address}
               onChange={(val) => handleFieldChange('address', val)}
+              placeholder={"123 Example St\nSydney NSW 2000\nAustralia"}
               multiline
               autoGrow
-              rows={2}
+              rows={3}
             />
           </div>
 

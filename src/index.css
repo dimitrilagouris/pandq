@@ -128,7 +128,7 @@ textarea,
   overflow: hidden;
   cursor: grab;
   background-color: #fafaf9;
-  background-image: radial-gradient(circle, #d6d3d1 0.6px, transparent 0.6px);
+  background-image: radial-gradient(circle, #a8a29e 0.6px, transparent 0.6px);
   background-size: 20px 20px;
 }
 
@@ -150,10 +150,13 @@ textarea,
     transform: scale(0.94);
     opacity: 0.5;
   }
-  12%, 88% {
+
+  12%,
+  96% {
     transform: scale(1);
     opacity: 1;
   }
+
   100% {
     transform: scale(0.94);
     opacity: 0.5;
@@ -167,9 +170,13 @@ textarea,
   will-change: transform, opacity;
 }
 
-/* Ensure the card containing the open dropdown sits on top of all other cards and hover effects */
+/* Ensure the card containing the open dropdown sits on top and renders at full quality without GPU transforms */
 .scroll-animate-card:has(.dropdown-menu-open) {
   z-index: 60 !important;
+  animation: none !important;
+  transform: none !important;
+  will-change: auto !important;
+  opacity: 1 !important;
 }
 
 /* Scroll-driven row entrance and exit animations (tuned for shorter elements) */
@@ -178,10 +185,13 @@ textarea,
     transform: scale(0.96);
     opacity: 0.5;
   }
-  8%, 95% {
+
+  8%,
+  95% {
     transform: scale(1);
     opacity: 1;
   }
+
   100% {
     transform: scale(0.96);
     opacity: 0.5;

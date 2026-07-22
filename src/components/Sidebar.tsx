@@ -28,7 +28,8 @@ const {
   RiDashboardLine: DashIcon,
   RiLogoutBoxLine: LogoutIcon,
   RiAddLine: AddIcon,
-  RiLayoutLeftLine: LayoutLeftIcon
+  RiLayoutLeftLine: LayoutLeftIcon,
+  RiMagicLine: MagicIcon
 } = Icons;
 
 interface SidebarProps {
@@ -158,28 +159,36 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
       {/* Setup Card */}
       {completedSteps < 5 && !isCardDismissed && (
         <div 
-          onClick={() => onNavigate('settings')}
-          className={`bg-stone-50 border border-stone-200 rounded-xl cursor-pointer hover:bg-stone-100 transition-all duration-300 overflow-hidden mx-3 mb-2 flex flex-col flex-shrink-0 shadow-sm relative ${
-            isCollapsed ? 'max-h-0 opacity-0 p-0 border-transparent mb-0' : 'max-h-[120px] opacity-100 p-3'
+          className={`bg-white rounded-2xl shadow-1 p-4 mx-3 mb-3 flex flex-col gap-3 flex-shrink-0 transition-all duration-300 overflow-hidden ${
+            isCollapsed ? 'max-h-0 opacity-0 p-0 mb-0' : 'opacity-100'
           }`}
         >
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsCardDismissed(true);
-            }}
-            className="absolute top-3 right-3 text-stone-400 hover:text-stone-600 transition-colors"
-            title="Dismiss"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          <h4 className="text-sm font-semibold text-stone-900 mb-1 pr-4 truncate">Finish setting up</h4>
-          <div className="flex items-center justify-between text-xs text-stone-500 mb-3 truncate">
-            <span>{completedSteps}/5 steps completed</span>
+          {/* Two-Square Icon Container (matching EmptyState component) */}
+          <div className="w-10 h-10 bg-stone-200/80 rounded-xl flex items-center justify-center flex-shrink-0">
+            <div className="w-7 h-7 bg-white rounded-lg shadow-1 flex items-center justify-center text-stone-800">
+              <MagicIcon className="w-4 h-4" />
+            </div>
           </div>
-          <HorizontalProgress current={completedSteps} total={5} />
+
+          {/* Title & Progress */}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-stone-900">Finish setting up</span>
+              <span className="text-stone-400 font-normal">{completedSteps} / 5 completed</span>
+            </div>
+            <HorizontalProgress current={completedSteps} total={5} className="!h-1.5" barColor="#1c1917" />
+          </div>
+
+          {/* Continue Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            fullWidth
+            onClick={() => onNavigate('settings')}
+            className="!h-9 text-xs font-semibold text-stone-900 bg-white border-stone-200 hover:bg-stone-50 rounded-xl shadow-2xs"
+          >
+            Continue
+          </Button>
         </div>
       )}
 

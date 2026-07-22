@@ -3,20 +3,21 @@ import React from 'react';
 interface HorizontalProgressProps {
   current: number;
   total: number;
+  barColor?: string;
   className?: string;
 }
 
 const trackStyle: React.CSSProperties = {
-  background: '#f2f1ef',
-};
-
-const fillStyle: React.CSSProperties = {
-  background: '#ff6600',
+  background: '#e7e5e4',
 };
 
 /** Horizontal progress bar with a standard fill. */
-export const HorizontalProgress: React.FC<HorizontalProgressProps> = ({ current, total, className = '' }) => {
+export const HorizontalProgress: React.FC<HorizontalProgressProps> = ({ current, total, barColor = '#1c1917', className = '' }) => {
   const percentage = total > 0 ? Math.min(current / total, 1) * 100 : 0;
+
+  const fillStyle: React.CSSProperties = {
+    background: barColor,
+  };
 
   return (
     <div className={`relative w-full h-2 ${className}`}>

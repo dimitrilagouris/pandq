@@ -576,7 +576,7 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
           if (isSetupComplete || isBannerDismissed) return null;
 
           return (
-            <div className="bg-stone-50 border border-stone-200 rounded-2xl p-6 mb-8 flex flex-row items-center justify-between shadow-sm relative">
+            <div className="bg-white rounded-2xl p-6 mb-8 flex flex-row items-center justify-between shadow-1 relative">
               <button
                 onClick={() => {
                   setIsBannerDismissed(true);
@@ -592,24 +592,24 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
                 <h3 className="text-lg font-semibold text-stone-900 pr-8">Finish setting up</h3>
                 <p className="text-sm text-stone-500 mt-1 mb-4 max-w-md">Complete your organisation details to start sending professional invoices. Click a step to complete it.</p>
 
-                <ul className="text-sm text-stone-600 space-y-2">
-                  <li className="flex items-center gap-2 cursor-pointer hover:text-stone-900 transition-colors" onClick={() => setActiveTab('organisation')}>
+                <ul className="text-sm text-stone-600 space-y-2.5">
+                  <li className="flex items-center gap-2.5 cursor-pointer hover:text-stone-900 transition-colors" onClick={() => setActiveTab('organisation')}>
                     {isOrgNameSet ? <RiCheckboxCircleFill className="text-lime-500 w-4 h-4 flex-shrink-0" /> : <div className="w-4 h-4 rounded-full border border-stone-300 flex-shrink-0" />}
                     Organisation Name
                   </li>
-                  <li className="flex items-center gap-2 cursor-pointer hover:text-stone-900 transition-colors" onClick={() => setActiveTab('organisation')}>
+                  <li className="flex items-center gap-2.5 cursor-pointer hover:text-stone-900 transition-colors" onClick={() => setActiveTab('organisation')}>
                     {isOrgAbnSet ? <RiCheckboxCircleFill className="text-lime-500 w-4 h-4 flex-shrink-0" /> : <div className="w-4 h-4 rounded-full border border-stone-300 flex-shrink-0" />}
                     Business Number (ABN/VAT)
                   </li>
-                  <li className="flex items-center gap-2 cursor-pointer hover:text-stone-900 transition-colors" onClick={() => setActiveTab('organisation')}>
+                  <li className="flex items-center gap-2.5 cursor-pointer hover:text-stone-900 transition-colors" onClick={() => setActiveTab('organisation')}>
                     {isOrgAddressSet ? <RiCheckboxCircleFill className="text-lime-500 w-4 h-4 flex-shrink-0" /> : <div className="w-4 h-4 rounded-full border border-stone-300 flex-shrink-0" />}
                     Business Address
                   </li>
-                  <li className="flex items-center gap-2 cursor-pointer hover:text-stone-900 transition-colors" onClick={() => setActiveTab('organisation')}>
+                  <li className="flex items-center gap-2.5 cursor-pointer hover:text-stone-900 transition-colors" onClick={() => setActiveTab('organisation')}>
                     {isOrgEmailSet ? <RiCheckboxCircleFill className="text-lime-500 w-4 h-4 flex-shrink-0" /> : <div className="w-4 h-4 rounded-full border border-stone-300 flex-shrink-0" />}
                     Contact Email
                   </li>
-                  <li className="flex items-center gap-2 cursor-pointer hover:text-stone-900 transition-colors" onClick={() => setActiveTab('payment')}>
+                  <li className="flex items-center gap-2.5 cursor-pointer hover:text-stone-900 transition-colors" onClick={() => setActiveTab('payment')}>
                     {isBankSet ? <RiCheckboxCircleFill className="text-lime-500 w-4 h-4 flex-shrink-0" /> : <div className="w-4 h-4 rounded-full border border-stone-300 flex-shrink-0" />}
                     Bank Details
                   </li>

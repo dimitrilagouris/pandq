@@ -1,47 +1,55 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { RiAddLine, RiSearchLine, RiDeleteBinLine, RiPencilLine, RiUser3Line } from 'react-icons/ri';
-import { Client } from '../types';
+import { Client, Invoice } from '../types';
 import { Table, ColumnDef } from '../components/Table';
 import { Button } from '../components/Button';
 import { ClientModal } from '../components/ClientModal';
+import { ClientDetailsDrawer } from '../components/ClientDetailsDrawer';
 import { Input } from '../components/Input';
 import { EmptyState } from '../components/EmptyState';
 import { Tooltip } from '../components/Tooltip';
 
 /**
- * Clients page — lists all clients with search, add, edit, delete actions.
+ * Clients page — lists all clients with search, add, edit, delete actions and details drawer.
  */
 export default function ClientsPage(): React.JSX.Element {
   const [clients, setClients] = useState<Client[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [search, setSearch] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [modalClient, setModalClient] = useState<Client | null | undefined>(undefined);
+  const [drawerClient, setDrawerClient] = useState<Client | null>(null);
   const [_selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
 
   // undefined = closed, null = new client, Client = edit existing
   const isModalOpen = modalClient !== undefined;
 
-  const loadClients = useCallback(async (): Promise<void> => {
+  const loadData = useCallback(async (): Promise<void> => {
     try {
       setIsLoading(true);
-      const data = await window.electronAPI.getClients();
-      setClients(data);
+      const [clientData, invoiceData] = await Promise.all([
+        window.electronAPI.getClients(),
+        window.electronAPI.getInvoices()
+      ]);
+      setClients(clientData);
+      setInvoices(invoiceData);
       setError('');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to load clients.');
+      setError(err instanceof Error ? err.message : 'Failed to load clients data.');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => { loadClients(); }, [loadClients]);
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleDelete = async (client: Client): Promise<void> => {
     if (!confirm(`Delete client "${client.name}"? This will also remove all their invoices.`)) return;
     try {
       await window.electronAPI.deleteClient(client.id);
-      await loadClients();
+      if (drawerClient?.id === client.id) setDrawerClient(null);
+      await loadData();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to delete client.');
     }
@@ -49,7 +57,7 @@ export default function ClientsPage(): React.JSX.Element {
 
   const handleModalSave = async (): Promise<void> => {
     setModalClient(undefined);
-    await loadClients();
+    await loadData();
   };
 
   const filtered = clients.filter((c) =>
@@ -132,7 +140,8 @@ export default function ClientsPage(): React.JSX.Element {
         </div>
         <Button
           variant="primary"
-          leftIcon={<RiAddLine className="w-5 h-5" />}
+          size="sm"
+          leftIcon={<RiAddLine className="w-4 h-4" />}
           onClick={() => setModalClient(null)}
         >
           New Client
@@ -172,11 +181,21 @@ export default function ClientsPage(): React.JSX.Element {
           columns={columns}
           data={filtered}
           keyExtractor={(c) => c.id}
-          onRowClick={(c) => setModalClient(c)}
+          onRowClick={(c) => setDrawerClient(c)}
           onSelectionChange={setSelectedIds}
           emptyMessage=""
         />
       )}
+
+      {/* Client Details Drawer */}
+      <ClientDetailsDrawer
+        client={drawerClient}
+        invoices={invoices}
+        onClose={() => setDrawerClient(null)}
+        onEditClient={(c) => {
+          setModalClient(c);
+        }}
+      />
 
       {/* Modal */}
       {isModalOpen && (

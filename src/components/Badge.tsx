@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type BadgeVariant = 'gray' | 'blue' | 'purple' | 'orange' | 'lime' | 'red' | 'amber' | 'emerald' | 'rose' | 'stone';
+export type BadgeVariant = 'gray' | 'blue' | 'purple' | 'orange' | 'lime' | 'red' | 'amber' | 'emerald' | 'rose' | 'stone' | 'pink';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   /** The theme variant of the badge. Defaults to 'gray'. */
@@ -31,7 +31,7 @@ export function getInvoiceStatusVariant(status: string): BadgeVariant {
 export function getActivityActionVariant(actionCode: string): BadgeVariant {
   const code: string = actionCode.toLowerCase();
   if (code.includes('created')) return 'blue';
-  if (code.includes('updated') || code.includes('toggled')) return 'purple';
+  if (code.includes('updated') || code.includes('toggled')) return 'pink';
   if (code.includes('sent')) return 'orange';
   if (code.includes('status_updated')) return 'lime';
   if (code.includes('deleted') || code.includes('removed')) return 'red';
@@ -77,6 +77,7 @@ export const Badge: React.FC<BadgeProps> = ({
     emerald: 'text-emerald-700 bg-emerald-100',
     rose: 'text-rose-700 bg-rose-100',
     stone: 'text-stone-700 bg-stone-100',
+    pink: 'text-pink-700 bg-pink-100',
   };
 
   const combinedClasses: string = `${baseStyles} ${variants[resolvedVariant]} ${className}`.trim();

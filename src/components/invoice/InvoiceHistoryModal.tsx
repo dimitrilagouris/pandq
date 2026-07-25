@@ -52,6 +52,7 @@ const customMarker = new L.DivIcon({
 interface InvoiceHistoryModalProps {
   invoiceId: number;
   onClose: () => void;
+  defaultTab?: 'summary' | 'history';
 }
 
 const formatTimeAgo = (dateStr: string) => {
@@ -106,13 +107,13 @@ const getTimelineIcon = (actionCode: string) => {
   );
 };
 
-export function InvoiceHistoryModal({ invoiceId, onClose }: InvoiceHistoryModalProps): React.JSX.Element {
+export function InvoiceHistoryModal({ invoiceId, onClose, defaultTab = 'summary' }: InvoiceHistoryModalProps): React.JSX.Element {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [invoice, setInvoice] = useState<any>(null);
   const [settings, setSettings] = useState<any>(null);
   const [invoiceStatuses, setInvoiceStatuses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'summary' | 'history'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'history'>(defaultTab);
   const [mapZoom, setMapZoom] = useState(14);
   const [recenterCount, setRecenterCount] = useState(0);
 
@@ -204,9 +205,9 @@ export function InvoiceHistoryModal({ invoiceId, onClose }: InvoiceHistoryModalP
     };
 
     return (
-      <div className="flex flex-col gap-6 w-full animate-fade-in">
+      <div className="flex flex-col gap-4 w-full animate-fade-in">
         {/* Map View */}
-        <div className="w-full h-[240px] bg-stone-100 rounded-2xl overflow-hidden relative border border-stone-200/60 shadow-sm">
+        <div className="w-full h-[210px] bg-stone-100 rounded-2xl overflow-hidden relative border border-stone-200/60 shadow-sm flex-shrink-0">
           {invoice.client_address ? coordinates ? (
             <>
               <MapContainer
@@ -254,29 +255,31 @@ export function InvoiceHistoryModal({ invoiceId, onClose }: InvoiceHistoryModalP
         </div>
 
         {/* Header Info */}
-        <div className="px-1">
-          <div className="flex items-center justify-between mb-1.5">
-            <h1 className="text-[32px] font-bold text-stone-900 tracking-tight leading-none">
-              {invoice.invoice_number}
-            </h1>
-            <Badge invoiceStatus={invoice.status || 'Draft'} size="lg">
-              {invoice.status || 'Draft'}
-            </Badge>
-          </div>
-          <div className="flex items-center gap-4 text-[14px] text-stone-600 mt-2">
-            <div className="flex items-center gap-1.5">
-              <RiTimeLine className="w-[16px] h-[16px] text-stone-400" />
-              <span>Issued: <span className="text-stone-900 font-medium">{formatDateSafe(invoice.date)}</span></span>
+        <div className="px-1 flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-[28px] font-bold text-stone-900 tracking-tight leading-none">
+                {invoice.invoice_number}
+              </h1>
+              <Badge invoiceStatus={invoice.status || 'Draft'} size="lg">
+                {invoice.status || 'Draft'}
+              </Badge>
             </div>
-            <div className="flex items-center gap-1.5">
-              <RiTimeLine className="w-[16px] h-[16px] text-stone-400" />
-              <span>Due: <span className="text-stone-900 font-medium">{formatDateSafe(invoice.due_date)}</span></span>
+            <div className="flex items-center gap-4 text-[13.5px] text-stone-600 mt-2">
+              <div className="flex items-center gap-1.5">
+                <RiTimeLine className="w-[15px] h-[15px] text-stone-400" />
+                <span>Issued: <span className="text-stone-900 font-medium">{formatDateSafe(invoice.date)}</span></span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <RiTimeLine className="w-[15px] h-[15px] text-stone-400" />
+                <span>Due: <span className="text-stone-900 font-medium">{formatDateSafe(invoice.due_date)}</span></span>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Progress Bar (Segmented) */}
-        <div className="w-full bg-stone-200 rounded-full flex overflow-hidden shadow-sm">
+        <div className="w-full bg-stone-200 rounded-full flex overflow-hidden shadow-sm flex-shrink-0">
           {stages.map((stage, idx) => {
             const isHighlighted = idx <= currentIndex;
 
@@ -294,24 +297,24 @@ export function InvoiceHistoryModal({ invoiceId, onClose }: InvoiceHistoryModalP
           })}
         </div>
 
-        {/* Condensed Info Grid */}
-        <div className="grid grid-cols-2 gap-y-6 gap-x-8 px-1 pb-2">
+        {/* Info Grid */}
+        <div className="grid grid-cols-2 gap-y-4 gap-x-8 px-1 pb-1">
           {/* Client */}
-          <div className="flex flex-col gap-0">
-            <span className="text-[13px] text-stone-400 font-medium leading-none mb-1">Client</span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[13px] text-stone-400 font-medium leading-none mb-0.5">Client</span>
             <span className="text-[14px] text-stone-900 font-medium leading-snug">{invoice.client_business_name || invoice.client_name || 'Client Name'}</span>
-            {invoice.client_address && <span className="text-[14px] text-stone-900 leading-snug whitespace-pre-wrap">{invoice.client_address}</span>}
+            {invoice.client_address && <span className="text-[13.5px] text-stone-700 leading-snug whitespace-pre-wrap">{invoice.client_address}</span>}
           </div>
 
           {/* Total Amount */}
-          <div className="flex flex-col gap-0">
-            <span className="text-[13px] text-stone-400 font-medium leading-none mb-1">Total Amount</span>
-            <span className="text-[14px] text-stone-900 font-medium leading-snug">{formatCurrency(invoice.price || 0)}</span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[13px] text-stone-400 font-medium leading-none mb-0.5">Total Amount</span>
+            <span className="text-[15px] text-stone-900 font-bold leading-snug">{formatCurrency(invoice.price || 0)}</span>
           </div>
 
           {/* Email */}
-          <div className="flex flex-col gap-0">
-            <span className="text-[13px] text-stone-400 font-medium leading-none mb-1">Email</span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[13px] text-stone-400 font-medium leading-none mb-0.5">Email</span>
             <a href={`mailto:${invoice.client_email}`} className="text-[14px] text-stone-900 underline underline-offset-2 hover:text-orange-600 transition-colors truncate leading-snug" title={invoice.client_email}>
               {invoice.client_email || 'client@email.com'}
             </a>
@@ -319,8 +322,8 @@ export function InvoiceHistoryModal({ invoiceId, onClose }: InvoiceHistoryModalP
 
           {/* Work Timeline */}
           {dateRangeStr && (
-            <div className="flex flex-col gap-0">
-              <span className="text-[13px] text-stone-400 font-medium leading-none mb-1">Work Timeline</span>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[13px] text-stone-400 font-medium leading-none mb-0.5">Work Timeline</span>
               <span className="text-[14px] text-stone-900 leading-snug">{dateRangeStr}</span>
             </div>
           )}
@@ -332,7 +335,7 @@ export function InvoiceHistoryModal({ invoiceId, onClose }: InvoiceHistoryModalP
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-stone-900/40 animate-fade-in" onClick={onClose}>
       <div
-        className="bg-stone-50 rounded-2xl shadow-xl w-full max-w-xl flex flex-col overflow-hidden h-[650px] max-h-[90vh] animate-slide-up"
+        className="bg-stone-50 rounded-2xl shadow-xl w-full max-w-xl flex flex-col overflow-hidden h-[640px] max-h-[90vh] animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-4 px-6 pb-2">

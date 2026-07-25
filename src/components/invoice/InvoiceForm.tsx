@@ -25,6 +25,7 @@ import { Dropdown } from '../Dropdown';
 import { Button } from '../Button';
 import { HelpBadge } from '../HelpBadge';
 import { Toggle } from '../Toggle';
+import { CollapsibleSection } from '../CollapsibleSection';
 import { InvoiceFormState, LineItem } from './invoiceTypes';
 import { templates } from './templates/registry';
 import { TemplateSelector } from './TemplateSelector';
@@ -150,13 +151,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
   return (
     <div className="flex flex-col gap-5">
       {/* ── Invoice Details ── */}
-      <div className="flex flex-col gap-4">
-        <button type="button" onClick={() => setIsDetailsOpen(!isDetailsOpen)} className="flex items-center justify-between group outline-none w-full">
-          <h2 className="text-base text-black font-medium">Invoice Details</h2>
-          <RiArrowDownSLine className={`w-5 h-5 text-stone-400 transition-transform ${isDetailsOpen ? 'rotate-180' : ''}`} />
-        </button>
-        {isDetailsOpen && (
-          <div className="flex flex-col gap-4">
+      <CollapsibleSection
+        title="Invoice Details"
+        isOpen={isDetailsOpen}
+        onToggle={() => setIsDetailsOpen(!isDetailsOpen)}
+      >
         {/* Client selector */}
         <div className="flex flex-col gap-1 w-full" ref={dropdownRef}>
           <label className="text-xs font-medium text-stone-500 tracking-wide">Bill To</label>
@@ -236,7 +235,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
             </div>
 
             {isOpen && (
-              <div className="absolute z-50 left-0 right-0 mt-1 bg-stone-600/95 backdrop-blur-md border border-white/5 rounded-2xl shadow-2xl p-1.5 flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="absolute z-50 left-0 right-0 mt-1 bg-stone-700/95 backdrop-blur-md border border-white/5 rounded-2xl shadow-2xl p-1.5 flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-150">
                 <div className="flex flex-col gap-0.5 overflow-y-auto max-h-60 custom-scrollbar">
                   {filteredClients.length > 0 ? (
                     filteredClients.map((c, idx) => {
@@ -314,117 +313,104 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
             onChange={(val) => onChange({ dueDate: val })}
           />
         </div>
-        </div>
-        )}
-      </div>
+      </CollapsibleSection>
 
       {/* ── Divider ── */}
       <div className="h-px bg-stone-200/80" />
 
       {/* ── Line Items ── */}
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between group cursor-pointer outline-none w-full" onClick={() => setIsItemsOpen(!isItemsOpen)}>
-          <div className="flex items-center gap-4">
-            <h2 className="text-base text-black font-medium select-none">Invoice Items</h2>
-            <div className="flex items-center gap-2">
-              <Button type="button" variant="ghost" size="sm" leftIcon={<RiAddLine className="w-3.5 h-3.5" />} onClick={(e) => { e.stopPropagation(); addItem('labour'); }}>
-                Labour
-              </Button>
-              <Button type="button" variant="ghost" size="sm" leftIcon={<RiAddLine className="w-3.5 h-3.5" />} onClick={(e) => { e.stopPropagation(); addItem('materials'); }}>
-                Material
-              </Button>
-            </div>
+      <CollapsibleSection
+        title="Invoice Items"
+        isOpen={isItemsOpen}
+        onToggle={() => setIsItemsOpen(!isItemsOpen)}
+        headerActions={
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="ghost" size="sm" leftIcon={<RiAddLine className="w-3.5 h-3.5" />} onClick={(e) => { e.stopPropagation(); addItem('labour'); }}>
+              Labour
+            </Button>
+            <Button type="button" variant="ghost" size="sm" leftIcon={<RiAddLine className="w-3.5 h-3.5" />} onClick={(e) => { e.stopPropagation(); addItem('materials'); }}>
+              Material
+            </Button>
           </div>
-          <RiArrowDownSLine className={`w-5 h-5 text-stone-400 transition-transform ${isItemsOpen ? 'rotate-180' : ''}`} />
-        </div>
-        {isItemsOpen && (
-          <div className="flex flex-col gap-4">
-            <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
+        }
       >
-        <div className="flex flex-col gap-6">
-          {/* Labour items */}
-          {labourItems.length > 0 && (
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[11px] font-medium text-stone-400 uppercase tracking-wider">Labour</span>
-              <SortableContext
-                items={labourItems.map(i => i.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                {labourItems.map((item) => (
-                  <SortableLineItemCard
-                    key={item.id}
-                    item={item}
-                    isEditing={editingItemId === item.id}
-                    onEdit={() => setEditingItemId(editingItemId === item.id ? null : item.id)}
-                    onDelete={() => removeItem(item.id)}
-                    onUpdate={(patch) => updateItem(item.id, patch)}
-                  />
-                ))}
-              </SortableContext>
-            </div>
-          )}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="flex flex-col gap-6">
+            {/* Labour items */}
+            {labourItems.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[11px] font-medium text-stone-400 uppercase tracking-wider">Labour</span>
+                <SortableContext
+                  items={labourItems.map(i => i.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {labourItems.map((item) => (
+                    <SortableLineItemCard
+                      key={item.id}
+                      item={item}
+                      isEditing={editingItemId === item.id}
+                      onEdit={() => setEditingItemId(editingItemId === item.id ? null : item.id)}
+                      onDelete={() => removeItem(item.id)}
+                      onUpdate={(patch) => updateItem(item.id, patch)}
+                    />
+                  ))}
+                </SortableContext>
+              </div>
+            )}
 
-          {/* Materials items */}
-          {materialItems.length > 0 && (
-            <div className="flex flex-col gap-1.5 mt-1">
-              <span className="text-[11px] font-medium text-stone-400 uppercase tracking-wider">Materials</span>
-              <SortableContext
-                items={materialItems.map(i => i.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                {materialItems.map((item) => (
-                  <SortableLineItemCard
-                    key={item.id}
-                    item={item}
-                    isEditing={editingItemId === item.id}
-                    onEdit={() => setEditingItemId(editingItemId === item.id ? null : item.id)}
-                    onDelete={() => removeItem(item.id)}
-                    onUpdate={(patch) => updateItem(item.id, patch)}
-                  />
-                ))}
-              </SortableContext>
-            </div>
-          )}
-
-        </div>
-      </DndContext>
+            {/* Materials items */}
+            {materialItems.length > 0 && (
+              <div className="flex flex-col gap-1.5 mt-1">
+                <span className="text-[11px] font-medium text-stone-400 uppercase tracking-wider">Materials</span>
+                <SortableContext
+                  items={materialItems.map(i => i.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {materialItems.map((item) => (
+                    <SortableLineItemCard
+                      key={item.id}
+                      item={item}
+                      isEditing={editingItemId === item.id}
+                      onEdit={() => setEditingItemId(editingItemId === item.id ? null : item.id)}
+                      onDelete={() => removeItem(item.id)}
+                      onUpdate={(patch) => updateItem(item.id, patch)}
+                    />
+                  ))}
+                </SortableContext>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </DndContext>
+      </CollapsibleSection>
 
       {/* ── Divider ── */}
       <div className="h-px bg-stone-200/80" />
 
       {/* ── Template ── */}
-      <div className="flex flex-col gap-4">
-        <button type="button" onClick={() => setIsTemplateOpen(!isTemplateOpen)} className="flex items-center justify-between group outline-none w-full">
-          <h2 className="text-base text-black font-medium">Template</h2>
-          <RiArrowDownSLine className={`w-5 h-5 text-stone-400 transition-transform ${isTemplateOpen ? 'rotate-180' : ''}`} />
-        </button>
-        {isTemplateOpen && (
-          <div className="flex flex-col gap-4">
-            <TemplateSelector
-              selectedTemplateId={form.templateId}
-              onSelect={(val) => onChange({ templateId: val })}
-            />
-          </div>
-        )}
-      </div>
+      <CollapsibleSection
+        title="Template"
+        isOpen={isTemplateOpen}
+        onToggle={() => setIsTemplateOpen(!isTemplateOpen)}
+      >
+        <TemplateSelector
+          selectedTemplateId={form.templateId}
+          onSelect={(val) => onChange({ templateId: val })}
+        />
+      </CollapsibleSection>
 
       {/* ── Divider ── */}
       <div className="h-px bg-stone-200/80" />
 
       {/* ── Additional Options ── */}
-      <div className="flex flex-col gap-4">
-        <button type="button" onClick={() => setIsOptionsOpen(!isOptionsOpen)} className="flex items-center justify-between group outline-none w-full">
-          <h2 className="text-base text-black font-medium">Additional Options</h2>
-          <RiArrowDownSLine className={`w-5 h-5 text-stone-400 transition-transform ${isOptionsOpen ? 'rotate-180' : ''}`} />
-        </button>
-        {isOptionsOpen && (
-          <div className="flex flex-col gap-4">
+      <CollapsibleSection
+        title="Additional Options"
+        isOpen={isOptionsOpen}
+        onToggle={() => setIsOptionsOpen(!isOptionsOpen)}
+      >
         <div className="flex flex-col gap-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
             <div className="flex flex-col gap-4">
@@ -482,9 +468,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
             placeholder="Payment terms, bank details, or any other notes…"
           />
         </div>
-          </div>
-        )}
-      </div>
+      </CollapsibleSection>
 
       {isDiscountModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/40" onClick={() => setIsDiscountModalOpen(false)}>

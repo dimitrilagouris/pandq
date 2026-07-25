@@ -11,6 +11,7 @@ import { Input } from '../components/Input';
 import { Dropdown, DropdownFooter, DropdownOption } from '../components/Dropdown';
 import { Badge, BadgeVariant } from '../components/Badge';
 import { InvoiceHistoryModal } from '../components/invoice/InvoiceHistoryModal';
+import { DeleteInvoiceModal } from '../components/invoice/DeleteInvoiceModal';
 import { EmptyState } from '../components/EmptyState';
 
 /** Format a date string YYYY-MM-DD into a nicer layout. */
@@ -56,6 +57,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
   const [canvasScale, setCanvasScale] = useState(0.85);
   const [historyInvoiceId, setHistoryInvoiceId] = useState<number | null>(null);
   const [historyDefaultTab, setHistoryDefaultTab] = useState<'summary' | 'history'>('summary');
+  const [deletingInvoice, setDeletingInvoice] = useState<Invoice | null>(null);
   const [invoiceStatuses, setInvoiceStatuses] = useState<InvoiceStatus[]>([]);
   const [flags, setFlags] = useState<Flag[]>([]);
   const [flagFilter, setFlagFilter] = useState<number | null>(null);
@@ -91,7 +93,7 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
     try {
       setIsLoading(true);
       const data = await window.electronAPI.getInvoices();
-      setInvoices(data);
+      setInvoices(data || []);
       setError('');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load invoices.');
@@ -102,14 +104,8 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
 
   useEffect(() => { loadInvoices(); }, [loadInvoices]);
 
-  const handleDelete = async (invoice: Invoice): Promise<void> => {
-    if (!confirm(`Delete invoice "${invoice.invoice_number}"?`)) return;
-    try {
-      await window.electronAPI.deleteInvoice(invoice.id);
-      await loadInvoices();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to delete invoice.');
-    }
+  const handleDelete = (invoice: Invoice): void => {
+    setDeletingInvoice(invoice);
   };
 
   /** Build template HTML for a single invoice and either email or PDF-export it. */
@@ -896,6 +892,19 @@ export default function ProjectsPage({ onNavigate, onEditInvoice }: ProjectsPage
             onClose={() => setHistoryInvoiceId(null)}
           />
         )}
+        <DeleteInvoiceModal
+          isOpen={deletingInvoice !== null}
+          invoice={deletingInvoice}
+          onClose={() => setDeletingInvoice(null)}
+          onConfirm={async (inv) => {
+            await window.electronAPI.deleteInvoice(inv.id);
+            await loadInvoices();
+            if (selectedPreviewId === inv.id) {
+              setSelectedPreviewId(null);
+              setPreviewForm(null);
+            }
+          }}
+        />
       </div>
     </div>
   );

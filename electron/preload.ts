@@ -123,4 +123,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   deleteInvoiceStatus: (name: string): Promise<unknown> => {
     return ipcRenderer.invoke('db-delete-invoice-status', name);
   },
+  getFlags: (): Promise<unknown[]> => {
+    return ipcRenderer.invoke('db-get-flags');
+  },
+  toggleInvoiceFlag: (invoiceId: number, flagId: number): Promise<boolean> => {
+    return ipcRenderer.invoke('db-toggle-invoice-flag', invoiceId, flagId);
+  },
 });

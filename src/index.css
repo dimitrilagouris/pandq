@@ -204,3 +204,26 @@ textarea,
   animation-range: entry 0% exit 100%;
   will-change: transform, opacity;
 }
+
+/* Smooth expand and collapse slide animation for accordion sections */
+.accordion-grid {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  pointer-events: none;
+  transition: grid-template-rows 300ms cubic-bezier(0.4, 0, 0.2, 1), opacity 250ms ease-in-out;
+}
+
+.accordion-grid.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.accordion-inner {
+  overflow: hidden;
+}
+
+.accordion-grid.is-open .accordion-inner {
+  overflow: visible;
+}

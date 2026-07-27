@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { StatusDistributionCard, StatusMetric } from '../components/dashboard/StatusDistributionCard';
 import { Invoice, InvoiceStatus } from '../types';
 import { Badge, BadgeVariant } from '../components/Badge';
@@ -7,6 +7,7 @@ import { RiMoneyDollarCircleLine, RiTimeLine, RiCheckboxCircleLine, RiReceiptLin
 import { DashboardCard } from '../components/dashboard/DashboardCard';
 import { Table, ColumnDef } from '../components/Table';
 import { Page } from '../App';
+import { InvoiceStatusFilterPill, FilterPillOption } from '../components/invoice/InvoiceStatusFilterPill';
 
 interface DashboardPageProps {
   onNavigate?: (page: Page) => void;
@@ -29,37 +30,22 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
+type TimeframeOption = 'all' | '30days' | 'year';
+
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [invoiceStatuses, setInvoiceStatuses] = useState<InvoiceStatus[]>([]);
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
 
-  // Timeframe selector state and sliding animation hooks
-  const [timeFilter, setTimeFilter] = useState<'all' | '30days' | 'year'>('all');
-  const [sliderStyle, setSliderStyle] = useState({ left: 0, width: 0, opacity: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
-  const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  // Timeframe selector state
+  const [timeFilter, setTimeFilter] = useState<TimeframeOption>('all');
 
-  const timeOptions = [
-    { value: 'all', label: 'All time' },
-    { value: '30days', label: 'Last 30 days' },
-    { value: 'year', label: 'This year' },
-  ] as const;
-
-  useEffect(() => {
-    const activeBtn = buttonRefs.current[timeFilter];
-    const container = containerRef.current;
-    if (activeBtn && container) {
-      const containerRect = container.getBoundingClientRect();
-      const btnRect = activeBtn.getBoundingClientRect();
-      setSliderStyle({
-        left: btnRect.left - containerRect.left,
-        width: btnRect.width,
-        opacity: 1,
-      });
-    }
-  }, [timeFilter]);
+  const timeOptions: FilterPillOption<TimeframeOption>[] = [
+    { key: 'all', label: 'All time' },
+    { key: '30days', label: 'Last 30 days' },
+    { key: 'year', label: 'This year' },
+  ];
 
   // Compute filtered invoices based on timeframe selection
   const filteredInvoices = useMemo(() => {
@@ -147,7 +133,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
     filteredInvoices.forEach((inv) => {
       const price = Number(inv.price) || 0;
       const status = inv.status ? inv.status.toLowerCase() : 'draft';
-      
+
       let isOverdue = false;
       if (status !== 'paid' && status !== 'cancelled' && inv.due_date) {
         const dueDate = new Date(inv.due_date);
@@ -333,31 +319,30 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       key: 'invoice_number',
       header: 'Invoice',
       width: '1fr',
-      render: (inv) => <span className="font-mono font-medium text-stone-700">{inv.invoice_number}</span>,
+      render: (inv) => <span className="text-stone-700">{inv.invoice_number}</span>,
     },
     {
       key: 'client_name',
       header: 'Client',
       width: '1.5fr',
-      render: (inv) => (
-        <span className="text-stone-700">
-          {settings['setting_display_client_name_as'] === 'company' && inv.client_business_name
-            ? inv.client_business_name
-            : (inv.client_name || inv.client_business_name || 'No Client')}
-        </span>
-      ),
+      render: (inv) => {
+        const clientName = settings['setting_display_client_name_as'] === 'company' && inv.client_business_name
+          ? inv.client_business_name
+          : (inv.client_name || inv.client_business_name || 'No Client');
+        return <span className="text-stone-700">{clientName}</span>;
+      },
     },
     {
       key: 'date',
       header: 'Date',
       width: '1fr',
-      render: (inv) => <span className="text-xs text-stone-500">{inv.date}</span>,
+      render: (inv) => <span className="text-stone-500">{inv.date}</span>,
     },
     {
       key: 'price',
       header: 'Amount',
       width: '1fr',
-      render: (inv) => <div className="text-right font-mono text-stone-700 w-full pr-4">${(Number(inv.price) || 0).toFixed(2)}</div>,
+      render: (inv) => <div className="text-right text-stone-700 w-full pr-4">${(Number(inv.price) || 0).toFixed(2)}</div>,
     },
     {
       key: 'status',
@@ -386,36 +371,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         </div>
 
         {/* Timeframe Selection Slider */}
-        <div
-          ref={containerRef}
-          className="relative flex bg-stone-200 p-0.5 rounded-xl w-fit shadow-sm text-xs font-medium select-none items-center gap-0.5"
-        >
-          <div
-            style={{
-              transform: `translateX(${sliderStyle.left}px)`,
-              width: `${sliderStyle.width}px`,
-              opacity: sliderStyle.opacity,
-            }}
-            className="absolute top-0.5 bottom-0.5 left-0 bg-white rounded-lg shadow-1 transition-all duration-300 ease-out pointer-events-none"
-          />
-
-          {timeOptions.map((opt) => {
-            const isSelected = timeFilter === opt.value;
-            return (
-              <button
-                key={opt.value}
-                ref={(el) => { buttonRefs.current[opt.value] = el; }}
-                type="button"
-                onClick={() => setTimeFilter(opt.value)}
-                className={`relative z-10 flex items-center px-4 py-1.5 rounded-lg transition-all duration-150 border-0 cursor-pointer text-xs font-medium bg-transparent ${
-                  isSelected ? 'text-stone-900' : 'text-stone-500 hover:text-stone-900'
-                }`}
-              >
-                {opt.label}
-              </button>
-            );
-          })}
-        </div>
+        <InvoiceStatusFilterPill
+          options={timeOptions}
+          value={timeFilter}
+          onChange={setTimeFilter}
+        />
       </div>
 
       <main className="flex-1 min-h-0 overflow-y-auto px-2 -mx-2 flex flex-col gap-6">
@@ -467,8 +427,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                       <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <defs>
                           <linearGradient id="colorPaid" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#f97316" stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
+                            <stop offset="5%" stopColor="#f97316" stopOpacity={0.2} />
+                            <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
@@ -482,11 +442,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                 </div>
 
                 {/* Section 3: Recent Invoices Table */}
-                <div className="bg-stone-50 border border-stone-200 rounded-2xl p-5 shadow-sm flex flex-col lg:flex-grow lg:min-h-0">
+                <div className="bg-stone-50 border border-stone-200 rounded-2xl p-5 shadow-sm flex flex-col h-[290px] lg:min-h-0">
                   <div className="flex justify-between items-center mb-4 flex-shrink-0">
                     <h3 className="text-base text-black font-medium">Recent Invoices</h3>
                     <span
-                      onClick={() => onNavigate?.('projects')}
+                      onClick={() => onNavigate?.('invoices')}
                       className="text-xs font-semibold text-stone-400 cursor-pointer hover:text-stone-600 transition-colors"
                     >
                       View All

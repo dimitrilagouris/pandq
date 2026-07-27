@@ -121,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
       <div className={`py-3 transition-all duration-300 overflow-hidden ${isCollapsed ? 'px-3' : 'px-5'}`}>
         <Button
           variant="primary"
-          onClick={() => onNavigate('invoices')}
+          onClick={() => onNavigate('invoice-editor')}
           title={isCollapsed ? "New Invoice" : undefined}
           className={`transition-all duration-300 flex items-center justify-center whitespace-nowrap overflow-hidden ${
             isCollapsed ? 'w-10 h-10 !px-0 rounded-xl' : 'w-full'
@@ -148,7 +148,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
           <span className="text-xs font-medium text-stone-400 uppercase tracking-wider whitespace-nowrap">Pages</span>
         </div>
         <nav className={`flex flex-col gap-0.5 transition-all duration-300 ${isCollapsed ? 'px-3' : 'px-3'}`}>
-          <NavItem isCollapsed={isCollapsed} icon={<RecIcon className="w-[18px] h-[18px]" />} label="Invoices" active={activePage === 'projects'} onClick={() => onNavigate('projects')} />
+          <NavItem isCollapsed={isCollapsed} icon={<RecIcon className="w-[18px] h-[18px]" />} label="Invoices" active={activePage === 'invoices'} onClick={() => onNavigate('invoices')} />
           <NavItem isCollapsed={isCollapsed} icon={<DashIcon className="w-[18px] h-[18px]" />} label="Dashboard" active={activePage === 'dashboard'} onClick={() => onNavigate('dashboard')} />
           <NavItem isCollapsed={isCollapsed} icon={<GroupIcon className="w-[18px] h-[18px]" />} label="Clients" active={activePage === 'clients'} onClick={() => onNavigate('clients')} />
           <NavItem isCollapsed={isCollapsed} icon={<PulseIcon className="w-[18px] h-[18px]" />} label="Activity" active={activePage === 'activities'} onClick={() => onNavigate('activities')} />

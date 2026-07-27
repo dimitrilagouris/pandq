@@ -245,7 +245,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           form.templateId,
         );
       }
-      onNavigate('projects', true);
+      onNavigate('invoices', true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to save invoice.');
     } finally {
@@ -366,7 +366,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
       // 3. Trigger print to PDF dialog
       const success = await window.electronAPI.printToPDF(form.invoiceNumber, htmlContent);
       if (success) {
-        onNavigate('projects', true);
+        onNavigate('invoices', true);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to export PDF.');
@@ -503,7 +503,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
         await window.electronAPI.updateInvoiceStatus(currentInvoiceId, 'sent');
       }
 
-      onNavigate('projects', true);
+      onNavigate('invoices', true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to send invoice.');
     } finally {
@@ -520,7 +520,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           {/* Back button */}
           <button
             type="button"
-            onClick={() => onNavigate('projects')}
+            onClick={() => onNavigate('invoices')}
             className="flex items-center justify-center w-8 h-8 rounded-lg bg-stone-100 hover:bg-stone-200 border border-stone-200/80 text-stone-600 hover:text-stone-900 transition-colors shadow-sm cursor-pointer"
             title="Back to Invoices"
           >

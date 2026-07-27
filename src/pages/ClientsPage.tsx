@@ -192,6 +192,7 @@ export default function ClientsPage(): React.JSX.Element {
         client={drawerClient}
         invoices={invoices}
         onClose={() => setDrawerClient(null)}
+        onClientUpdated={loadData}
         onEditClient={(c) => {
           setModalClient(c);
         }}

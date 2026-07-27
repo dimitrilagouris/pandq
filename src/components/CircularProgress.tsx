@@ -3,11 +3,12 @@ import React from 'react';
 interface CircularProgressProps {
   current: number;
   total: number;
+  strokeColor?: string;
   className?: string;
 }
 
 /** Circular progress ring with a standard solid fill. */
-export const CircularProgress: React.FC<CircularProgressProps> = ({ current, total, className = '' }) => {
+export const CircularProgress: React.FC<CircularProgressProps> = ({ current, total, strokeColor = '#1c1917', className = '' }) => {
   const radius = 36;
   const circumference = 2 * Math.PI * radius;
   const percentage = total > 0 ? current / total : 0;
@@ -20,7 +21,7 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({ current, tot
           cx="50" 
           cy="50" 
           r={radius} 
-          stroke="#f2f1ef" 
+          stroke="#e7e5e4" 
           strokeWidth="10" 
           fill="transparent" 
         />
@@ -30,7 +31,7 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({ current, tot
             cx="50"
             cy="50"
             r={radius}
-            stroke="#ff6600"
+            stroke={strokeColor}
             strokeWidth="10"
             fill="transparent"
             strokeLinecap="round"

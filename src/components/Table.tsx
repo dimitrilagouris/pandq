@@ -132,44 +132,44 @@ export function Table<T>({
       ) : (
         <div className="flex-1 min-h-0 overflow-y-auto pb-12 pr-2 -mr-2 relative z-0">
           <div className="flex flex-col divide-y divide-stone-200 border-b border-stone-200/80">
-          {sorted.map((row) => {
-            const key = keyExtractor(row);
-            const isSelected = selected.has(key);
-            return (
-              <div
-                key={key}
-                onClick={() => onRowClick?.(row)}
-                className={`scroll-animate-row grid items-center px-3 py-3 transition-colors duration-100
+            {sorted.map((row) => {
+              const key = keyExtractor(row);
+              const isSelected = selected.has(key);
+              return (
+                <div
+                  key={key}
+                  onClick={() => onRowClick?.(row)}
+                  className={`scroll-animate-row grid items-center px-3 py-3 transition-colors duration-100
                   ${onRowClick ? 'cursor-pointer' : ''}
                   ${isSelected ? 'bg-stone-200/40' : 'bg-transparent hover:bg-stone-200/10'}
                 `}
-                style={{ gridTemplateColumns: colWidths }}
-              >
-                {selectable && (
-                  <div
-                    className="flex items-center justify-center"
-                    onClick={(e) => { e.stopPropagation(); toggleRow(key); }}
-                  >
-                    <Checkbox checked={isSelected} onChange={() => toggleRow(key)} />
-                  </div>
-                )}
-                {columns.map((col) => (
-                  <div
-                    key={String(col.key)}
-                    className={`text-sm text-stone-700 pr-3 ${col.className ?? 'truncate'}`}
-                  >
-                    {col.render
-                      ? col.render(row)
-                      : String((row as Record<string, unknown>)[col.key as string] ?? '—')}
-                  </div>
-                ))}
-              </div>
-            );
-          })}
-        </div>
+                  style={{ gridTemplateColumns: colWidths }}
+                >
+                  {selectable && (
+                    <div
+                      className="flex items-center justify-center"
+                      onClick={(e) => { e.stopPropagation(); toggleRow(key); }}
+                    >
+                      <Checkbox checked={isSelected} onChange={() => toggleRow(key)} />
+                    </div>
+                  )}
+                  {columns.map((col) => (
+                    <div
+                      key={String(col.key)}
+                      className={`text-sm text-stone-700 pr-3 ${col.className ?? 'truncate'}`}
+                    >
+                      {col.render
+                        ? col.render(row)
+                        : String((row as Record<string, unknown>)[col.key as string] ?? '—')}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
-      
+
       {/* Bottom gradient overlay */}
       {sorted.length > 0 && (
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none z-10" />

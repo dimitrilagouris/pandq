@@ -1,22 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { RiArrowDownSLine } from 'react-icons/ri';
+import { ActivityLog } from '../types/models';
 import { Table, ColumnDef } from '../components/Table';
 import { Input } from '../components/Input';
 import { Dropdown, DropdownOption } from '../components/Dropdown';
 import { Badge } from '../components/Badge';
 import { DatePicker } from '../components/DatePicker';
 
-interface ActivityLog {
-  id: number;
-  invoice_id: number | null;
-  invoice_number: string | null;
-  action_code: string;
-  action_label: string;
-  action_category: string;
-  invoice_status: string | null;
-  details: string | null;
-  timestamp: string;
-}
 
 interface SearchableInvoiceDropdownProps {
   value: string;

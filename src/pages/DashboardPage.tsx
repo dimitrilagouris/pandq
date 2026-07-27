@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { StatusDistributionCard, StatusMetric } from '../components/dashboard/StatusDistributionCard';
-import { Invoice, InvoiceStatus } from '../types';
+import { Invoice, InvoiceStatus } from '../types/models';
 import { Badge, BadgeVariant } from '../components/Badge';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { RiMoneyDollarCircleLine, RiTimeLine, RiCheckboxCircleLine, RiReceiptLine } from 'react-icons/ri';

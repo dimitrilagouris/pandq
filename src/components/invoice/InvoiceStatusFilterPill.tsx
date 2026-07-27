@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Invoice } from '../../types';
+import { Invoice } from '../../types/models';
 
 export interface FilterPillOption<T extends string = string> {
   key: T;

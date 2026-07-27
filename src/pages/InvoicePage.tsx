@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { RiMailLine, RiFileTextLine, RiSaveLine, RiShareBoxLine, RiArrowRightSLine, RiAddLine, RiSubtractLine, RiArrowLeftLine } from 'react-icons/ri';
-import { Client } from '../types';
+import { Client } from '../types/models';
 import { Button } from '../components/Button';
 import { InvoiceForm } from '../components/invoice/InvoiceForm';
 import { InvoicePreview, computeTotals, buildTemplateData } from '../components/invoice/InvoicePreview';

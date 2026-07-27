@@ -1,6 +1,6 @@
 import React from 'react';
 import { RiCheckLine, RiFlagFill } from 'react-icons/ri';
-import { Invoice, InvoiceStatus } from '../../types';
+import { Invoice, InvoiceStatus } from '../../types/models';
 import { Badge, BadgeVariant } from '../Badge';
 import { formatDate } from './invoiceActionHelpers';
 

@@ -18,7 +18,7 @@ import {
   RiFullscreenLine,
   RiFocus3Line
 } from 'react-icons/ri';
-import { ActivityLog } from '../../types';
+import { ActivityLog } from '../../types/models';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';

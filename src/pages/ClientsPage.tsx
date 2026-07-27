@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { RiAddLine, RiSearchLine, RiDeleteBinLine, RiPencilLine, RiUser3Line } from 'react-icons/ri';
-import { Client, Invoice } from '../types';
+import { Client, Invoice } from '../types/models';
 import { Table, ColumnDef } from '../components/Table';
 import { Button } from '../components/Button';
 import { ClientModal } from '../components/ClientModal';

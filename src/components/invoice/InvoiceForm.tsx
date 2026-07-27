@@ -18,7 +18,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-import { Client } from '../../types';
+import { Client } from '../../types/models';
 import { Input } from '../Input';
 import { DatePicker } from '../DatePicker';
 import { Dropdown } from '../Dropdown';

@@ -9,7 +9,7 @@ import {
   RiCheckboxCircleFill,
   RiArrowDownSLine
 } from 'react-icons/ri';
-import { Client, Invoice } from '../types';
+import { Client, Invoice } from '../types/models';
 import { Badge } from './Badge';
 import { Button } from './Button';
 import { Input } from './Input';

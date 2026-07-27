@@ -1,5 +1,5 @@
 import React from 'react';
-import { Client } from '../../types';
+import { Client } from '../../types/models';
 import { InvoiceFormState, InvoiceTotals } from './invoiceTypes';
 import { getTemplate } from './templates/registry';
 import { TemplateData } from './templates/templateTypes';

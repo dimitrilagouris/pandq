@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Invoice } from '../../types';
+import { Invoice } from '../../types/models';
 import { Button } from '../Button';
 import { Input } from '../Input';
 import { RiCloseLine, RiDeleteBinLine, RiAlertLine } from 'react-icons/ri';

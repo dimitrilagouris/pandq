@@ -10,7 +10,7 @@ import {
   RiFlagFill,
   RiFlagLine,
 } from 'react-icons/ri';
-import { Invoice, Flag } from '../../types';
+import { Invoice, Flag } from '../../types/models';
 import { DropdownFooter } from '../Dropdown';
 
 export interface ContextMenuState {

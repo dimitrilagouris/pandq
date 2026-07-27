@@ -9,7 +9,7 @@ import {
   RiFlagFill,
   RiFlagLine,
 } from 'react-icons/ri';
-import { Invoice, Client, InvoiceStatus, Flag } from '../types';
+import { Invoice, Client, InvoiceStatus, Flag } from '../types/models';
 import { Page } from '../App';
 import { InvoicePreview } from '../components/invoice/InvoicePreview';
 import { PreviewCanvas, PreviewCanvasHandle } from '../components/invoice/PreviewCanvas';

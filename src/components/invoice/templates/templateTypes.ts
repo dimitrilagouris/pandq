@@ -1,5 +1,5 @@
 import React from 'react';
-import { Client } from '../../../types';
+import { Client } from '../../../types/models';
 import { InvoiceFormState, InvoiceTotals } from '../invoiceTypes';
 
 /** Resolved data bag passed to every template for rendering. */

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Client } from '../types';
+import { Client } from '../types/models';
 import { Input } from './Input';
 import { Button } from './Button';
 import { RiCloseLine, RiArrowDownSLine, RiUser3Line, RiBuildingLine, RiPhoneLine, RiMailLine, RiMapPinLine } from 'react-icons/ri';

@@ -1,4 +1,4 @@
-import { Invoice, Client } from '../../types';
+import { Invoice, Client } from '../../types/models';
 import { InvoiceFormState } from './invoiceTypes';
 import { buildTemplateData } from './InvoicePreview';
 import { getTemplate } from './templates/registry';

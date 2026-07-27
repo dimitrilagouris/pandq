@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   RiArrowLeftLine,
   RiUser3Line,
@@ -6,11 +6,14 @@ import {
   RiPencilLine,
   RiAddLine,
   RiFileTextLine,
-  RiCheckboxCircleFill
+  RiCheckboxCircleFill,
+  RiArrowDownSLine
 } from 'react-icons/ri';
 import { Client, Invoice } from '../types';
 import { Badge } from './Badge';
 import { Button } from './Button';
+import { Input } from './Input';
+import { InvoiceStatusFilterPill, FilterPillOption } from './invoice/InvoiceStatusFilterPill';
 
 type DrawerTab = 'overview' | 'outstanding' | 'invoices';
 
@@ -18,8 +21,16 @@ interface ClientDetailsDrawerProps {
   client: Client | null;
   invoices: Invoice[];
   onClose: () => void;
-  onEditClient: (client: Client) => void;
+  onEditClient?: (client: Client) => void;
+  onClientUpdated?: () => void;
   onCreateInvoice?: (client: Client) => void;
+}
+
+interface ClientFormData {
+  name: string;
+  business_name: string;
+  email: string;
+  address: string;
 }
 
 /** Helper to derive status badge variant. */
@@ -49,20 +60,31 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
   invoices,
   onClose,
   onEditClient,
+  onClientUpdated,
   onCreateInvoice
 }) => {
   const [activeTab, setActiveTab] = useState<DrawerTab>('overview');
   const [isRendered, setIsRendered] = useState<boolean>(false);
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
 
-  // Tab slider pill navigation
-  const [sliderStyle, setSliderStyle] = useState<{ left: number; width: number; opacity: number }>({
-    left: 0,
-    width: 0,
-    opacity: 0,
+  // Inline Editing state inside drawer
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editForm, setEditForm] = useState<ClientFormData>({
+    name: '',
+    business_name: '',
+    email: '',
+    address: '',
   });
-  const containerRef = useRef<HTMLDivElement>(null);
-  const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [countryCode, setCountryCode] = useState<string>('+61');
+  const [rawPhone, setRawPhone] = useState<string>('');
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
+
+  // Reset inline edit state when client changes
+  useEffect(() => {
+    setIsEditing(false);
+    setError('');
+  }, [client]);
 
   // Handle smooth enter/exit animations
   useEffect(() => {
@@ -92,36 +114,84 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
     }, 300);
   };
 
+  /** Initialises inline edit mode with current client details. */
+  const startEditing = (): void => {
+    if (!client) return;
+    setEditForm({
+      name: client.name || '',
+      business_name: client.business_name || '',
+      email: client.email || '',
+      address: client.address || '',
+    });
+    const phoneStr = client.phone || '';
+    if (phoneStr.startsWith('+1 ')) {
+      setCountryCode('+1');
+      setRawPhone(phoneStr.slice(3));
+    } else if (phoneStr.startsWith('+61 ')) {
+      setCountryCode('+61');
+      setRawPhone(phoneStr.slice(4));
+    } else if (phoneStr.startsWith('+44 ')) {
+      setCountryCode('+44');
+      setRawPhone(phoneStr.slice(4));
+    } else if (phoneStr.startsWith('+64 ')) {
+      setCountryCode('+64');
+      setRawPhone(phoneStr.slice(4));
+    } else if (phoneStr.startsWith('+81 ')) {
+      setCountryCode('+81');
+      setRawPhone(phoneStr.slice(4));
+    } else {
+      setCountryCode('+61');
+      setRawPhone(phoneStr);
+    }
+    setError('');
+    setIsEditing(true);
+    setActiveTab('overview');
+  };
+
+  /** Saves inline edited client details to backend storage. */
+  const handleSaveInline = async (): Promise<void> => {
+    if (!client) return;
+    if (!editForm.name.trim()) {
+      setError('Name is required.');
+      return;
+    }
+    const formattedPhone = rawPhone.trim() ? `${countryCode} ${rawPhone.trim()}` : '';
+    try {
+      setIsSaving(true);
+      await window.electronAPI.updateClient(
+        client.id,
+        editForm.name,
+        editForm.business_name,
+        editForm.email,
+        formattedPhone,
+        editForm.address
+      );
+      client.name = editForm.name;
+      client.business_name = editForm.business_name;
+      client.email = editForm.email;
+      client.phone = formattedPhone;
+      client.address = editForm.address;
+      setIsEditing(false);
+      setError('');
+      if (onClientUpdated) {
+        onClientUpdated();
+      }
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to save client.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const clientInvoices = client ? invoices.filter(inv => inv.client_id === client.id) : [];
   const outstandingInvoices = clientInvoices.filter(inv => inv.status.split('|')[0] !== 'paid');
-  const paidInvoices = clientInvoices.filter(inv => inv.status.split('|')[0] === 'paid');
-
-  const totalOutstanding = outstandingInvoices.reduce((sum, inv) => sum + (inv.price || 0), 0);
-  const totalPaid = paidInvoices.reduce((sum, inv) => sum + (inv.price || 0), 0);
-  const totalInvoiced = clientInvoices.reduce((sum, inv) => sum + (inv.price || 0), 0);
 
   // Tab definitions matching InvoicesPage status filter style
-  const tabs: { key: DrawerTab; label: string; count?: number }[] = [
+  const tabs: FilterPillOption<DrawerTab>[] = [
     { key: 'overview', label: 'Overview' },
-    { key: 'outstanding', label: 'Outstanding', count: outstandingInvoices.length },
-    { key: 'invoices', label: 'Invoices', count: clientInvoices.length },
+    { key: 'outstanding', label: 'Outstanding', count: outstandingInvoices.length > 0 ? outstandingInvoices.length : undefined },
+    { key: 'invoices', label: 'Invoices', count: clientInvoices.length > 0 ? clientInvoices.length : undefined },
   ];
-
-  // Update slider position whenever activeTab or client changes
-  useEffect(() => {
-    if (!isRendered) return;
-    const btn = buttonRefs.current[activeTab];
-    const container = containerRef.current;
-    if (btn && container) {
-      const btnRect = btn.getBoundingClientRect();
-      const containerRect = container.getBoundingClientRect();
-      setSliderStyle({
-        left: btnRect.left - containerRect.left,
-        width: btnRect.width,
-        opacity: 1,
-      });
-    }
-  }, [activeTab, isRendered, client]);
 
   if (!isRendered || !client) return null;
 
@@ -162,15 +232,38 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
               </div>
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              leftIcon={<RiPencilLine className="w-3.5 h-3.5" />}
-              onClick={() => onEditClient(client)}
-              className="text-xs !py-1.5 shadow-2xs"
-            >
-              Edit
-            </Button>
+            {isEditing ? (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setIsEditing(false)}
+                  disabled={isSaving}
+                  className="text-xs !py-1.5"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleSaveInline}
+                  disabled={isSaving}
+                  className="text-xs !py-1.5"
+                >
+                  {isSaving ? 'Saving…' : 'Save'}
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<RiPencilLine className="w-3.5 h-3.5" />}
+                onClick={startEditing}
+                className="text-xs !py-1.5"
+              >
+                Edit
+              </Button>
+            )}
           </div>
 
           <div>
@@ -193,116 +286,181 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
 
         {/* Segmented Status Filter Style Tab Navigation */}
         <div className="px-6 pt-4 pb-2 flex-shrink-0">
-          <div
-            ref={containerRef}
-            className="relative flex bg-stone-200/80 p-0.5 rounded-xl w-full shadow-sm text-xs font-medium select-none items-center gap-0.5"
-          >
-            {/* Sliding background highlight pill */}
-            <div
-              style={{
-                transform: `translateX(${sliderStyle.left}px)`,
-                width: `${sliderStyle.width}px`,
-                opacity: sliderStyle.opacity,
-              }}
-              className="absolute top-0.5 bottom-0.5 left-0 bg-white rounded-lg shadow-1 transition-all duration-300 ease-out pointer-events-none"
-            />
-
-            {tabs.map((tab) => {
-              const isSelected = activeTab === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  ref={(el) => { buttonRefs.current[tab.key] = el; }}
-                  type="button"
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`relative z-10 flex-1 flex items-center justify-center py-1.5 px-3 rounded-lg transition-all duration-150 border-0 cursor-pointer text-xs font-medium bg-transparent ${
-                    isSelected ? 'text-stone-900 font-semibold' : 'text-stone-500 hover:text-stone-900'
-                  }`}
-                >
-                  <span>{tab.label}</span>
-                  {tab.count !== undefined && tab.count > 0 && (
-                    <span className={`ml-1.5 px-1.5 py-0.5 text-[10px] font-bold rounded-full transition-all duration-150 ${
-                      isSelected ? 'bg-stone-100 text-stone-900' : 'bg-stone-300/80 text-stone-600'
-                    }`}>
-                      {tab.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          <InvoiceStatusFilterPill
+            options={tabs}
+            value={activeTab}
+            onChange={setActiveTab}
+            fullWidth
+          />
         </div>
 
         {/* Tab Content Panel */}
         <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-6">
           {activeTab === 'overview' && (
-            <>
-
-              {/* Basic Information */}
-              <div>
-                <h3 className="text-base font-bold text-stone-900 mb-3.5">
-                  Basic Information
+            isEditing ? (
+              <div className="flex flex-col gap-4">
+                <h3 className="text-base text-black font-medium select-none">
+                  Edit Client Details
                 </h3>
-                <div className="flex flex-col gap-2 text-sm">
-                  <div className="flex items-center justify-between py-1">
-                    <span className="text-stone-500 font-normal">Contact Name</span>
-                    <span className="font-medium text-stone-900">{client.name}</span>
-                  </div>
-                  <div className="flex items-center justify-between py-1">
-                    <span className="text-stone-500 font-normal">Business / Company</span>
-                    <span className="font-medium text-stone-900">{client.business_name || '—'}</span>
-                  </div>
-                  <div className="flex items-center justify-between py-1">
-                    <span className="text-stone-500 font-normal">Primary Email</span>
-                    <span className="font-medium text-stone-900">{client.email || '—'}</span>
-                  </div>
-                  <div className="flex items-center justify-between py-1">
-                    <span className="text-stone-500 font-normal">Phone Number</span>
-                    <span className="font-medium text-stone-900">{client.phone || '—'}</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* Address Information */}
-              <div>
-                <h3 className="text-base font-bold text-stone-900 mb-3.5">
-                  Billing Address
-                </h3>
-                <div className="bg-stone-100 rounded-xl p-3.5 border-0">
-                  <p className="text-xs text-stone-700 leading-relaxed font-regular">
-                    {client.address || 'No billing address specified for this client.'}
+                {error && (
+                  <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                    {error}
                   </p>
-                  {client.address && (
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(client.address)}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs font-semibold text-stone-900 hover:underline inline-flex items-center gap-1 mt-2.5"
-                    >
-                      View in Google Maps →
-                    </a>
-                  )}
-                </div>
-              </div>
+                )}
 
-              {onCreateInvoice && (
-                <div className="pt-2">
+                <Input
+                  label="Contact Name"
+                  name="name"
+                  value={editForm.name}
+                  onChange={(val) => setEditForm(prev => ({ ...prev, name: val }))}
+                  required
+                />
+
+                <Input
+                  label="Business / Company"
+                  name="business_name"
+                  value={editForm.business_name}
+                  onChange={(val) => setEditForm(prev => ({ ...prev, business_name: val }))}
+                />
+
+                <div className="flex flex-col gap-1 w-full">
+                  <label className="text-xs font-medium text-stone-500 tracking-wide select-none">
+                    Phone Number
+                  </label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-shrink-0">
+                      <select
+                        value={countryCode}
+                        onChange={(e) => setCountryCode(e.target.value)}
+                        className="h-9 px-3 text-[14px] text-stone-900 bg-white border border-transparent rounded-xl shadow-1 focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-400 focus:ring-offset-1 appearance-none pr-8 cursor-pointer transition-all duration-150"
+                      >
+                        <option value="+61">🇦🇺 +61</option>
+                        <option value="+1">🇺🇸 +1</option>
+                        <option value="+44">🇬🇧 +44</option>
+                        <option value="+64">🇳🇿 +64</option>
+                        <option value="+81">🇯🇵 +81</option>
+                      </select>
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-stone-400">
+                        <RiArrowDownSLine className="w-4 h-4" />
+                      </div>
+                    </div>
+                    <Input
+                      name="phone"
+                      value={rawPhone}
+                      onChange={setRawPhone}
+                      placeholder="412 345 678"
+                      type="tel"
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+
+                <Input
+                  label="Primary Email"
+                  name="email"
+                  type="email"
+                  value={editForm.email}
+                  onChange={(val) => setEditForm(prev => ({ ...prev, email: val }))}
+                />
+
+                <Input
+                  label="Billing Address"
+                  name="address"
+                  value={editForm.address}
+                  onChange={(val) => setEditForm(prev => ({ ...prev, address: val }))}
+                  multiline
+                  autoGrow
+                  rows={3}
+                />
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setIsEditing(false)}
+                    disabled={isSaving}
+                  >
+                    Cancel
+                  </Button>
                   <Button
                     variant="primary"
-                    fullWidth
-                    leftIcon={<RiAddLine className="w-4 h-4" />}
-                    onClick={() => onCreateInvoice(client)}
+                    size="sm"
+                    onClick={handleSaveInline}
+                    disabled={isSaving}
                   >
-                    Create Invoice for {client.name}
+                    {isSaving ? 'Saving…' : 'Save Changes'}
                   </Button>
                 </div>
-              )}
-            </>
+              </div>
+            ) : (
+              <>
+                {/* Basic Information */}
+                <div>
+                  <h3 className="text-base text-black font-medium select-none mb-3.5">
+                    Basic Information
+                  </h3>
+                  <div className="flex flex-col gap-2 text-sm">
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-stone-500 font-normal">Contact Name</span>
+                      <span className="font-medium text-stone-900">{client.name}</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-stone-500 font-normal">Business / Company</span>
+                      <span className="font-medium text-stone-900">{client.business_name || '—'}</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-stone-500 font-normal">Primary Email</span>
+                      <span className="font-medium text-stone-900">{client.email || '—'}</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1">
+                      <span className="text-stone-500 font-normal">Phone Number</span>
+                      <span className="font-medium text-stone-900">{client.phone || '—'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Address Information */}
+                <div>
+                  <h3 className="text-base text-black font-medium select-none mb-3.5">
+                    Billing Address
+                  </h3>
+                  <div className="bg-stone-100 rounded-xl p-3.5 border-0">
+                    <p className="text-xs text-stone-700 leading-relaxed font-regular">
+                      {client.address || 'No billing address specified for this client.'}
+                    </p>
+                    {client.address && (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(client.address)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs font-semibold text-stone-900 hover:underline inline-flex items-center gap-1 mt-2.5"
+                      >
+                        View in Google Maps →
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                {onCreateInvoice && (
+                  <div className="pt-2">
+                    <Button
+                      variant="primary"
+                      fullWidth
+                      leftIcon={<RiAddLine className="w-4 h-4" />}
+                      onClick={() => onCreateInvoice(client)}
+                    >
+                      Create Invoice for {client.name}
+                    </Button>
+                  </div>
+                )}
+              </>
+            )
           )}
 
           {activeTab === 'outstanding' && (
             <div className="flex flex-col gap-2.5">
-              <h3 className="text-base font-bold text-stone-900 mb-3">
+              <h3 className="text-base text-black font-medium select-none mb-3">
                 Outstanding Invoices ({outstandingInvoices.length})
               </h3>
 
@@ -339,7 +497,7 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
 
           {activeTab === 'invoices' && (
             <div className="flex flex-col gap-2.5">
-              <h3 className="text-base font-bold text-stone-900 mb-3">
+              <h3 className="text-base text-black font-medium select-none mb-3">
                 All Client Invoices ({clientInvoices.length})
               </h3>
 
@@ -378,3 +536,4 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
     </div>
   );
 };
+

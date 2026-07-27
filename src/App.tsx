@@ -7,8 +7,10 @@ import InvoicesPage from './pages/InvoicesPage';
 import SettingsPage from './pages/SettingsPage';
 import ActivitiesPage from './pages/ActivitiesPage';
 import { DashboardPage } from './pages/DashboardPage';
+import type { PageKey } from './routes/routes';
 
-export type Page = 'dashboard' | 'invoices' | 'invoice-editor' | 'clients' | 'activities' | 'settings';
+/** Re-export so existing consumers importing `Page` from App.tsx still work. */
+export type Page = PageKey;
 
 /**
  * Main application component — manages active page and layout.

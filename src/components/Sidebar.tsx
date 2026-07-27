@@ -1,35 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import {
-  RiEqualizerLine,
-  RiTimeLine,
-  RiSettings3Line,
-  RiReceiptLine,
-  RiPulseLine,
-  RiGroup3Line,
-  RiDashboardLine,
-  RiLogoutBoxLine,
-  RiAddLine,
-  RiLayoutLeftLine
-} from 'react-icons/react-icons/ri';
+import * as Icons from 'react-icons/ri';
 import { Button } from './Button';
 import { Page } from '../App';
 import { HorizontalProgress } from './HorizontalProgress';
-
-// React-icons standard import fallback since the above is weird
-import * as Icons from 'react-icons/ri';
+import { getSidebarGroups, getRoutesByGroup } from '../routes/routes';
 
 const {
   RiEqualizerLine: EqIcon,
   RiTimeLine: TimeIcon,
   RiSettings3Line: SetIcon,
-  RiReceiptLine: RecIcon,
-  RiPulseLine: PulseIcon,
-  RiGroup3Line: GroupIcon,
-  RiDashboardLine: DashIcon,
-  RiLogoutBoxLine: LogoutIcon,
-  RiAddLine: AddIcon,
   RiLayoutLeftLine: LayoutLeftIcon,
-  RiMagicLine: MagicIcon
+  RiAddLine: AddIcon,
+  RiLogoutBoxLine: LogoutIcon,
+  RiMagicLine: MagicIcon,
 } = Icons;
 
 interface SidebarProps {
@@ -142,18 +125,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
 
       {/* Navigation */}
       <div className="pt-4 flex-1 overflow-hidden">
-        <div className={`px-5 transition-all duration-300 overflow-hidden ${
-          isCollapsed ? 'opacity-0 max-h-0 pb-0' : 'opacity-100 max-h-[30px] pb-2'
-        }`}>
-          <span className="text-xs font-medium text-stone-400 uppercase tracking-wider whitespace-nowrap">Pages</span>
-        </div>
-        <nav className={`flex flex-col gap-0.5 transition-all duration-300 ${isCollapsed ? 'px-3' : 'px-3'}`}>
-          <NavItem isCollapsed={isCollapsed} icon={<RecIcon className="w-[18px] h-[18px]" />} label="Invoices" active={activePage === 'invoices'} onClick={() => onNavigate('invoices')} />
-          <NavItem isCollapsed={isCollapsed} icon={<DashIcon className="w-[18px] h-[18px]" />} label="Dashboard" active={activePage === 'dashboard'} onClick={() => onNavigate('dashboard')} />
-          <NavItem isCollapsed={isCollapsed} icon={<GroupIcon className="w-[18px] h-[18px]" />} label="Clients" active={activePage === 'clients'} onClick={() => onNavigate('clients')} />
-          <NavItem isCollapsed={isCollapsed} icon={<PulseIcon className="w-[18px] h-[18px]" />} label="Activity" active={activePage === 'activities'} onClick={() => onNavigate('activities')} />
-          <NavItem isCollapsed={isCollapsed} icon={<SetIcon className="w-[18px] h-[18px]" />} label="Settings" active={activePage === 'settings'} onClick={() => onNavigate('settings')} />
-        </nav>
+        {getSidebarGroups().map((group) => (
+          <div key={group}>
+            <div className={`px-5 transition-all duration-300 overflow-hidden ${
+              isCollapsed ? 'opacity-0 max-h-0 pb-0' : 'opacity-100 max-h-[30px] pb-2'
+            }`}>
+              <span className="text-xs font-medium text-stone-400 uppercase tracking-wider whitespace-nowrap">{group}</span>
+            </div>
+            <nav className="flex flex-col gap-0.5 transition-all duration-300 px-3">
+              {getRoutesByGroup(group).map((route) => {
+                const IconComponent = route.icon;
+                return (
+                  <NavItem
+                    key={route.key}
+                    isCollapsed={isCollapsed}
+                    icon={<IconComponent className="w-[18px] h-[18px]" />}
+                    label={route.label}
+                    active={activePage === route.key}
+                    onClick={() => onNavigate(route.key)}
+                  />
+                );
+              })}
+            </nav>
+          </div>
+        ))}
       </div>
 
       {/* Setup Card */}

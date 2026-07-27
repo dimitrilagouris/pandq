@@ -42,3 +42,8 @@ out/
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Development artefacts (not for version control)
+debug_flags.json
+seed_error.json
+walkthrough.md

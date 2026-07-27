@@ -3,18 +3,18 @@ import { Sidebar } from './components/Sidebar';
 import { Button } from './components/Button';
 import ClientsPage from './pages/ClientsPage';
 import InvoicePage from './pages/InvoicePage';
-import ProjectsPage from './pages/ProjectsPage';
+import InvoicesPage from './pages/InvoicesPage';
 import SettingsPage from './pages/SettingsPage';
 import ActivitiesPage from './pages/ActivitiesPage';
 import { DashboardPage } from './pages/DashboardPage';
 
-export type Page = 'dashboard' | 'invoices' | 'clients' | 'activities' | 'settings' | 'projects';
+export type Page = 'dashboard' | 'invoices' | 'invoice-editor' | 'clients' | 'activities' | 'settings';
 
 /**
  * Main application component — manages active page and layout.
  */
 export default function App(): React.JSX.Element {
-  const [activePage, setActivePage] = useState<Page>('projects');
+  const [activePage, setActivePage] = useState<Page>('invoices');
   const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [pendingPage, setPendingPage] = useState<Page | null>(null);
@@ -34,7 +34,7 @@ export default function App(): React.JSX.Element {
 
   const handleNavigate = (page: Page, force = false) => {
     if (page === activePage) {
-      if (page === 'invoices' && editingInvoiceId !== null) {
+      if (page === 'invoice-editor' && editingInvoiceId !== null) {
         // transitioning from editing to new invoice
       } else {
         return;
@@ -46,7 +46,7 @@ export default function App(): React.JSX.Element {
       setShowDiscardModal(true);
     } else {
       setHasUnsavedChanges(false);
-      if (page === 'invoices') setEditingInvoiceId(null);
+      if (page === 'invoice-editor' && page !== activePage) setEditingInvoiceId(null);
       setActivePage(page);
     }
   };
@@ -59,6 +59,16 @@ export default function App(): React.JSX.Element {
         return <ClientsPage />;
       case 'invoices':
         return (
+          <InvoicesPage
+            onNavigate={handleNavigate}
+            onEditInvoice={(id) => {
+              setEditingInvoiceId(id);
+              setActivePage('invoice-editor');
+            }}
+          />
+        );
+      case 'invoice-editor':
+        return (
           <InvoicePage 
             onNavigate={handleNavigate} 
             invoiceId={editingInvoiceId} 
@@ -69,19 +79,6 @@ export default function App(): React.JSX.Element {
         return <SettingsPage onDirtyChange={setHasUnsavedChanges} />;
       case 'activities':
         return <ActivitiesPage />;
-      case 'projects':
-        return (
-          <ProjectsPage
-            onNavigate={(p) => {
-              if (p === 'invoices') setEditingInvoiceId(null);
-              setActivePage(p);
-            }}
-            onEditInvoice={(id) => {
-              setEditingInvoiceId(id);
-              setActivePage('invoices');
-            }}
-          />
-        );
       default:
         return (
           <div className="flex-1 flex items-center justify-center">
@@ -133,7 +130,7 @@ export default function App(): React.JSX.Element {
                   setHasUnsavedChanges(false);
                   setShowDiscardModal(false);
                   if (pendingPage) {
-                    if (pendingPage === 'invoices') setEditingInvoiceId(null);
+                    if (pendingPage === 'invoice-editor') setEditingInvoiceId(null);
                     setActivePage(pendingPage);
                   }
                 }}

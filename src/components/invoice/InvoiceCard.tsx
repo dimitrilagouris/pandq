@@ -44,13 +44,20 @@ export const InvoiceCard: React.FC<InvoiceCardProps> = ({
   const status = parts[0] || 'draft';
   const flagColors = (typeof invoice.flags === 'string' ? invoice.flags : '').split(',').filter(Boolean);
 
-  const displayDate = invoice.updated_at
-    ? formatDate(invoice.updated_at.split('T')[0])
-    : formatDate(invoice.date);
+  let rawDate = invoice.date;
+  if (invoice.updated_at) {
+    rawDate = invoice.updated_at.split('T')[0];
+  }
+  const displayDate = formatDate(rawDate);
 
-  const clientDisplayName = settings['setting_display_client_name_as'] === 'company' && invoice.client_business_name
-    ? invoice.client_business_name
-    : (invoice.client_name || invoice.client_business_name || 'No Client');
+  let clientDisplayName = 'No Client';
+  if (settings['setting_display_client_name_as'] === 'company' && invoice.client_business_name) {
+    clientDisplayName = invoice.client_business_name;
+  } else if (invoice.client_name) {
+    clientDisplayName = invoice.client_name;
+  } else if (invoice.client_business_name) {
+    clientDisplayName = invoice.client_business_name;
+  }
 
   return (
     <div

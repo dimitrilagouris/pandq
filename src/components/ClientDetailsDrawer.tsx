@@ -201,6 +201,11 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
     return null;
   }
 
+  let saveButtonLabel = 'Save';
+  if (isSaving) {
+    saveButtonLabel = 'Saving…';
+  }
+
   return (
     <div className="fixed inset-0 z-[100] flex justify-end overflow-hidden">
       {/* Backdrop — no blur as requested */}
@@ -256,7 +261,7 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
                   disabled={isSaving}
                   className="text-xs !py-1.5"
                 >
-                  {isSaving ? 'Saving…' : 'Save'}
+                  {saveButtonLabel}
                 </Button>
               </div>
             ) : (

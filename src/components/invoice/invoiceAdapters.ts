@@ -10,7 +10,10 @@ export function extractNotes(status: string | null | undefined): string {
   if (!status) {
     return '';
   }
-  return status.includes('|') ? status.split('|').slice(1).join('|') : '';
+  if (status.includes('|')) {
+    return status.split('|').slice(1).join('|');
+  }
+  return '';
 }
 
 /**
@@ -21,21 +24,55 @@ export function extractNotes(status: string | null | undefined): string {
  */
 export function hydrateFormState(detail: InvoiceDetail): InvoiceFormState {
   const notesStr = extractNotes(detail.status);
-  const templateId = detail.template_id || 'classic';
 
-  const items: LineItem[] = (detail.items || []).map((item: PersistedInvoiceItem) => ({
-    id: String(item.id || Math.random()),
-    type: (item.type || 'labour') as 'labour' | 'materials',
-    description: item.description || '',
-    quantity: item.quantity ?? 0,
-    hours: item.hours !== null && item.hours !== undefined ? item.hours : undefined,
-    date: item.date || undefined,
-    unitPrice: item.rate ?? 0,
-  }));
+  let templateId = 'classic';
+  if (detail.template_id) {
+    templateId = detail.template_id;
+  }
 
+  const rawItems = detail.items || [];
+  const items: LineItem[] = rawItems.map((item: PersistedInvoiceItem) => {
+    let itemType: 'labour' | 'materials' = 'labour';
+    if (item.type === 'materials') {
+      itemType = 'materials';
+    }
+
+    let itemId = String(Math.random());
+    if (item.id) {
+      itemId = String(item.id);
+    }
+
+    let hours: number | undefined;
+    if (item.hours !== null && item.hours !== undefined) {
+      hours = item.hours;
+    }
+
+    return {
+      id: itemId,
+      type: itemType,
+      description: item.description || '',
+      quantity: item.quantity ?? 0,
+      hours,
+      date: item.date || undefined,
+      unitPrice: item.rate ?? 0,
+    };
+  });
+
+  let discount = 0;
+  let discountType: 'flat' | 'percentage' = 'flat';
   const firstDiscount = detail.discounts && detail.discounts[0];
-  const discount = firstDiscount ? firstDiscount.amount : 0;
-  const discountType = firstDiscount && firstDiscount.type === 'percentage' ? 'percentage' : 'flat';
+
+  if (firstDiscount) {
+    discount = firstDiscount.amount;
+    if (firstDiscount.type === 'percentage') {
+      discountType = 'percentage';
+    }
+  }
+
+  let displayDueDate = true;
+  if (detail.display_due_date !== undefined) {
+    displayDueDate = Boolean(detail.display_due_date);
+  }
 
   return {
     invoiceNumber: detail.invoice_number || '',
@@ -44,7 +81,7 @@ export function hydrateFormState(detail: InvoiceDetail): InvoiceFormState {
     clientId: detail.client_id ?? null,
     items,
     gstEnabled: Boolean(detail.gst_added),
-    displayDueDate: detail.display_due_date !== undefined ? Boolean(detail.display_due_date) : true,
+    displayDueDate,
     discount,
     discountType,
     notes: notesStr,

@@ -60,11 +60,20 @@ export const DeleteInvoiceModal: React.FC<DeleteInvoiceModalProps> = ({
       await onConfirm(invoice);
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to delete invoice.');
+      let errorMessage = 'Failed to delete invoice.';
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      setError(errorMessage);
     } finally {
       setIsDeleting(false);
     }
   };
+
+  let deleteButtonLabel = 'Delete Invoice';
+  if (isDeleting) {
+    deleteButtonLabel = 'Deleting…';
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/40 animate-fade-in" onClick={onClose}>
@@ -124,7 +133,7 @@ export const DeleteInvoiceModal: React.FC<DeleteInvoiceModalProps> = ({
               disabled={!isEnabled || isDeleting}
               leftIcon={<RiDeleteBinLine className="w-4 h-4" />}
             >
-              {isDeleting ? 'Deleting…' : 'Delete Invoice'}
+              {deleteButtonLabel}
             </Button>
           </div>
         </form>

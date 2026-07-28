@@ -74,10 +74,16 @@ export function InvoiceStatusFilterPill<T extends string = string>({
     }
 
     resolvedOptions = statusKeys.map((optKey) => {
-      const count = optKey === 'all'
-        ? invoices.length
-        : invoices.filter((inv) => (inv.status.split('|')[0] || 'draft') === optKey).length;
-      const label = optKey === 'all' ? 'All' : optKey.charAt(0).toUpperCase() + optKey.slice(1);
+      let count = invoices.length;
+      if (optKey !== 'all') {
+        count = invoices.filter((inv) => (inv.status.split('|')[0] || 'draft') === optKey).length;
+      }
+
+      let label = 'All';
+      if (optKey !== 'all') {
+        label = optKey.charAt(0).toUpperCase() + optKey.slice(1);
+      }
+
       return {
         key: optKey as T,
         label,

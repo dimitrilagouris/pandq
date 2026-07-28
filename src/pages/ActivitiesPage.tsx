@@ -32,7 +32,15 @@ const SearchableInvoiceDropdown: React.FC<SearchableInvoiceDropdownProps> = ({ v
   }, []);
 
   const filteredOptions = options.filter(opt => opt.toLowerCase().includes(searchQuery.toLowerCase()));
-  const displayValue = value === 'all' ? (isOpen ? searchQuery : 'All Invoices') : value;
+
+  let displayValue = value;
+  if (value === 'all') {
+    if (isOpen) {
+      displayValue = searchQuery;
+    } else {
+      displayValue = 'All Invoices';
+    }
+  }
 
   return (
     <div className="flex flex-col gap-1 min-w-[180px] relative" ref={containerRef}>
@@ -53,7 +61,11 @@ const SearchableInvoiceDropdown: React.FC<SearchableInvoiceDropdownProps> = ({ v
           }}
           onFocus={() => {
             setIsOpen(true);
-            setSearchQuery(value === 'all' ? '' : value);
+            if (value === 'all') {
+              setSearchQuery('');
+            } else {
+              setSearchQuery(value);
+            }
           }}
           placeholder="Select invoice..."
           className="w-full"
@@ -217,7 +229,10 @@ export default function ActivitiesPage(): React.JSX.Element {
           if (!isNaN(date.getTime())) {
             const pad = (n: number) => String(n).padStart(2, '0');
             const hours = date.getHours();
-            const ampm = hours >= 12 ? 'pm' : 'am';
+            let ampm = 'am';
+            if (hours >= 12) {
+              ampm = 'pm';
+            }
             const h = hours % 12 || 12;
             formattedDate = `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}, ${h}:${pad(date.getMinutes())}${ampm}`;
           }
@@ -262,7 +277,9 @@ export default function ActivitiesPage(): React.JSX.Element {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-stone-900">Activity</h1>
-          <p className="text-sm text-stone-500 mt-0.5">{logs.length} event{logs.length !== 1 ? 's' : ''} total</p>
+          <p className="text-sm text-stone-500 mt-0.5">
+            {logs.length} event{logs.length === 1 ? '' : 's'} total
+          </p>
         </div>
       </div>
 

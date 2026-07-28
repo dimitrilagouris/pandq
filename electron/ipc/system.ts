@@ -138,10 +138,8 @@ export function registerSystemHandlers(): void {
       exec(`osascript "${tempScriptPath}"`, (error) => {
         try { fs.unlinkSync(tempScriptPath); } catch {}
         
-        let db;
-        try { db = getDb(); } catch {}
-        // Log activity
-        const inv = db?.prepare('SELECT id FROM invoices WHERE invoice_number = ?').get(invoiceNumber) as { id: number } | undefined;
+        const db = getDb();
+        const inv = db.prepare('SELECT id FROM invoices WHERE invoice_number = ?').get(invoiceNumber) as { id: number } | undefined;
         insertActivityLog(inv?.id || null, invoiceNumber, 'invoice_sent', `Emailed to ${recipientEmail}`);
 
         if (error) {
@@ -239,12 +237,9 @@ export function registerSystemHandlers(): void {
       exec(`osascript "${tempScriptPath}"`, (error) => {
         try { fs.unlinkSync(tempScriptPath); } catch {}
 
-        let db;
-        try { db = getDb(); } catch {}
-        
-        // Log activity for each entry
+        const db = getDb();
         for (const entry of invoiceEntries) {
-          const inv = db?.prepare('SELECT id FROM invoices WHERE invoice_number = ?').get(entry.invoiceNumber) as { id: number } | undefined;
+          const inv = db.prepare('SELECT id FROM invoices WHERE invoice_number = ?').get(entry.invoiceNumber) as { id: number } | undefined;
           insertActivityLog(inv?.id || null, entry.invoiceNumber, 'invoice_sent', `Batch emailed to ${recipientEmail}`);
         }
 

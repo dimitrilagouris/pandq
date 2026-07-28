@@ -61,10 +61,21 @@ export default function InvoicesPage({ onNavigate, onEditInvoice }: InvoicesPage
   const lastClickedIndexRef = useRef<number>(-1);
 
   useEffect(() => {
-    window.electronAPI.getClients().then(setClients).catch(console.error);
-    window.electronAPI.getSettings().then(setSettings).catch(console.error);
-    window.electronAPI.getInvoiceStatuses().then(setInvoiceStatuses).catch(console.error);
-    window.electronAPI.getFlags?.().then(setFlags).catch(console.error);
+    Promise.all([
+      window.electronAPI.getClients(),
+      window.electronAPI.getSettings(),
+      window.electronAPI.getInvoiceStatuses(),
+      window.electronAPI.getFlags(),
+    ])
+      .then(([clientsData, settingsData, statusesData, flagsData]) => {
+        setClients(clientsData || []);
+        setSettings(settingsData || {});
+        setInvoiceStatuses(statusesData || []);
+        setFlags(flagsData || []);
+      })
+      .catch((err) => {
+        console.error('Failed to load initial invoice metadata:', err);
+      });
   }, []);
 
   const loadInvoices = useCallback(async (): Promise<void> => {

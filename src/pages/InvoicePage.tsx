@@ -27,25 +27,28 @@ function dueDateStr(): string {
   return d.toISOString().slice(0, 10);
 }
 
-const INITIAL_FORM: InvoiceFormState = {
-  invoiceNumber: `INV-${String(Date.now()).slice(-5)}`,
-  dateIssued: todayStr(),
-  dueDate: dueDateStr(),
-  clientId: null,
-  items: [],
-  gstEnabled: true,
-  displayDueDate: true,
-  discount: 0,
-  discountType: 'flat',
-  notes: '',
-  templateId: 'classic',
-};
+/** Creates a fresh initial form state with up-to-date dates and invoice number. */
+function createInitialFormState(): InvoiceFormState {
+  return {
+    invoiceNumber: `INV-${String(Date.now()).slice(-5)}`,
+    dateIssued: todayStr(),
+    dueDate: dueDateStr(),
+    clientId: null,
+    items: [],
+    gstEnabled: true,
+    displayDueDate: true,
+    discount: 0,
+    discountType: 'flat',
+    notes: '',
+    templateId: 'classic',
+  };
+}
 
 /**
  * Two-panel invoice creation page — form on the left, live preview on the right.
  */
 const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirtyChange }) => {
-  const [form, setForm] = useState<InvoiceFormState>(INITIAL_FORM);
+  const [form, setForm] = useState<InvoiceFormState>(createInitialFormState);
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [initialFormState, setInitialFormState] = useState<InvoiceFormState | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
@@ -107,7 +110,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
         const defaultTemplate = settings['setting_default_template_id'] || 'classic';
 
         const defaultForm = {
-          ...INITIAL_FORM,
+          ...createInitialFormState(),
           invoiceNumber: `${prefix}${String(Date.now()).slice(-5)}`,
           dueDate: computedDueDate,
           gstEnabled: defaultGst,
@@ -119,10 +122,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
         setInitialFormState(defaultForm);
       }).catch(err => {
         console.error('Failed to load default settings:', err);
-        const fallbackForm = {
-          ...INITIAL_FORM,
-          invoiceNumber: `INV-${String(Date.now()).slice(-5)}`,
-        };
+        const fallbackForm = createInitialFormState();
         setForm(fallbackForm);
         setInitialFormState(fallbackForm);
       });

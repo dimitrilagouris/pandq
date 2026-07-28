@@ -32,6 +32,18 @@ const CustomTooltip = ({ active, payload }: any) => {
 
 type TimeframeOption = 'all' | '30days' | 'year';
 
+const TAILWIND_HEX_COLORS: Record<string, string> = {
+  stone: '#78716c',
+  blue: '#3b82f6',
+  lime: '#84cc16',
+  amber: '#f59e0b',
+  rose: '#f43f5e',
+  emerald: '#10b981',
+  red: '#ef4444',
+  purple: '#a855f7',
+  orange: '#f97316',
+};
+
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [invoiceStatuses, setInvoiceStatuses] = useState<InvoiceStatus[]>([]);
@@ -90,22 +102,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
     loadData();
   }, []);
 
-  const tailwindHexColors: Record<string, string> = {
-    stone: '#78716c',
-    blue: '#3b82f6',
-    lime: '#84cc16',
-    amber: '#f59e0b',
-    rose: '#f43f5e',
-    emerald: '#10b981',
-    red: '#ef4444',
-    purple: '#a855f7',
-    orange: '#f97316',
-  };
-
   const getStatusHexColor = (name: string, fallback: string): string => {
     const status = invoiceStatuses.find(s => s.name.toLowerCase() === name.toLowerCase());
     if (status) {
-      return tailwindHexColors[status.color] || fallback;
+      return TAILWIND_HEX_COLORS[status.color] || fallback;
     }
     return fallback;
   };

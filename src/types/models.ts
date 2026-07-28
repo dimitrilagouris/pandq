@@ -83,3 +83,35 @@ export interface ActivityLog {
   details: string | null;
   timestamp: string;
 }
+
+/** A single persisted line item, as returned from the DB. */
+export interface PersistedInvoiceItem {
+  id: number;
+  invoice_id: number;
+  type: string;
+  description: string;
+  hours: number | null;
+  rate: number;
+  quantity: number | null;
+  date: string | null;
+}
+
+/** A persisted discount row. */
+export interface PersistedDiscount {
+  id: number;
+  invoice_id: number;
+  description: string;
+  amount: number;
+  type: 'flat' | 'percentage';
+}
+
+/**
+ * Full invoice detail as returned by `getInvoiceById`.
+ * Extends the list-level Invoice with nested items, discounts, and client fields.
+ */
+export interface InvoiceDetail extends Invoice {
+  client_phone?: string;
+  template_id: string;
+  items: PersistedInvoiceItem[];
+  discounts: PersistedDiscount[];
+}

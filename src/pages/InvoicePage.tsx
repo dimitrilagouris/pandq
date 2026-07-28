@@ -7,6 +7,7 @@ import { InvoicePreview, computeTotals, buildTemplateData } from '../components/
 import { PreviewCanvas, PreviewCanvasHandle } from '../components/invoice/PreviewCanvas';
 import { InvoiceFormState } from '../components/invoice/invoiceTypes';
 import { getTemplate } from '../components/invoice/templates/registry';
+import { hydrateFormState } from '../components/invoice/invoiceAdapters';
 import { Page } from '../App';
 
 interface InvoicePageProps {
@@ -86,30 +87,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
     if (invoiceId) {
       window.electronAPI.getInvoiceById(invoiceId).then(data => {
         if (data) {
-          const statusStr = data.status || '';
-          const notesStr = statusStr.includes('|') ? statusStr.split('|').slice(1).join('|') : '';
-
-          const populatedForm = {
-            invoiceNumber: data.invoice_number,
-            dateIssued: data.date,
-            dueDate: data.due_date,
-            clientId: data.client_id,
-            items: data.items.map((item: any) => ({
-              id: item.id || String(Math.random()),
-              type: (item.type || 'labour') as 'labour' | 'materials',
-              description: item.description,
-              quantity: item.quantity,
-              hours: item.hours !== null ? item.hours : undefined,
-              date: item.date || undefined,
-              unitPrice: item.rate,
-            })),
-            gstEnabled: Boolean(data.gst_added),
-            displayDueDate: data.display_due_date !== undefined ? Boolean(data.display_due_date) : true,
-            discount: data.discounts && data.discounts[0] ? data.discounts[0].amount : 0,
-            discountType: data.discounts && data.discounts[0] && data.discounts[0].type === 'percentage' ? 'percentage' : 'flat',
-            notes: notesStr,
-            templateId: data.template_id || 'classic',
-          };
+          const populatedForm = hydrateFormState(data);
           setForm(populatedForm);
           setInitialFormState(populatedForm);
         }

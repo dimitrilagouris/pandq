@@ -24,6 +24,7 @@ import { InvoiceCard } from '../components/invoice/InvoiceCard';
 import { InvoiceStatusFilterPill } from '../components/invoice/InvoiceStatusFilterPill';
 import { InvoiceContextMenu, ContextMenuState } from '../components/invoice/InvoiceContextMenu';
 import { handleSingleInvoiceAction, handleSendBatchInvoices } from '../components/invoice/invoiceActionHelpers';
+import { hydrateFormState } from '../components/invoice/invoiceAdapters';
 
 interface InvoicesPageProps {
   onNavigate: (page: Page) => void;
@@ -188,33 +189,7 @@ export default function InvoicesPage({ onNavigate, onEditInvoice }: InvoicesPage
     try {
       const fullData = await window.electronAPI.getInvoiceById(inv.id);
       if (fullData) {
-        const statusStr = fullData.status || '';
-        const notesStr = statusStr.includes('|') ? statusStr.split('|').slice(1).join('|') : '';
-
-        setPreviewForm({
-          invoiceNumber: fullData.invoice_number,
-          dateIssued: fullData.date,
-          dueDate: fullData.due_date,
-          clientId: fullData.client_id,
-          items: fullData.items.map((item: any) => ({
-            id: item.id || String(Math.random()),
-            type: (item.type || 'labour') as 'labour' | 'materials',
-            description: item.description,
-            quantity: item.quantity,
-            hours: item.hours !== null ? item.hours : undefined,
-            date: item.date || undefined,
-            unitPrice: item.rate,
-          })),
-          gstEnabled: Boolean(fullData.gst_added),
-          displayDueDate: fullData.display_due_date !== undefined ? Boolean(fullData.display_due_date) : true,
-          discount: fullData.discounts && fullData.discounts[0] ? fullData.discounts[0].amount : 0,
-          discountType:
-            fullData.discounts && fullData.discounts[0] && fullData.discounts[0].type === 'percentage'
-              ? 'percentage'
-              : 'flat',
-          notes: notesStr,
-          templateId: fullData.template_id || 'classic',
-        });
+        setPreviewForm(hydrateFormState(fullData));
 
         const client =
           clients.find((c) => c.id === fullData.client_id) ||

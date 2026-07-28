@@ -2,6 +2,7 @@ import { Invoice, Client } from '../../types/models';
 import { InvoiceFormState } from './invoiceTypes';
 import { buildTemplateData } from './InvoicePreview';
 import { getTemplate } from './templates/registry';
+import { hydrateFormState } from './invoiceAdapters';
 
 /** Format a YYYY-MM-DD date string for display. */
 export function formatDate(dateStr: string): string {
@@ -30,31 +31,8 @@ export async function handleSingleInvoiceAction(
   const fullData = await window.electronAPI.getInvoiceById(inv.id);
   if (!fullData) return;
 
-  const statusStr = fullData.status || '';
-  const notesStr = statusStr.includes('|') ? statusStr.split('|').slice(1).join('|') : '';
-  const templateId = fullData.template_id || 'classic';
-
-  const formState: InvoiceFormState = {
-    invoiceNumber: fullData.invoice_number,
-    dateIssued: fullData.date,
-    dueDate: fullData.due_date,
-    clientId: fullData.client_id,
-    items: (fullData.items || []).map((item: any) => ({
-      id: item.id || String(Math.random()),
-      type: (item.type || 'labour') as 'labour' | 'materials',
-      description: item.description,
-      quantity: item.quantity,
-      hours: item.hours !== null ? item.hours : undefined,
-      date: item.date || undefined,
-      unitPrice: item.rate,
-    })),
-    gstEnabled: Boolean(fullData.gst_added),
-    displayDueDate: fullData.display_due_date !== undefined ? Boolean(fullData.display_due_date) : true,
-    discount: fullData.discounts && fullData.discounts[0] ? fullData.discounts[0].amount : 0,
-    discountType: fullData.discounts && fullData.discounts[0] && fullData.discounts[0].type === 'percentage' ? 'percentage' : 'flat',
-    notes: notesStr,
-    templateId,
-  };
+  const formState: InvoiceFormState = hydrateFormState(fullData);
+  const templateId = formState.templateId;
 
   const client: Client = clients.find(c => c.id === fullData.client_id) || {
     id: fullData.client_id,
@@ -110,31 +88,8 @@ export async function handleSendBatchInvoices(
     const fullData = await window.electronAPI.getInvoiceById(inv.id);
     if (!fullData) continue;
 
-    const statusStr = fullData.status || '';
-    const notesStr = statusStr.includes('|') ? statusStr.split('|').slice(1).join('|') : '';
-    const templateId = fullData.template_id || 'classic';
-
-    const formState: InvoiceFormState = {
-      invoiceNumber: fullData.invoice_number,
-      dateIssued: fullData.date,
-      dueDate: fullData.due_date,
-      clientId: fullData.client_id,
-      items: (fullData.items || []).map((item: any) => ({
-        id: item.id || String(Math.random()),
-        type: (item.type || 'labour') as 'labour' | 'materials',
-        description: item.description,
-        quantity: item.quantity,
-        hours: item.hours !== null ? item.hours : undefined,
-        date: item.date || undefined,
-        unitPrice: item.rate,
-      })),
-      gstEnabled: Boolean(fullData.gst_added),
-      displayDueDate: fullData.display_due_date !== undefined ? Boolean(fullData.display_due_date) : true,
-      discount: fullData.discounts && fullData.discounts[0] ? fullData.discounts[0].amount : 0,
-      discountType: fullData.discounts && fullData.discounts[0] && fullData.discounts[0].type === 'percentage' ? 'percentage' : 'flat',
-      notes: notesStr,
-      templateId,
-    };
+    const formState: InvoiceFormState = hydrateFormState(fullData);
+    const templateId = formState.templateId;
 
     const client: Client = clients.find(c => c.id === fullData.client_id) || {
       id: fullData.client_id,
@@ -142,7 +97,7 @@ export async function handleSendBatchInvoices(
       business_name: inv.client_business_name || '',
       email: inv.client_email || '',
       phone: '',
-      address: (fullData as any).client_address || (inv as any).client_address || '',
+      address: fullData.client_address || inv.client_address || '',
     };
 
     const templateData = buildTemplateData(formState, client, settings);

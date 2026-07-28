@@ -7,35 +7,32 @@ import { Dropdown, DropdownOption } from '../components/Dropdown';
 import { Badge } from '../components/Badge';
 import { DatePicker } from '../components/DatePicker';
 
-
 interface SearchableInvoiceDropdownProps {
   value: string;
   options: string[];
   onChange: (val: string) => void;
 }
 
+/**
+ * Autocomplete dropdown component for selecting an invoice filter by number.
+ */
 const SearchableInvoiceDropdown: React.FC<SearchableInvoiceDropdownProps> = ({ value, options, onChange }) => {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
-  const filteredOptions = options.filter(opt =>
-    opt.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const displayValue = isOpen
-    ? searchQuery
-    : (value === 'all' ? '' : value);
+  const filteredOptions = options.filter(opt => opt.toLowerCase().includes(searchQuery.toLowerCase()));
+  const displayValue = value === 'all' ? (isOpen ? searchQuery : 'All Invoices') : value;
 
   return (
     <div className="flex flex-col gap-1 min-w-[180px] relative" ref={containerRef}>
@@ -47,7 +44,9 @@ const SearchableInvoiceDropdown: React.FC<SearchableInvoiceDropdownProps> = ({ v
           value={displayValue}
           onChange={(val) => {
             setSearchQuery(val);
-            if (!isOpen) setIsOpen(true);
+            if (!isOpen) {
+              setIsOpen(true);
+            }
             if (val === '') {
               onChange('all');
             }
@@ -108,6 +107,9 @@ const SearchableInvoiceDropdown: React.FC<SearchableInvoiceDropdownProps> = ({ v
   );
 };
 
+/**
+ * Activity log page — displays audit trail of invoice mutations with date and category filters.
+ */
 export default function ActivitiesPage(): React.JSX.Element {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -120,6 +122,7 @@ export default function ActivitiesPage(): React.JSX.Element {
 
   const [error, setError] = useState<string>('');
 
+  /** Fetches full audit logs from SQLite database. */
   const loadLogs = useCallback(async (): Promise<void> => {
     try {
       setIsLoading(true);
@@ -149,11 +152,21 @@ export default function ActivitiesPage(): React.JSX.Element {
   const filtered = logs.filter((log) => {
     // 1. Activity Type filter match
     if (activityType !== 'all') {
-      if (activityType === 'created' && !log.action_code?.includes('created')) return false;
-      if (activityType === 'updated' && !log.action_code?.includes('updated') && !log.action_code?.includes('toggled')) return false;
-      if (activityType === 'sent' && !log.action_code?.includes('sent')) return false;
-      if (activityType === 'status_updated' && !log.action_code?.includes('status_updated')) return false;
-      if (activityType === 'deleted' && !log.action_code?.includes('deleted') && !log.action_code?.includes('removed')) return false;
+      if (activityType === 'created' && !log.action_code?.includes('created')) {
+        return false;
+      }
+      if (activityType === 'updated' && !log.action_code?.includes('updated') && !log.action_code?.includes('toggled')) {
+        return false;
+      }
+      if (activityType === 'sent' && !log.action_code?.includes('sent')) {
+        return false;
+      }
+      if (activityType === 'status_updated' && !log.action_code?.includes('status_updated')) {
+        return false;
+      }
+      if (activityType === 'deleted' && !log.action_code?.includes('deleted') && !log.action_code?.includes('removed')) {
+        return false;
+      }
     }
 
     // 2. Invoice dropdown filter match
@@ -168,11 +181,15 @@ export default function ActivitiesPage(): React.JSX.Element {
 
       if (startDate) {
         const start = new Date(startDate + 'T00:00:00');
-        if (timeMs < start.getTime()) return false;
+        if (timeMs < start.getTime()) {
+          return false;
+        }
       }
       if (endDate) {
         const end = new Date(endDate + 'T23:59:59.999');
-        if (timeMs > end.getTime()) return false;
+        if (timeMs > end.getTime()) {
+          return false;
+        }
       }
     }
 

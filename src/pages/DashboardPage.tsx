@@ -63,10 +63,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   const filteredInvoices = useMemo(() => {
     const now = new Date();
     return invoices.filter((inv) => {
-      if (timeFilter === 'all') return true;
-      if (!inv.date) return false;
+      if (timeFilter === 'all') {
+        return true;
+      }
+      if (!inv.date) {
+        return false;
+      }
       const invDate = new Date(inv.date);
-      if (isNaN(invDate.getTime())) return false;
+      if (isNaN(invDate.getTime())) {
+        return false;
+      }
 
       if (timeFilter === '30days') {
         const thirtyDaysAgo = new Date();
@@ -230,9 +236,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
 
     // Filter all invoices that fall into the previous comparison period
     const prevInvoices = invoices.filter((inv) => {
-      if (!inv.date) return false;
+      if (!inv.date) {
+        return false;
+      }
       const invDate = new Date(inv.date);
-      if (isNaN(invDate.getTime())) return false;
+      if (isNaN(invDate.getTime())) {
+        return false;
+      }
       return invDate >= prevStart && invDate <= prevEnd;
     });
 

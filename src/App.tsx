@@ -24,7 +24,9 @@ export default function App(): React.JSX.Element {
 
   // Handle Escape key to close the discard confirmation modal
   useEffect(() => {
-    if (!showDiscardModal) return;
+    if (!showDiscardModal) {
+      return;
+    }
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setShowDiscardModal(false);
@@ -48,7 +50,9 @@ export default function App(): React.JSX.Element {
       setShowDiscardModal(true);
     } else {
       setHasUnsavedChanges(false);
-      if (page === 'invoice-editor' && page !== activePage) setEditingInvoiceId(null);
+      if (page === 'invoice-editor' && page !== activePage) {
+        setEditingInvoiceId(null);
+      }
       setActivePage(page);
     }
   };
@@ -132,7 +136,9 @@ export default function App(): React.JSX.Element {
                   setHasUnsavedChanges(false);
                   setShowDiscardModal(false);
                   if (pendingPage) {
-                    if (pendingPage === 'invoice-editor') setEditingInvoiceId(null);
+                    if (pendingPage === 'invoice-editor') {
+                      setEditingInvoiceId(null);
+                    }
                     setActivePage(pendingPage);
                   }
                 }}

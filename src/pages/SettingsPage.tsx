@@ -131,13 +131,17 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
   }, []);
 
   const updateField = <K extends keyof SettingsFormState>(key: K, value: SettingsFormState[K]): void => {
-    if (saveSuccess) setSaveSuccess(false);
+    if (saveSuccess) {
+      setSaveSuccess(false);
+    }
     setForm(prev => ({ ...prev, [key]: value }));
   };
 
   // Compute dirty state
   const isDirty = useMemo(() => {
-    if (!initialState) return false;
+    if (!initialState) {
+      return false;
+    }
     return (Object.keys(DEFAULT_SETTINGS) as Array<keyof SettingsFormState>).some(
       key => form[key] !== initialState[key]
     );
@@ -500,7 +504,9 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
           const totalSteps = 5;
           const isSetupComplete = completedSteps === totalSteps;
 
-          if (isSetupComplete || isBannerDismissed) return null;
+          if (isSetupComplete || isBannerDismissed) {
+            return null;
+          }
 
           return (
             <div className="bg-white rounded-2xl p-6 mb-8 flex flex-row items-center justify-between shadow-1 relative">

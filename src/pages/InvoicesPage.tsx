@@ -97,7 +97,9 @@ export default function InvoicesPage({ onNavigate, onEditInvoice }: InvoicesPage
 
   /* ── Context Menu & Selection Shortcuts ── */
   useEffect(() => {
-    if (!contextMenu) return;
+    if (!contextMenu) {
+      return;
+    }
     const close = () => setContextMenu(null);
     document.addEventListener('mousedown', close);
     window.addEventListener('scroll', close, true);
@@ -164,7 +166,9 @@ export default function InvoicesPage({ onNavigate, onEditInvoice }: InvoicesPage
       }
     }
 
-    if (statusFilter === 'all') return matchesSearch && matchesFlag;
+    if (statusFilter === 'all') {
+      return matchesSearch && matchesFlag;
+    }
     return invStatus === statusFilter && matchesSearch && matchesFlag;
   });
 
@@ -263,7 +267,9 @@ export default function InvoicesPage({ onNavigate, onEditInvoice }: InvoicesPage
             size="sm"
             onClick={() => {
               setIsSelectionMode(!isSelectionMode);
-              if (isSelectionMode) setSelectedIds(new Set());
+              if (isSelectionMode) {
+                setSelectedIds(new Set());
+              }
             }}
           >
             {isSelectionMode ? 'Cancel Selection' : 'Select'}

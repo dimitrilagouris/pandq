@@ -130,30 +130,40 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
     setError('');
   }, [invoiceId]);
 
-  // Deep comparison helper to check if the form is dirty
+  /** Compares current invoice form state against initial loaded state to determine dirty status. */
   const isFormDirty = useCallback((current: InvoiceFormState, initial: InvoiceFormState | null): boolean => {
-    if (!initial) return false;
-    if (current.invoiceNumber !== initial.invoiceNumber) return true;
-    if (current.dateIssued !== initial.dateIssued) return true;
-    if (current.dueDate !== initial.dueDate) return true;
-    if (current.clientId !== initial.clientId) return true;
-    if (current.gstEnabled !== initial.gstEnabled) return true;
-    if (current.displayDueDate !== initial.displayDueDate) return true;
-    if (current.discount !== initial.discount) return true;
-    if (current.notes !== initial.notes) return true;
-    if (current.templateId !== initial.templateId) return true;
-    if (current.items.length !== initial.items.length) return true;
+    if (!initial) {
+      return false;
+    }
+    if (
+      current.invoiceNumber !== initial.invoiceNumber ||
+      current.dateIssued !== initial.dateIssued ||
+      current.dueDate !== initial.dueDate ||
+      current.clientId !== initial.clientId ||
+      current.gstEnabled !== initial.gstEnabled ||
+      current.displayDueDate !== initial.displayDueDate ||
+      current.discount !== initial.discount ||
+      current.notes !== initial.notes ||
+      current.templateId !== initial.templateId ||
+      current.items.length !== initial.items.length
+    ) {
+      return true;
+    }
 
     for (let i = 0; i < current.items.length; i++) {
       const c = current.items[i];
       const init = initial.items[i];
-      if (!init) return true;
-      if (c.type !== init.type) return true;
-      if (c.description !== init.description) return true;
-      if (c.quantity !== init.quantity) return true;
-      if (c.unitPrice !== init.unitPrice) return true;
-      if (c.hours !== init.hours) return true;
-      if (c.date !== init.date) return true;
+      if (
+        !init ||
+        c.type !== init.type ||
+        c.description !== init.description ||
+        c.quantity !== init.quantity ||
+        c.unitPrice !== init.unitPrice ||
+        c.hours !== init.hours ||
+        c.date !== init.date
+      ) {
+        return true;
+      }
     }
     return false;
   }, []);

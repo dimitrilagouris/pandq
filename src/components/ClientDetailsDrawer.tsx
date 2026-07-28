@@ -158,14 +158,14 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
     const formattedPhone = rawPhone.trim() ? `${countryCode} ${rawPhone.trim()}` : '';
     try {
       setIsSaving(true);
-      await window.electronAPI.updateClient(
-        client.id,
-        editForm.name,
-        editForm.business_name,
-        editForm.email,
-        formattedPhone,
-        editForm.address
-      );
+      await window.electronAPI.updateClient({
+        id: client.id,
+        name: editForm.name,
+        businessName: editForm.business_name,
+        email: editForm.email,
+        phone: formattedPhone,
+        address: editForm.address,
+      });
       client.name = editForm.name;
       client.business_name = editForm.business_name;
       client.email = editForm.email;

@@ -214,36 +214,36 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
       }));
 
       if (invoiceId) {
-        await window.electronAPI.updateInvoice(
+        await window.electronAPI.updateInvoice({
           invoiceId,
-          form.clientId,
-          form.invoiceNumber,
-          form.dateIssued,
-          form.dueDate,
-          form.gstEnabled,
-          form.displayDueDate,
-          form.discount,
-          form.discountType,
-          totals.grandTotal,
+          clientId: form.clientId,
+          invoiceNumber: form.invoiceNumber,
+          date: form.dateIssued,
+          dueDate: form.dueDate,
+          gstEnabled: form.gstEnabled,
+          displayDueDate: form.displayDueDate,
+          discount: form.discount,
+          discountType: form.discountType,
+          price: totals.grandTotal,
           items,
-          form.notes,
-          form.templateId,
-        );
+          notes: form.notes,
+          templateId: form.templateId,
+        });
       } else {
-        await window.electronAPI.createInvoice(
-          form.clientId,
-          form.invoiceNumber,
-          form.dateIssued,
-          form.dueDate,
-          form.gstEnabled,
-          form.displayDueDate,
-          form.discount,
-          form.discountType,
-          totals.grandTotal,
+        await window.electronAPI.createInvoice({
+          clientId: form.clientId,
+          invoiceNumber: form.invoiceNumber,
+          date: form.dateIssued,
+          dueDate: form.dueDate,
+          gstEnabled: form.gstEnabled,
+          displayDueDate: form.displayDueDate,
+          discount: form.discount,
+          discountType: form.discountType,
+          price: totals.grandTotal,
           items,
-          form.notes,
-          form.templateId,
-        );
+          notes: form.notes,
+          templateId: form.templateId,
+        });
       }
       onNavigate('invoices', true);
     } catch (err: unknown) {
@@ -285,36 +285,36 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
 
       // 1. Auto-save state to database first
       if (invoiceId) {
-        await window.electronAPI.updateInvoice(
+        await window.electronAPI.updateInvoice({
           invoiceId,
-          form.clientId,
-          form.invoiceNumber,
-          form.dateIssued,
-          form.dueDate,
-          form.gstEnabled,
-          form.displayDueDate,
-          form.discount,
-          form.discountType,
-          totals.grandTotal,
+          clientId: form.clientId,
+          invoiceNumber: form.invoiceNumber,
+          date: form.dateIssued,
+          dueDate: form.dueDate,
+          gstEnabled: form.gstEnabled,
+          displayDueDate: form.displayDueDate,
+          discount: form.discount,
+          discountType: form.discountType,
+          price: totals.grandTotal,
           items,
-          form.notes,
-          form.templateId,
-        );
+          notes: form.notes,
+          templateId: form.templateId,
+        });
       } else {
-        await window.electronAPI.createInvoice(
-          form.clientId,
-          form.invoiceNumber,
-          form.dateIssued,
-          form.dueDate,
-          form.gstEnabled,
-          form.displayDueDate,
-          form.discount,
-          form.discountType,
-          totals.grandTotal,
+        await window.electronAPI.createInvoice({
+          clientId: form.clientId,
+          invoiceNumber: form.invoiceNumber,
+          date: form.dateIssued,
+          dueDate: form.dueDate,
+          gstEnabled: form.gstEnabled,
+          displayDueDate: form.displayDueDate,
+          discount: form.discount,
+          discountType: form.discountType,
+          price: totals.grandTotal,
           items,
-          form.notes,
-          form.templateId,
-        );
+          notes: form.notes,
+          templateId: form.templateId,
+        });
       }
 
       // 2. Build high fidelity printable document with styling
@@ -408,36 +408,36 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
       // 1. Auto-save state to database first
       let currentInvoiceId = invoiceId;
       if (currentInvoiceId) {
-        await window.electronAPI.updateInvoice(
-          currentInvoiceId,
-          form.clientId,
-          form.invoiceNumber,
-          form.dateIssued,
-          form.dueDate,
-          form.gstEnabled,
-          form.displayDueDate,
-          form.discount,
-          form.discountType,
-          totals.grandTotal,
+        await window.electronAPI.updateInvoice({
+          invoiceId: currentInvoiceId,
+          clientId: form.clientId,
+          invoiceNumber: form.invoiceNumber,
+          date: form.dateIssued,
+          dueDate: form.dueDate,
+          gstEnabled: form.gstEnabled,
+          displayDueDate: form.displayDueDate,
+          discount: form.discount,
+          discountType: form.discountType,
+          price: totals.grandTotal,
           items,
-          form.notes,
-          form.templateId,
-        );
+          notes: form.notes,
+          templateId: form.templateId,
+        });
       } else {
-        const newId = await window.electronAPI.createInvoice(
-          form.clientId,
-          form.invoiceNumber,
-          form.dateIssued,
-          form.dueDate,
-          form.gstEnabled,
-          form.displayDueDate,
-          form.discount,
-          form.discountType,
-          totals.grandTotal,
+        const newId = await window.electronAPI.createInvoice({
+          clientId: form.clientId,
+          invoiceNumber: form.invoiceNumber,
+          date: form.dateIssued,
+          dueDate: form.dueDate,
+          gstEnabled: form.gstEnabled,
+          displayDueDate: form.displayDueDate,
+          discount: form.discount,
+          discountType: form.discountType,
+          price: totals.grandTotal,
           items,
-          form.notes,
-          form.templateId,
-        );
+          notes: form.notes,
+          templateId: form.templateId,
+        });
         currentInvoiceId = Number(newId);
       }
 

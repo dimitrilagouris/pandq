@@ -93,9 +93,9 @@ export const ClientModal: React.FC<ClientModalProps> = ({ client, onClose, onSav
     try {
       setIsSaving(true);
       if (isEditing && client) {
-        await window.electronAPI.updateClient(client.id, form.name, form.business_name, form.email, formattedPhone, form.address);
+        await window.electronAPI.updateClient({ id: client.id, name: form.name, businessName: form.business_name, email: form.email, phone: formattedPhone, address: form.address });
       } else {
-        await window.electronAPI.createClient(form.name, form.business_name, form.email, formattedPhone, form.address);
+        await window.electronAPI.createClient({ name: form.name, businessName: form.business_name, email: form.email, phone: formattedPhone, address: form.address });
       }
       onSave();
     } catch (err: unknown) {

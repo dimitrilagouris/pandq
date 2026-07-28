@@ -234,7 +234,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           <div
             ref={popupRef}
             style={{ top: coords.top, left: coords.left }}
-            className="fixed z-[9999] w-64 bg-stone-100 border border-stone-200/80 rounded-2xl shadow-22 p-4 animate-in fade-in slide-in-from-top-2 duration-150 select-none"
+            className="fixed z-[9999] w-64 bg-stone-100 border border-stone-200/80 rounded-2xl shadow-22 p-4 animate-dropdown-pop select-none"
           >
             {/* Header controls */}
             <div className="flex items-center justify-between mb-3.5">

@@ -155,7 +155,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
       </button>
 
       {isOpen && (
-        <div className={`dropdown-menu-open absolute z-50 mt-1.5 bg-stone-700/95 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-22 py-1.5 flex flex-col animate-in fade-in slide-in-from-top-2 duration-150 ${alignmentClass} ${widthClass}`}>
+        <div className={`dropdown-menu-open absolute z-50 mt-1.5 bg-stone-700/95 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-22 py-1.5 flex flex-col animate-dropdown-pop ${alignmentClass} ${widthClass}`}>
           <div className="flex flex-col overflow-y-auto max-h-[300px]">
             {options.map((opt, idx) => (
               <React.Fragment key={opt.value}>

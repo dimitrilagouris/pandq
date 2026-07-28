@@ -1,132 +1,96 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import type {
+  CreateClientPayload,
+  UpdateClientPayload,
+  CreateInvoicePayload,
+  UpdateInvoicePayload,
+} from '../src/types/electron';
 
 // Expose safe database functions to the renderer process
 contextBridge.exposeInMainWorld('electronAPI', {
-  getClients: (): Promise<unknown[]> => {
-    return ipcRenderer.invoke('db-get-clients');
-  },
+  // ── Clients ──────────────────────────────────────────────────────────────
+  getClients: () => ipcRenderer.invoke('db-get-clients'),
 
-  createClient: (name: string, businessName: string, email: string, phone: string, address: string): Promise<unknown> => {
-    return ipcRenderer.invoke('db-create-client', name, businessName, email, phone, address);
-  },
+  createClient: (payload: CreateClientPayload) =>
+    ipcRenderer.invoke('db-create-client', payload),
 
-  updateClient: (id: number, name: string, businessName: string, email: string, phone: string, address: string): Promise<unknown> => {
-    return ipcRenderer.invoke('db-update-client', id, name, businessName, email, phone, address);
-  },
+  updateClient: (payload: UpdateClientPayload) =>
+    ipcRenderer.invoke('db-update-client', payload),
 
-  deleteClient: (id: number): Promise<unknown> => {
-    return ipcRenderer.invoke('db-delete-client', id);
-  },
+  deleteClient: (id: number) => ipcRenderer.invoke('db-delete-client', id),
 
-  getInvoices: (): Promise<unknown[]> => {
-    return ipcRenderer.invoke('db-get-invoices');
-  },
+  // ── Invoices ─────────────────────────────────────────────────────────────
+  getInvoices: () => ipcRenderer.invoke('db-get-invoices'),
 
-  createInvoice: (
-    clientId: number,
+  getInvoiceById: (id: number) => ipcRenderer.invoke('db-get-invoice-by-id', id),
+
+  createInvoice: (payload: CreateInvoicePayload) =>
+    ipcRenderer.invoke('db-create-invoice', payload),
+
+  updateInvoice: (payload: UpdateInvoicePayload) =>
+    ipcRenderer.invoke('db-update-invoice', payload),
+
+  deleteInvoice: (id: number) => ipcRenderer.invoke('db-delete-invoice', id),
+
+  updateInvoiceStatus: (id: number, status: string) =>
+    ipcRenderer.invoke('db-update-invoice-status', id, status),
+
+  // ── Invoice statuses ──────────────────────────────────────────────────────
+  getInvoiceStatuses: () => ipcRenderer.invoke('db-get-invoice-statuses'),
+
+  createInvoiceStatus: (name: string, color: string) =>
+    ipcRenderer.invoke('db-create-invoice-status', name, color),
+
+  updateInvoiceStatusColor: (name: string, color: string) =>
+    ipcRenderer.invoke('db-update-invoice-status-color', name, color),
+
+  deleteInvoiceStatus: (name: string) =>
+    ipcRenderer.invoke('db-delete-invoice-status', name),
+
+  // ── Flags ─────────────────────────────────────────────────────────────────
+  getFlags: () => ipcRenderer.invoke('db-get-flags'),
+
+  toggleInvoiceFlag: (invoiceId: number, flagId: number) =>
+    ipcRenderer.invoke('db-toggle-invoice-flag', invoiceId, flagId),
+
+  // ── Export / email ────────────────────────────────────────────────────────
+  printToPDF: (invoiceNumber: string, htmlContent: string) =>
+    ipcRenderer.invoke('print-to-pdf', invoiceNumber, htmlContent),
+
+  emailInvoice: (
     invoiceNumber: string,
-    date: string,
+    htmlContent: string,
+    recipientEmail: string,
+    clientName: string,
+    grandTotal: number,
     dueDate: string,
-    gstEnabled: boolean,
-    displayDueDate: boolean,
-    discount: number,
-    discountType: string,
-    price: number,
-    items: Array<{ type: string; description: string; quantity: number; rate: number }>,
-    notes: string,
-    templateId: string,
-  ): Promise<unknown> => {
-    return ipcRenderer.invoke('db-create-invoice', clientId, invoiceNumber, date, dueDate, gstEnabled, displayDueDate, discount, discountType, price, items, notes, templateId);
-  },
+  ) => ipcRenderer.invoke('email-invoice', invoiceNumber, htmlContent, recipientEmail, clientName, grandTotal, dueDate),
 
-  deleteInvoice: (id: number): Promise<unknown> => {
-    return ipcRenderer.invoke('db-delete-invoice', id);
-  },
+  emailMultipleInvoices: (
+    invoiceEntries: Array<{ invoiceNumber: string; htmlContent: string; clientName: string; grandTotal: number; dueDate: string }>,
+    recipientEmail: string,
+  ) => ipcRenderer.invoke('email-multiple-invoices', invoiceEntries, recipientEmail),
 
-  printToPDF: (invoiceNumber: string, htmlContent: string): Promise<boolean> => {
-    return ipcRenderer.invoke('print-to-pdf', invoiceNumber, htmlContent);
-  },
+  // ── Projects ──────────────────────────────────────────────────────────────
+  getProjects: () => ipcRenderer.invoke('db-get-projects'),
 
-  emailInvoice: (invoiceNumber: string, htmlContent: string, recipientEmail: string, clientName: string, grandTotal: number, dueDate: string): Promise<boolean> => {
-    return ipcRenderer.invoke('email-invoice', invoiceNumber, htmlContent, recipientEmail, clientName, grandTotal, dueDate);
-  },
+  createProject: (name: string, clientId: number | null, description: string, status: string, startDate: string) =>
+    ipcRenderer.invoke('db-create-project', name, clientId, description, status, startDate),
 
-  emailMultipleInvoices: (invoiceEntries: Array<{ invoiceNumber: string; htmlContent: string; clientName: string; grandTotal: number; dueDate: string }>, recipientEmail: string): Promise<boolean> => {
-    return ipcRenderer.invoke('email-multiple-invoices', invoiceEntries, recipientEmail);
-  },
+  updateProject: (id: number, name: string, clientId: number | null, description: string, status: string, startDate: string) =>
+    ipcRenderer.invoke('db-update-project', id, name, clientId, description, status, startDate),
 
-  getInvoiceById: (id: number): Promise<any> => {
-    return ipcRenderer.invoke('db-get-invoice-by-id', id);
-  },
+  deleteProject: (id: number) => ipcRenderer.invoke('db-delete-project', id),
 
-  updateInvoice: (
-    invoiceId: number,
-    clientId: number,
-    invoiceNumber: string,
-    date: string,
-    dueDate: string,
-    gstEnabled: boolean,
-    displayDueDate: boolean,
-    discount: number,
-    discountType: string,
-    price: number,
-    items: Array<{ type: string; description: string; quantity: number; rate: number }>,
-    notes: string,
-    templateId: string,
-  ): Promise<unknown> => {
-    return ipcRenderer.invoke('db-update-invoice', invoiceId, clientId, invoiceNumber, date, dueDate, gstEnabled, displayDueDate, discount, discountType, price, items, notes, templateId);
-  },
+  // ── Settings ──────────────────────────────────────────────────────────────
+  getSettings: () => ipcRenderer.invoke('db-get-settings'),
 
-  getProjects: (): Promise<any[]> => {
-    return ipcRenderer.invoke('db-get-projects');
-  },
+  saveSettings: (settings: Record<string, string>) =>
+    ipcRenderer.invoke('db-save-settings', settings),
 
-  createProject: (name: string, clientId: number | null, description: string, status: string, startDate: string): Promise<unknown> => {
-    return ipcRenderer.invoke('db-create-project', name, clientId, description, status, startDate);
-  },
+  // ── Activity ──────────────────────────────────────────────────────────────
+  getActivityLogs: () => ipcRenderer.invoke('db-get-activity-logs'),
 
-  updateProject: (id: number, name: string, clientId: number | null, description: string, status: string, startDate: string): Promise<unknown> => {
-    return ipcRenderer.invoke('db-update-project', id, name, clientId, description, status, startDate);
-  },
-
-  deleteProject: (id: number): Promise<unknown> => {
-    return ipcRenderer.invoke('db-delete-project', id);
-  },
-
-  getSettings: (): Promise<Record<string, string>> => {
-    return ipcRenderer.invoke('db-get-settings');
-  },
-
-  saveSettings: (settings: Record<string, string>): Promise<boolean> => {
-    return ipcRenderer.invoke('db-save-settings', settings);
-  },
-
-  updateInvoiceStatus: (id: number, status: string): Promise<unknown> => {
-    return ipcRenderer.invoke('db-update-invoice-status', id, status);
-  },
-
-  getActivityLogs: (): Promise<unknown[]> => {
-    return ipcRenderer.invoke('db-get-activity-logs');
-  },
-  getInvoiceActivityLogs: (invoiceId: number): Promise<unknown[]> => {
-    return ipcRenderer.invoke('db-get-invoice-activity-logs', invoiceId);
-  },
-  getInvoiceStatuses: (): Promise<unknown[]> => {
-    return ipcRenderer.invoke('db-get-invoice-statuses');
-  },
-  createInvoiceStatus: (name: string, color: string): Promise<unknown> => {
-    return ipcRenderer.invoke('db-create-invoice-status', name, color);
-  },
-  updateInvoiceStatusColor: (name: string, color: string): Promise<unknown> => {
-    return ipcRenderer.invoke('db-update-invoice-status-color', name, color);
-  },
-  deleteInvoiceStatus: (name: string): Promise<unknown> => {
-    return ipcRenderer.invoke('db-delete-invoice-status', name);
-  },
-  getFlags: (): Promise<unknown[]> => {
-    return ipcRenderer.invoke('db-get-flags');
-  },
-  toggleInvoiceFlag: (invoiceId: number, flagId: number): Promise<boolean> => {
-    return ipcRenderer.invoke('db-toggle-invoice-flag', invoiceId, flagId);
-  },
+  getInvoiceActivityLogs: (invoiceId: number) =>
+    ipcRenderer.invoke('db-get-invoice-activity-logs', invoiceId),
 });

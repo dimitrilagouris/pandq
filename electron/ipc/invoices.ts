@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron';
 import { getDb } from '../database';
 import { insertActivityLog, formatDate } from '../database/utils';
+import type { CreateInvoicePayload, UpdateInvoicePayload } from '../../src/types/electron';
 
 export function registerInvoiceHandlers(): void {
   ipcMain.handle('db-get-invoices', (): unknown[] => {
@@ -72,22 +73,8 @@ export function registerInvoiceHandlers(): void {
     }
   });
 
-  ipcMain.handle('db-update-invoice', (
-    _event,
-    invoiceId: number,
-    clientId: number,
-    invoiceNumber: string,
-    date: string,
-    dueDate: string,
-    gstEnabled: boolean,
-    displayDueDate: boolean,
-    discount: number,
-    discountType: string,
-    price: number,
-    items: Array<{ type: string; description: string; hours: number | null; rate: number; quantity: number | null; date: string | null }>,
-    notes: string,
-    templateId: string,
-  ): unknown => {
+  ipcMain.handle('db-update-invoice', (_event, payload: UpdateInvoicePayload): void => {
+    const { invoiceId, clientId, invoiceNumber, date, dueDate, gstEnabled, displayDueDate, discount, discountType, price, items, notes, templateId } = payload;
     const db = getDb();
 
     // 1. Fetch old details for comparison
@@ -221,21 +208,8 @@ export function registerInvoiceHandlers(): void {
     return true;
   });
 
-  ipcMain.handle('db-create-invoice', (
-    _event,
-    clientId: number,
-    invoiceNumber: string,
-    date: string,
-    dueDate: string,
-    gstEnabled: boolean,
-    displayDueDate: boolean,
-    discount: number,
-    discountType: string,
-    price: number,
-    items: Array<{ type: string; description: string; hours: number | null; rate: number; quantity: number | null; date: string | null }>,
-    notes: string,
-    templateId: string,
-  ): unknown => {
+  ipcMain.handle('db-create-invoice', (_event, payload: CreateInvoicePayload): number => {
+    const { clientId, invoiceNumber, date, dueDate, gstEnabled, displayDueDate, discount, discountType, price, items, notes, templateId } = payload;
     const db = getDb();
 
     // Persist invoice, items, and optional discount atomically

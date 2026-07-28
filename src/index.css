@@ -98,6 +98,23 @@ textarea,
   animation: pop-in 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
+/* Smooth scale pop-up animation for dropdown menus and floating overlays */
+@keyframes dropdown-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-dropdown-pop {
+  transform-origin: top left;
+  animation: dropdown-pop 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* A4 Page Break guidelines for live preview */
 .a4-page-breaks {
   position: relative;

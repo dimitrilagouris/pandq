@@ -75,7 +75,7 @@ const SearchableInvoiceDropdown: React.FC<SearchableInvoiceDropdownProps> = ({ v
         </div>
 
         {isOpen && (
-          <div className="absolute z-50 left-0 right-0 mt-1 bg-stone-700/95 backdrop-blur-md border border-white/5 rounded-2xl shadow-22 max-h-60 overflow-y-auto p-1.5 flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="absolute z-50 left-0 right-0 mt-1 bg-stone-700/95 backdrop-blur-md border border-white/5 rounded-2xl shadow-22 max-h-60 overflow-y-auto p-1.5 flex flex-col gap-0.5 animate-dropdown-pop">
             <button
               type="button"
               onClick={() => {

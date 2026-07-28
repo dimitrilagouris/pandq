@@ -247,7 +247,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
             </div>
 
             {isOpen && (
-              <div className="absolute z-50 left-0 right-0 mt-1 bg-stone-700/95 backdrop-blur-md border border-white/5 rounded-2xl shadow-2xl p-1.5 flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="absolute z-50 left-0 right-0 mt-1 bg-stone-700/95 backdrop-blur-md border border-white/5 rounded-2xl shadow-2xl p-1.5 flex flex-col gap-0.5 animate-dropdown-pop">
                 <div className="flex flex-col gap-0.5 overflow-y-auto max-h-60 custom-scrollbar">
                   {filteredClients.length > 0 ? (
                     filteredClients.map((c, idx) => {

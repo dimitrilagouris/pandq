@@ -130,7 +130,7 @@ export const InvoiceContextMenu: React.FC<InvoiceContextMenuProps> = ({
       onContextMenu={(e) => e.preventDefault()}
     >
       <div
-        className="fixed z-[201] bg-stone-700/95 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-22 py-1.5 flex flex-col w-52 animate-in fade-in zoom-in-95 duration-100"
+        className="fixed z-[201] bg-stone-700/95 backdrop-blur-xl border border-white/[0.08] rounded-xl shadow-22 py-1.5 flex flex-col w-52 animate-dropdown-pop"
         style={{ left: menuLeft, top: menuTop }}
         onMouseDown={(e) => e.stopPropagation()}
       >

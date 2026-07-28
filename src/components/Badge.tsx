@@ -14,32 +14,54 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 /**
- * Maps an invoice status to a badge variant.
+ * Resolves an invoice status string to its corresponding visual theme variant.
+ *
+ * @param status - Invoice status string (e.g. Sent, Paid, Overdue).
  */
 export function getInvoiceStatusVariant(status: string): BadgeVariant {
   const normalized: string = status.toLowerCase();
-  if (normalized.startsWith('sent')) return 'blue';
-  if (normalized.startsWith('paid')) return 'lime';
-  if (normalized.startsWith('cancelled')) return 'red';
-  if (normalized.startsWith('overdue')) return 'amber';
+  if (normalized.startsWith('sent')) {
+    return 'blue';
+  }
+  if (normalized.startsWith('paid')) {
+    return 'lime';
+  }
+  if (normalized.startsWith('cancelled')) {
+    return 'red';
+  }
+  if (normalized.startsWith('overdue')) {
+    return 'amber';
+  }
   return 'gray';
 }
 
 /**
- * Maps an activity action code to a badge variant.
+ * Resolves an activity log action code to its corresponding visual theme variant.
+ *
+ * @param actionCode - Action identifier string (e.g. invoice_created, status_updated).
  */
 export function getActivityActionVariant(actionCode: string): BadgeVariant {
   const code: string = actionCode.toLowerCase();
-  if (code.includes('created')) return 'blue';
-  if (code.includes('updated') || code.includes('toggled')) return 'pink';
-  if (code.includes('sent')) return 'orange';
-  if (code.includes('status_updated')) return 'lime';
-  if (code.includes('deleted') || code.includes('removed')) return 'red';
+  if (code.includes('created')) {
+    return 'blue';
+  }
+  if (code.includes('updated') || code.includes('toggled')) {
+    return 'pink';
+  }
+  if (code.includes('sent')) {
+    return 'orange';
+  }
+  if (code.includes('status_updated')) {
+    return 'lime';
+  }
+  if (code.includes('deleted') || code.includes('removed')) {
+    return 'red';
+  }
   return 'gray';
 }
 
 /**
- * A reusable badge component for status and action representation.
+ * Reusable badge pill component for status and action representation.
  */
 export const Badge: React.FC<BadgeProps> = ({
   children,
@@ -60,7 +82,7 @@ export const Badge: React.FC<BadgeProps> = ({
     resolvedVariant = getActivityActionVariant(activityAction);
   }
 
-  const sizeStyles = size === 'lg' 
+  const sizeStyles = size === 'lg'
     ? 'px-3 py-1 rounded-md text-xs font-medium uppercase'
     : 'px-2 py-0.5 rounded-md text-[10px] font-medium uppercase';
 

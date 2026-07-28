@@ -44,9 +44,13 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
   // Parse YYYY-MM-DD safely into year, month, date components in local time
   const parseDateString = (dateStr: string) => {
-    if (!dateStr) return new Date();
+    if (!dateStr) {
+      return new Date();
+    }
     const parts = dateStr.split('-');
-    if (parts.length !== 3) return new Date();
+    if (parts.length !== 3) {
+      return new Date();
+    }
     const y = parseInt(parts[0], 10);
     const m = parseInt(parts[1], 10) - 1;
     const d = parseInt(parts[2], 10);
@@ -85,7 +89,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
   // Close on scroll or resize when open (since it is fixed positioned)
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      return;
+    }
     const handleScroll = () => setIsOpen(false);
     const handleResize = () => setIsOpen(false);
 
@@ -107,7 +113,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
   // Format for text input display: e.g. "30 June 2026"
   const formatDisplayString = (dateStr: string) => {
-    if (!dateStr) return '';
+    if (!dateStr) {
+      return '';
+    }
     const date = parseDateString(dateStr);
     return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
   };

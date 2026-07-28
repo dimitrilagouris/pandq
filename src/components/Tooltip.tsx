@@ -7,6 +7,9 @@ interface TooltipProps {
   className?: string;
 }
 
+/**
+ * Floating tooltip component rendered into document body via React Portal.
+ */
 export const Tooltip: React.FC<TooltipProps> = ({ content, children, className = '' }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -25,7 +28,9 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, className =
   }, [showTooltip]);
 
   useEffect(() => {
-    if (!showTooltip) return;
+    if (!showTooltip) {
+      return;
+    }
     const hide = () => setShowTooltip(false);
     window.addEventListener('scroll', hide, true);
     window.addEventListener('resize', hide);

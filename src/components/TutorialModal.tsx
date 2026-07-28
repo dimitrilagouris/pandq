@@ -82,7 +82,9 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose })
 
   // Close on Escape key press
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      return;
+    }
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -93,7 +95,9 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose })
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   const pages: PageData[] = [
     {

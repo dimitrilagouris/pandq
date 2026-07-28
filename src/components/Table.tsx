@@ -47,7 +47,9 @@ export function Table<T>({
 
   /* ── Sorting ── */
   const sorted = React.useMemo((): T[] => {
-    if (!sort) return data;
+    if (!sort) {
+      return data;
+    }
     return [...data].sort((a, b) => {
       const av = (a as Record<string, unknown>)[sort.key];
       const bv = (b as Record<string, unknown>)[sort.key];

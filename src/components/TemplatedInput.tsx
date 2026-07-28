@@ -153,7 +153,9 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
 
   // Sync value from parent to contenteditable innerHTML (only when the parsed text differs to prevent cursor resetting)
   useEffect(() => {
-    if (!editorRef.current) return;
+    if (!editorRef.current) {
+      return;
+    }
     const currentText = htmlToText(editorRef.current.innerHTML);
     if (currentText !== value) {
       const targetHtml = textToHtml(value);
@@ -188,7 +190,9 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
   /** Delete the '/' and typed search query right before inserting a tag. */
   const deleteTriggerAndQuery = (): void => {
     const sel = window.getSelection();
-    if (!sel || !sel.rangeCount || !triggerNodeRef.current) return;
+    if (!sel || !sel.rangeCount || !triggerNodeRef.current) {
+      return;
+    }
     const range = sel.getRangeAt(0);
 
     range.setStart(triggerNodeRef.current, triggerOffsetRef.current);
@@ -197,7 +201,9 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
 
   /** Insert the visual tag at the current caret position. */
   const insertTag = (token: string, labelText: string, replaceSlash: boolean = false): void => {
-    if (!editorRef.current) return;
+    if (!editorRef.current) {
+      return;
+    }
     editorRef.current.focus();
 
     if (replaceSlash) {
@@ -262,7 +268,9 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
   /** Listens for '/' typing to display tag options. */
   const handleKeyUp = (_e: React.KeyboardEvent<HTMLDivElement>): void => {
     const sel = window.getSelection();
-    if (!sel || !sel.rangeCount) return;
+    if (!sel || !sel.rangeCount) {
+      return;
+    }
     
     const range = sel.getRangeAt(0);
     const container = range.startContainer;

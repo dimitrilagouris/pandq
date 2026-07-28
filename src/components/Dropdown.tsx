@@ -78,7 +78,9 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
   // Close dropdown when scrolling
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      return;
+    }
     const handleScroll = () => {
       setIsOpen(false);
     };

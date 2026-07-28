@@ -62,9 +62,13 @@ export function insertActivityLog(
  * @returns The formatted date string.
  */
 export function formatDate(dateStr: string): string {
-  if (!dateStr) return '';
+  if (!dateStr) {
+    return '';
+  }
   const parts = dateStr.split('-');
-  if (parts.length !== 3) return dateStr;
+  if (parts.length !== 3) {
+    return dateStr;
+  }
   const [y, m, d] = parts;
   return `${d}/${m}/${y}`;
 }

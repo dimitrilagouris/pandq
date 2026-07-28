@@ -47,7 +47,9 @@ export function registerInvoiceHandlers(): void {
       LEFT JOIN clients c ON i.client_id = c.id
       WHERE i.id = ?
     `).get(id) as any;
-    if (!invoice) return null;
+    if (!invoice) {
+      return null;
+    }
     const items = db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ?').all(id);
     const discounts = db.prepare('SELECT * FROM discounts WHERE invoice_id = ?').all(id);
     return { ...invoice, items, discounts };

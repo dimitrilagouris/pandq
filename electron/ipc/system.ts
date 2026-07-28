@@ -8,7 +8,9 @@ import { getDatabaseSettings, insertActivityLog, formatDate } from '../database/
 export function registerSystemHandlers(): void {
   ipcMain.handle('print-to-pdf', async (_event, invoiceNumber: string, htmlContent: string): Promise<boolean> => {
     const win = BrowserWindow.getFocusedWindow();
-    if (!win) return false;
+    if (!win) {
+      return false;
+    }
 
     const { filePath } = await dialog.showSaveDialog(win, {
       title: 'Save Invoice as PDF',
@@ -16,7 +18,9 @@ export function registerSystemHandlers(): void {
       filters: [{ name: 'PDF Files', extensions: ['pdf'] }]
     });
 
-    if (!filePath) return false;
+    if (!filePath) {
+      return false;
+    }
 
     const printWin = new BrowserWindow({
       show: false,

@@ -25,6 +25,7 @@ export default function ClientsPage(): React.JSX.Element {
   // undefined = closed, null = new client, Client = edit existing
   const isModalOpen = modalClient !== undefined;
 
+  /** Fetches all clients and invoices concurrently from SQLite. */
   const loadData = useCallback(async (): Promise<void> => {
     try {
       setIsLoading(true);
@@ -42,19 +43,27 @@ export default function ClientsPage(): React.JSX.Element {
     }
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
+  /** Deletes a client record and refreshes the client list. */
   const handleDelete = async (client: Client): Promise<void> => {
-    if (!confirm(`Delete client "${client.name}"? This will also remove all their invoices.`)) return;
+    if (!confirm(`Delete client "${client.name}"? This will also remove all their invoices.`)) {
+      return;
+    }
     try {
       await window.electronAPI.deleteClient(client.id);
-      if (drawerClient?.id === client.id) setDrawerClient(null);
+      if (drawerClient?.id === client.id) {
+        setDrawerClient(null);
+      }
       await loadData();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to delete client.');
     }
   };
 
+  /** Handles modal save completion by closing the modal and re-fetching clients. */
   const handleModalSave = async (): Promise<void> => {
     setModalClient(undefined);
     await loadData();

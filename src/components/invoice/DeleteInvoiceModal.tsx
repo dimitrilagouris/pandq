@@ -11,6 +11,9 @@ export interface DeleteInvoiceModalProps {
   onConfirm: (invoice: Invoice) => Promise<void> | void;
 }
 
+/**
+ * Confirmation modal requiring the user to type "delete" before permanently destroying an invoice.
+ */
 export const DeleteInvoiceModal: React.FC<DeleteInvoiceModalProps> = ({
   invoice,
   isOpen,
@@ -39,13 +42,17 @@ export const DeleteInvoiceModal: React.FC<DeleteInvoiceModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen || !invoice) return null;
+  if (!isOpen || !invoice) {
+    return null;
+  }
 
   const isEnabled = confirmText.trim().toLowerCase() === 'delete';
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
-    if (!isEnabled || isDeleting) return;
+    if (!isEnabled || isDeleting) {
+      return;
+    }
 
     try {
       setIsDeleting(true);

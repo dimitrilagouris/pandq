@@ -8,7 +8,9 @@ function formatCurrency(amount: number): string {
 
 /** Format a date string (YYYY-MM-DD) to a human-readable format. */
 function formatDate(dateStr: string): string {
-  if (!dateStr) return '—';
+  if (!dateStr) {
+    return '—';
+  }
   const date = new Date(dateStr + 'T00:00:00');
   return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
 }
@@ -48,8 +50,12 @@ function getGroupedLabour(items: any[]): GroupedLabour[] {
   const list = Array.from(groupsMap.values());
   // Sort by date: oldest to newest (undated first)
   list.sort((a, b) => {
-    if (!a.date) return -1;
-    if (!b.date) return 1;
+    if (!a.date) {
+      return -1;
+    }
+    if (!b.date) {
+      return 1;
+    }
     return a.date.localeCompare(b.date);
   });
   return list;
@@ -281,7 +287,9 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
 /** Build grouped items HTML block for labour section */
 function buildGroupedLabourRowsHtml(items: any[]): string {
   const grouped = getGroupedLabour(items);
-  if (grouped.length === 0) return '';
+  if (grouped.length === 0) {
+    return '';
+  }
 
   const rows = grouped.map(group => {
     const firstRate = group.items[0]?.unitPrice;
@@ -331,7 +339,9 @@ function buildGroupedLabourRowsHtml(items: any[]): string {
 /** Build flat items HTML block for materials section */
 function buildMaterialsRowsHtml(items: any[]): string {
   const materials = items.filter(i => i.type === 'materials');
-  if (materials.length === 0) return '';
+  if (materials.length === 0) {
+    return '';
+  }
 
   const rows = materials.map(item => {
     const qty = item.quantity ?? 0;

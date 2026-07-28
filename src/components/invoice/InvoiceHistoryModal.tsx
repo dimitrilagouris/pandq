@@ -1,22 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import {
   RiCloseLine,
-  RiCheckboxCircleFill,
   RiAddLine,
-  RiMailLine,
-  RiEditLine,
-  RiDeleteBinLine,
-  RiTimeLine,
-  RiArrowDownSLine,
-  RiMailSendLine,
   RiCheckLine,
   RiFileList3Line,
   RiMapPinLine,
-  RiFileCopyLine,
   RiNavigationFill,
   RiSubtractLine,
-  RiFullscreenLine,
-  RiFocus3Line
+  RiFocus3Line,
+  RiMailSendLine,
+  RiTimeLine
 } from 'react-icons/ri';
 import { ActivityLog } from '../../types/models';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
@@ -24,8 +17,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Badge } from '../Badge';
 
-// MapController to handle zooming and recentering from external buttons
-function MapController({ zoom, center, recenterCount }: { zoom: number, center: [number, number], recenterCount: number }) {
+/** Helper component to set map zoom and center dynamically when modified from external buttons. */
+function MapController({ zoom, center, recenterCount }: { zoom: number; center: [number, number]; recenterCount: number }) {
   const map = useMap();
 
   useEffect(() => {
@@ -41,7 +34,7 @@ function MapController({ zoom, center, recenterCount }: { zoom: number, center: 
   return null;
 }
 
-// Custom Marker
+/** Custom Leaflet pin marker for client map locations. */
 const customMarker = new L.DivIcon({
   html: `<div style="background-color: #ea580c; width: 14px; height: 14px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
   className: '',
@@ -55,7 +48,8 @@ interface InvoiceHistoryModalProps {
   defaultTab?: 'summary' | 'history';
 }
 
-const formatTimeAgo = (dateStr: string) => {
+/** Formats a timestamp into a human-readable relative time string (e.g. 5m ago, 2h ago). */
+const formatTimeAgo = (dateStr: string): string => {
   const safeDateStr = dateStr.includes('Z') || dateStr.includes('+')
     ? dateStr
     : dateStr.replace(' ', 'T') + 'Z';
@@ -64,17 +58,24 @@ const formatTimeAgo = (dateStr: string) => {
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
 
-  if (minutes < 1) return 'Just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  if (hours < 24) return `${hours}h ago`;
+  if (minutes < 1) {
+    return 'Just now';
+  }
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
   return `${days}d ago`;
 };
 
-const getTimelineIcon = (actionCode: string) => {
+/** Returns a visual icon indicator matching the activity log action category. */
+const getTimelineIcon = (actionCode: string): React.JSX.Element => {
   if (actionCode === 'invoice_created') {
     return (
       <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-white border border-stone-200 z-10 flex-shrink-0">
-        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
       </div>
     );
   }
@@ -99,23 +100,25 @@ const getTimelineIcon = (actionCode: string) => {
       </div>
     );
   }
-  // Default (Gray dot)
   return (
     <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-white border border-stone-200 z-10 flex-shrink-0">
-      <div className="w-2.5 h-2.5 rounded-full bg-stone-400"></div>
+      <div className="w-2.5 h-2.5 rounded-full bg-stone-400" />
     </div>
   );
 };
 
+/**
+ * Modal dialog displaying comprehensive invoice details, client map preview, and detailed audit history.
+ */
 export function InvoiceHistoryModal({ invoiceId, onClose, defaultTab = 'summary' }: InvoiceHistoryModalProps): React.JSX.Element {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [invoice, setInvoice] = useState<any>(null);
   const [settings, setSettings] = useState<any>(null);
-  const [invoiceStatuses, setInvoiceStatuses] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [, setInvoiceStatuses] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'summary' | 'history'>(defaultTab);
-  const [mapZoom, setMapZoom] = useState(14);
-  const [recenterCount, setRecenterCount] = useState(0);
+  const [mapZoom, setMapZoom] = useState<number>(14);
+  const [recenterCount, setRecenterCount] = useState<number>(0);
 
   const handleZoomIn = () => setMapZoom(prev => Math.min(prev + 1, 20));
   const handleZoomOut = () => setMapZoom(prev => Math.max(prev - 1, 1));
@@ -139,7 +142,7 @@ export function InvoiceHistoryModal({ invoiceId, onClose, defaultTab = 'summary'
   }, [invoice?.client_address]);
 
   useEffect(() => {
-    async function fetchData() {
+    async function fetchData(): Promise<void> {
       try {
         const [fetchedLogs, fetchedInvoice, fetchedSettings, fetchedStatuses] = await Promise.all([
           window.electronAPI.getInvoiceActivityLogs(invoiceId),
@@ -160,20 +163,24 @@ export function InvoiceHistoryModal({ invoiceId, onClose, defaultTab = 'summary'
     fetchData();
   }, [invoiceId]);
 
-  const renderSummary = () => {
-    if (!invoice || !settings) return (
-      <div className="flex items-center justify-center h-40">
-        <p className="text-sm text-stone-400">Loading summary…</p>
-      </div>
-    );
+  const renderSummary = (): React.JSX.Element => {
+    if (!invoice || !settings) {
+      return (
+        <div className="flex items-center justify-center h-40">
+          <p className="text-sm text-stone-400">Loading summary…</p>
+        </div>
+      );
+    }
 
     const stages = ['Draft', 'Sent', 'Paid'];
 
     const currentStatus = (invoice.status || '').toLowerCase();
     let currentIndex = stages.findIndex(s => s.toLowerCase() === currentStatus);
-    if (currentIndex === -1) currentIndex = 0; // Default if not found
+    if (currentIndex === -1) {
+      currentIndex = 0;
+    }
 
-    const formatCurrency = (amount: number) => {
+    const formatCurrency = (amount: number): string => {
       return new Intl.NumberFormat('en-AU', {
         style: 'currency',
         currency: 'AUD'
@@ -198,8 +205,10 @@ export function InvoiceHistoryModal({ invoiceId, onClose, defaultTab = 'summary'
       }
     }
 
-    const formatDateSafe = (dateString?: string) => {
-      if (!dateString) return 'N/A';
+    const formatDateSafe = (dateString?: string): string => {
+      if (!dateString) {
+        return 'N/A';
+      }
       const d = new Date(dateString);
       return isNaN(d.getTime()) ? 'N/A' : d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
     };
@@ -241,11 +250,11 @@ export function InvoiceHistoryModal({ invoiceId, onClose, defaultTab = 'summary'
               </div>
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center w-full h-full gap-2 bg-[#eef1f2] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-80 z-10 relative">
+            <div className="flex flex-col items-center justify-center w-full h-full gap-2 bg-[#eef1f2] opacity-80 z-10 relative">
               <span className="text-[13px] font-medium text-stone-500">Locating address...</span>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center w-full h-full gap-2 bg-[#eef1f2] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-80">
+            <div className="flex flex-col items-center justify-center w-full h-full gap-2 bg-[#eef1f2] opacity-80">
               <div className="flex flex-col items-center gap-2 bg-white/90 px-4 py-2.5 rounded-xl backdrop-blur-sm shadow-sm border border-stone-200/50">
                 <RiMapPinLine className="w-5 h-5 text-stone-400" />
                 <span className="text-[13px] font-medium text-stone-500">No client address available</span>

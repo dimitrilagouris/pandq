@@ -43,9 +43,13 @@ function formatCurrency(amount: number): string {
 
 /** Format an ISO date string to a short display format (e.g. "8 Jul"). */
 function formatShortDate(dateStr: string): string {
-  if (!dateStr) return '';
+  if (!dateStr) {
+    return '';
+  }
   const parts = dateStr.split('-');
-  if (parts.length !== 3) return dateStr;
+  if (parts.length !== 3) {
+    return dateStr;
+  }
   const date = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
   return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
 }
@@ -124,13 +128,17 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
   };
 
   const removeItem = (id: string): void => {
-    if (editingItemId === id) setEditingItemId(null);
+    if (editingItemId === id) {
+      setEditingItemId(null);
+    }
     onChange({ items: form.items.filter(item => item.id !== id) });
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    if (!over || active.id === over.id) {
+      return;
+    }
 
     const activeItem = form.items.find(i => i.id === active.id);
     const overItem = form.items.find(i => i.id === over.id);
@@ -195,11 +203,15 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
                       setFocusedIndex(0);
-                      if (!isOpen) setIsOpen(true);
+                      if (!isOpen) {
+                        setIsOpen(true);
+                      }
                     }}
                     onKeyDown={(e) => {
                       if (!isOpen) {
-                        if (e.key === 'ArrowDown' || e.key === 'Enter') setIsOpen(true);
+                        if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                          setIsOpen(true);
+                        }
                         return;
                       }
                       if (e.key === 'ArrowDown') {

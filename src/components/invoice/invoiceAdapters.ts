@@ -2,19 +2,22 @@ import { InvoiceDetail, PersistedInvoiceItem } from '../../types/models';
 import { InvoiceFormState, LineItem } from './invoiceTypes';
 
 /**
- * Extract invoice notes from status string where status is stored in "status|notes" format.
- * @param status - The raw status string from database.
+ * Extracts invoice notes from a status string stored in the "status|notes" database format.
+ *
+ * @param status - Raw status string retrieved from SQLite database.
  */
 export function extractNotes(status: string | null | undefined): string {
-  if (!status) return '';
+  if (!status) {
+    return '';
+  }
   return status.includes('|') ? status.split('|').slice(1).join('|') : '';
 }
 
 /**
- * Hydrates an in-memory `InvoiceFormState` from a persisted `InvoiceDetail` fetched from DB.
- * Pure converter function to prevent code duplication across editor, preview, and export helpers.
+ * Hydrates an in-memory `InvoiceFormState` from a persisted `InvoiceDetail` database record.
+ * Pure conversion utility shared across the editor, preview, and export workflows.
  *
- * @param detail - The full invoice detail loaded from `window.electronAPI.getInvoiceById`.
+ * @param detail - Full invoice record returned by `window.electronAPI.getInvoiceById`.
  */
 export function hydrateFormState(detail: InvoiceDetail): InvoiceFormState {
   const notesStr = extractNotes(detail.status);

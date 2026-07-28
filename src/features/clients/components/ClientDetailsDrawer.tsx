@@ -116,7 +116,9 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
 
   /** Initialises inline edit mode with current client details. */
   const startEditing = (): void => {
-    if (!client) return;
+    if (!client) {
+      return;
+    }
     setEditForm({
       name: client.name || '',
       business_name: client.business_name || '',
@@ -150,7 +152,9 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
 
   /** Saves inline edited client details to backend storage. */
   const handleSaveInline = async (): Promise<void> => {
-    if (!client) return;
+    if (!client) {
+      return;
+    }
     if (!editForm.name.trim()) {
       setError('Name is required.');
       return;
@@ -193,7 +197,9 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
     { key: 'invoices', label: 'Invoices', count: clientInvoices.length > 0 ? clientInvoices.length : undefined },
   ];
 
-  if (!isRendered || !client) return null;
+  if (!isRendered || !client) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 z-[100] flex justify-end overflow-hidden">

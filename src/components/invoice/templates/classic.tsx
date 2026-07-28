@@ -10,7 +10,9 @@ function formatCurrency(amount: number): string {
 
 /** Format a date string (YYYY-MM-DD) to a numeric format (DD/MM/YYYY) like the example. */
 function formatDate(dateStr: string): string {
-  if (!dateStr) return '—';
+  if (!dateStr) {
+    return '—';
+  }
   const date = new Date(dateStr + 'T00:00:00');
   return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }

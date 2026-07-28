@@ -87,15 +87,32 @@ export const InvoiceContextMenu: React.FC<InvoiceContextMenuProps> = ({
       })()
     : undefined;
 
-  const handleAction = (val: string) => {
+  /** Dispatches context menu action based on selected item key. */
+  const handleAction = (val: string): void => {
     onClose();
-    if (val === 'summary') onViewSummary(inv);
-    if (val === 'history') onViewHistory(inv);
-    if (val === 'edit') onEdit(inv);
-    if (val === 'delete') onDelete(inv);
-    if (val === 'send') onSend(inv);
-    if (val === 'save_pdf') onSavePdf(inv);
-    if (val === 'mark_paid') onMarkPaid(inv);
+    switch (val) {
+      case 'summary':
+        onViewSummary(inv);
+        break;
+      case 'history':
+        onViewHistory(inv);
+        break;
+      case 'edit':
+        onEdit(inv);
+        break;
+      case 'delete':
+        onDelete(inv);
+        break;
+      case 'send':
+        onSend(inv);
+        break;
+      case 'save_pdf':
+        onSavePdf(inv);
+        break;
+      case 'mark_paid':
+        onMarkPaid(inv);
+        break;
+    }
   };
 
   const menuWidth = 208;

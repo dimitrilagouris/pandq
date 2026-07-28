@@ -60,9 +60,11 @@ export function registerClientHandlers(): void {
         changes.push('address changed');
       }
 
-      const details = changes.length > 0
-        ? `Client "${name}" updated: ${changes.join(', ')}`
-        : `Client "${name}" updated`;
+      let details = `Client "${name}" updated`;
+      if (changes.length > 0) {
+        details = `Client "${name}" updated: ${changes.join(', ')}`;
+      }
+
       insertActivityLog(null, null, 'client_updated', details);
     } else {
       insertActivityLog(null, null, 'client_updated', `Client "${name}" details updated`);
@@ -75,6 +77,12 @@ export function registerClientHandlers(): void {
     const client = db.prepare('SELECT name FROM clients WHERE id = ?').get(id) as { name: string } | undefined;
 
     db.prepare('DELETE FROM clients WHERE id = ?').run(id);
-    insertActivityLog(null, null, 'client_deleted', `Client "${client?.name || 'N/A'}" was deleted`);
+
+    let clientName = 'N/A';
+    if (client && client.name) {
+      clientName = client.name;
+    }
+
+    insertActivityLog(null, null, 'client_deleted', `Client "${clientName}" was deleted`);
   });
 }

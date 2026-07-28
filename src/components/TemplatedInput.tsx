@@ -375,7 +375,7 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
         {/* Floating Slash Menu */}
         {showMenu && (
           <div 
-            className="slash-menu-container absolute z-50 bg-stone-700/95 backdrop-blur-md border border-white/5 rounded-2xl shadow-2xl p-1.5 w-60 flex flex-col gap-0.5 animate-dropdown-pop"
+            className="slash-menu-container absolute z-50 bg-stone-700/95 backdrop-blur-md border border-white/5 rounded-2xl shadow-2xl p-1.5 w-60 flex flex-col gap-0.5 animate-dropdown-pop origin-bottom"
             style={{ 
               left: `${menuCoords.left}px`, 
               top: `${menuCoords.top}px`,

@@ -5,7 +5,6 @@ import {
   RiReceiptLine,
   RiMailLine,
   RiBankCardLine,
-  RiCheckLine,
   RiCheckboxCircleFill
 } from 'react-icons/ri';
 import { Button } from '../components/Button';
@@ -15,7 +14,6 @@ import { TemplateSelector } from '../components/invoice/TemplateSelector';
 import { HelpBadge } from '../components/HelpBadge';
 import { TutorialModal } from '../components/TutorialModal';
 import { CircularProgress } from '../components/CircularProgress';
-import { templates } from '../components/invoice/templates/registry';
 import { Toggle } from '../components/Toggle';
 
 type SettingsTab = 'personalisation' | 'organisation' | 'invoice' | 'email' | 'payment';
@@ -24,214 +22,145 @@ interface SettingsPageProps {
   onDirtyChange?: (isDirty: boolean) => void;
 }
 
+/** Internal structured state shape for all user settings. */
+export interface SettingsFormState {
+  setting_org_name: string;
+  setting_org_abn: string;
+  setting_org_address: string;
+  setting_org_phone: string;
+  setting_org_email: string;
+  setting_language: string;
+  setting_display_client_name_as: 'name' | 'company';
+  setting_default_due_days: string;
+  setting_invoice_prefix: string;
+  setting_default_notes: string;
+  setting_default_gst_enabled: boolean;
+  setting_default_display_due_date: boolean;
+  setting_default_template_id: string;
+  setting_sender_name: string;
+  setting_email_subject: string;
+  setting_email_body: string;
+  setting_email_auto_update_status: boolean;
+  setting_bank_name: string;
+  setting_bsb: string;
+  setting_account_number: string;
+  setting_payment_instructions: string;
+}
+
+/** Canonical default values for all settings. */
+const DEFAULT_SETTINGS: SettingsFormState = {
+  setting_org_name: 'Your Business',
+  setting_org_abn: '',
+  setting_org_address: 'Your address here',
+  setting_org_phone: '',
+  setting_org_email: '',
+  setting_language: 'en-AU',
+  setting_display_client_name_as: 'name',
+  setting_default_due_days: '14',
+  setting_invoice_prefix: 'INV-',
+  setting_default_notes: '',
+  setting_default_gst_enabled: false,
+  setting_default_display_due_date: true,
+  setting_default_template_id: 'classic',
+  setting_sender_name: '',
+  setting_email_subject: 'Invoice {invoiceNumber}',
+  setting_email_body: 'Hi,\n\nPlease find attached invoice {invoiceNumber}.\n\nKind regards,\nYour Business',
+  setting_email_auto_update_status: true,
+  setting_bank_name: '',
+  setting_bsb: '',
+  setting_account_number: '',
+  setting_payment_instructions: 'Please pay within terms.',
+};
+
+/** Key mapping per settings tab for saving. */
+const TAB_KEYS: Record<SettingsTab, Array<keyof SettingsFormState>> = {
+  organisation: ['setting_org_name', 'setting_org_abn', 'setting_org_address', 'setting_org_phone', 'setting_org_email'],
+  personalisation: ['setting_language', 'setting_display_client_name_as'],
+  invoice: ['setting_default_due_days', 'setting_invoice_prefix', 'setting_default_notes', 'setting_default_gst_enabled', 'setting_default_display_due_date', 'setting_default_template_id'],
+  email: ['setting_sender_name', 'setting_email_subject', 'setting_email_body', 'setting_email_auto_update_status'],
+  payment: ['setting_bank_name', 'setting_bsb', 'setting_account_number', 'setting_payment_instructions'],
+};
+
+/** Convert a raw key-value dictionary from DB into a clean `SettingsFormState` object. */
+function parseSettings(settings: Record<string, string>): SettingsFormState {
+  return {
+    setting_org_name: settings['setting_org_name'] ?? DEFAULT_SETTINGS.setting_org_name,
+    setting_org_abn: settings['setting_org_abn'] ?? DEFAULT_SETTINGS.setting_org_abn,
+    setting_org_address: settings['setting_org_address'] ?? DEFAULT_SETTINGS.setting_org_address,
+    setting_org_phone: settings['setting_org_phone'] ?? DEFAULT_SETTINGS.setting_org_phone,
+    setting_org_email: settings['setting_org_email'] ?? DEFAULT_SETTINGS.setting_org_email,
+    setting_language: settings['setting_language'] ?? DEFAULT_SETTINGS.setting_language,
+    setting_display_client_name_as: (settings['setting_display_client_name_as'] as 'name' | 'company') || DEFAULT_SETTINGS.setting_display_client_name_as,
+    setting_default_due_days: settings['setting_default_due_days'] ?? DEFAULT_SETTINGS.setting_default_due_days,
+    setting_invoice_prefix: settings['setting_invoice_prefix'] ?? DEFAULT_SETTINGS.setting_invoice_prefix,
+    setting_default_notes: settings['setting_default_notes'] ?? DEFAULT_SETTINGS.setting_default_notes,
+    setting_default_gst_enabled: settings['setting_default_gst_enabled'] !== undefined ? settings['setting_default_gst_enabled'] === 'true' : DEFAULT_SETTINGS.setting_default_gst_enabled,
+    setting_default_display_due_date: settings['setting_default_display_due_date'] !== undefined ? settings['setting_default_display_due_date'] !== 'false' : DEFAULT_SETTINGS.setting_default_display_due_date,
+    setting_default_template_id: settings['setting_default_template_id'] ?? DEFAULT_SETTINGS.setting_default_template_id,
+    setting_sender_name: settings['setting_sender_name'] ?? DEFAULT_SETTINGS.setting_sender_name,
+    setting_email_subject: settings['setting_email_subject'] ?? DEFAULT_SETTINGS.setting_email_subject,
+    setting_email_body: settings['setting_email_body'] ?? DEFAULT_SETTINGS.setting_email_body,
+    setting_email_auto_update_status: settings['setting_email_auto_update_status'] !== undefined ? settings['setting_email_auto_update_status'] !== 'false' : DEFAULT_SETTINGS.setting_email_auto_update_status,
+    setting_bank_name: settings['setting_bank_name'] ?? DEFAULT_SETTINGS.setting_bank_name,
+    setting_bsb: settings['setting_bsb'] ?? DEFAULT_SETTINGS.setting_bsb,
+    setting_account_number: settings['setting_account_number'] ?? DEFAULT_SETTINGS.setting_account_number,
+    setting_payment_instructions: settings['setting_payment_instructions'] ?? DEFAULT_SETTINGS.setting_payment_instructions,
+  };
+}
+
 /**
- * SettingsPage - provides user preferences and organisation config with persistent local storage storage.
+ * SettingsPage - provides user preferences and organisation config with persistent local storage.
  */
 export default function SettingsPage({ onDirtyChange }: SettingsPageProps): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<SettingsTab>('organisation');
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isTutorialOpen, setIsTutorialOpen] = useState<boolean>(false);
-  const [initialSettings, setInitialSettings] = useState<Record<string, string>>({});
   const [isBannerDismissed, setIsBannerDismissed] = useState<boolean>(false);
 
-  // My Organisation State
-  const [orgName, setOrgName] = useState<string>('Your Business');
-  const [orgAbn, setOrgAbn] = useState<string>('');
-  const [orgAddress, setOrgAddress] = useState<string>('Your address here');
-  const [orgPhone, setOrgPhone] = useState<string>('');
-  const [orgEmail, setOrgEmail] = useState<string>('');
+  const [form, setForm] = useState<SettingsFormState>(DEFAULT_SETTINGS);
+  const [initialState, setInitialState] = useState<SettingsFormState | null>(null);
 
-  // Personalisation State
-  const [language, setLanguage] = useState<string>('en-AU');
-  const [displayClientNameAs, setDisplayClientNameAs] = useState<'name' | 'company'>('name');
-
-  // Invoice Creation State
-  const [defaultDueDays, setDefaultDueDays] = useState<string>('14');
-  const [invoicePrefix, setInvoicePrefix] = useState<string>('INV-');
-  const [defaultNotes, setDefaultNotes] = useState<string>('');
-  const [defaultGstEnabled, setDefaultGstEnabled] = useState<boolean>(false);
-  const [defaultDisplayDueDate, setDefaultDisplayDueDate] = useState<boolean>(true);
-  const [defaultTemplateId, setDefaultTemplateId] = useState<string>('classic');
-
-  // Email Preference State
-  const [senderName, setSenderName] = useState<string>('');
-  const [emailSubject, setEmailSubject] = useState<string>('Invoice {invoiceNumber}');
-  const [emailBody, setEmailBody] = useState<string>('Hi,\n\nPlease find attached invoice {invoiceNumber}.\n\nKind regards,\nYour Business');
-  const [emailAutoUpdateStatus, setEmailAutoUpdateStatus] = useState<boolean>(true);
-
-  // Payment Details State
-  const [bankName, setBankName] = useState<string>('');
-  const [bsb, setBsb] = useState<string>('');
-  const [accountNumber, setAccountNumber] = useState<string>('');
-  const [paymentInstructions, setPaymentInstructions] = useState<string>('Please pay within terms.');
-
-  // Load all settings from SQLite database on mount
+  // Load settings on mount
   useEffect(() => {
     window.electronAPI.getSettings().then((settings) => {
-      setInitialSettings(settings);
-      // Org
-      setOrgName(settings['setting_org_name'] || 'Your Business');
-      setOrgAbn(settings['setting_org_abn'] || '');
-      setOrgAddress(settings['setting_org_address'] || 'Your address here');
-      setOrgPhone(settings['setting_org_phone'] || '');
-      setOrgEmail(settings['setting_org_email'] || '');
-
-      // Personalisation
-      setLanguage(settings['setting_language'] || 'en-AU');
-      setDisplayClientNameAs((settings['setting_display_client_name_as'] as 'name' | 'company') || 'name');
-
-      // Invoice
-      setDefaultDueDays(settings['setting_default_due_days'] || '14');
-      setInvoicePrefix(settings['setting_invoice_prefix'] || 'INV-');
-      setDefaultNotes(settings['setting_default_notes'] || '');
-      setDefaultGstEnabled(settings['setting_default_gst_enabled'] === 'true');
-      setDefaultDisplayDueDate(settings['setting_default_display_due_date'] !== 'false');
-      setDefaultTemplateId(settings['setting_default_template_id'] || 'classic');
-
-      // Email
-      setSenderName(settings['setting_sender_name'] || '');
-      setEmailSubject(settings['setting_email_subject'] || 'Invoice {invoiceNumber}');
-      setEmailBody(settings['setting_email_body'] || 'Hi,\n\nPlease find attached invoice {invoiceNumber}.\n\nKind regards,\nYour Business');
-      setEmailAutoUpdateStatus(settings['setting_email_auto_update_status'] !== 'false');
-
-      // Payment
-      setBankName(settings['setting_bank_name'] || '');
-      setBsb(settings['setting_bsb'] || '');
-      setAccountNumber(settings['setting_account_number'] || '');
-      setPaymentInstructions(settings['setting_payment_instructions'] || 'Please pay within terms.');
+      const parsed = parseSettings(settings);
+      setForm(parsed);
+      setInitialState(parsed);
     }).catch(console.error);
   }, []);
 
-  // Reset the "Saved" indicator whenever any form value changes
-  useEffect(() => {
+  const updateField = <K extends keyof SettingsFormState>(key: K, value: SettingsFormState[K]): void => {
     if (saveSuccess) setSaveSuccess(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    orgName, orgAbn, orgAddress, orgPhone, orgEmail,
-    language, displayClientNameAs,
-    defaultDueDays, invoicePrefix, defaultNotes, defaultGstEnabled, defaultDisplayDueDate, defaultTemplateId,
-    senderName, emailSubject, emailBody, emailAutoUpdateStatus,
-    bankName, bsb, accountNumber, paymentInstructions,
-  ]);
+    setForm(prev => ({ ...prev, [key]: value }));
+  };
 
-  // Compute dirty state by comparing current state with initial database values
+  // Compute dirty state
+  const isDirty = useMemo(() => {
+    if (!initialState) return false;
+    return (Object.keys(DEFAULT_SETTINGS) as Array<keyof SettingsFormState>).some(
+      key => form[key] !== initialState[key]
+    );
+  }, [form, initialState]);
+
   useEffect(() => {
-    if (Object.keys(initialSettings).length === 0) {
-      onDirtyChange?.(false);
-      return;
-    }
-
-    const currentSettings: Record<string, string> = {
-      setting_org_name: orgName,
-      setting_org_abn: orgAbn,
-      setting_org_address: orgAddress,
-      setting_org_phone: orgPhone,
-      setting_org_email: orgEmail,
-      setting_language: language,
-      setting_display_client_name_as: displayClientNameAs,
-      setting_default_due_days: defaultDueDays,
-      setting_invoice_prefix: invoicePrefix,
-      setting_default_notes: defaultNotes,
-      setting_default_gst_enabled: String(defaultGstEnabled),
-      setting_default_display_due_date: String(defaultDisplayDueDate),
-      setting_default_template_id: defaultTemplateId,
-      setting_sender_name: senderName,
-      setting_email_subject: emailSubject,
-      setting_email_body: emailBody,
-      setting_email_auto_update_status: String(emailAutoUpdateStatus),
-      setting_bank_name: bankName,
-      setting_bsb: bsb,
-      setting_account_number: accountNumber,
-      setting_payment_instructions: paymentInstructions,
-    };
-
-    let isDirty = false;
-    for (const key of Object.keys(currentSettings)) {
-      const initialVal = initialSettings[key];
-      const currentVal = currentSettings[key];
-
-      // Replicate default fallbacks used in mount loading to avoid false dirty alerts
-      let resolvedInitial = initialVal;
-      if (initialVal === undefined) {
-        if (key === 'setting_org_name') resolvedInitial = 'Your Business';
-        else if (key === 'setting_org_address') resolvedInitial = 'Your address here';
-        else if (key === 'setting_language') resolvedInitial = 'en-AU';
-        else if (key === 'setting_display_client_name_as') resolvedInitial = 'name';
-        else if (key === 'setting_default_due_days') resolvedInitial = '14';
-        else if (key === 'setting_invoice_prefix') resolvedInitial = 'INV-';
-        else if (key === 'setting_default_gst_enabled') resolvedInitial = 'false';
-        else if (key === 'setting_default_display_due_date') resolvedInitial = 'true';
-        else if (key === 'setting_default_template_id') resolvedInitial = 'classic';
-        else if (key === 'setting_email_subject') resolvedInitial = 'Invoice {invoiceNumber}';
-        else if (key === 'setting_email_body') resolvedInitial = 'Hi,\n\nPlease find attached invoice {invoiceNumber}.\n\nKind regards,\nYour Business';
-        else if (key === 'setting_email_auto_update_status') resolvedInitial = 'true';
-        else if (key === 'setting_payment_instructions') resolvedInitial = 'Please pay within terms.';
-        else resolvedInitial = '';
-      }
-
-      if (resolvedInitial !== currentVal) {
-        isDirty = true;
-        break;
-      }
-    }
-
     onDirtyChange?.(isDirty);
-  }, [
-    initialSettings,
-    orgName, orgAbn, orgAddress, orgPhone, orgEmail,
-    language,
-    defaultDueDays, invoicePrefix, defaultNotes, defaultGstEnabled, defaultDisplayDueDate, defaultTemplateId,
-    senderName, emailSubject, emailBody, emailAutoUpdateStatus,
-    bankName, bsb, accountNumber, paymentInstructions,
-    onDirtyChange, displayClientNameAs
-  ]);
+  }, [isDirty, onDirtyChange]);
 
-  /**
-   * Save the settings for the currently active tab to SQLite database.
-   */
+  /** Save current tab's settings to database. */
   const handleSave = async (): Promise<void> => {
+    const keysToSave = TAB_KEYS[activeTab];
     const toSave: Record<string, string> = {};
-
-    if (activeTab === 'organisation') {
-      toSave['setting_org_name'] = orgName;
-      toSave['setting_org_abn'] = orgAbn;
-      toSave['setting_org_address'] = orgAddress;
-      toSave['setting_org_phone'] = orgPhone;
-      toSave['setting_org_email'] = orgEmail;
-    } else if (activeTab === 'personalisation') {
-      toSave['setting_language'] = language;
-      toSave['setting_display_client_name_as'] = displayClientNameAs;
-    } else if (activeTab === 'invoice') {
-      toSave['setting_default_due_days'] = defaultDueDays;
-      toSave['setting_invoice_prefix'] = invoicePrefix;
-      toSave['setting_default_notes'] = defaultNotes;
-      toSave['setting_default_gst_enabled'] = String(defaultGstEnabled);
-      toSave['setting_default_display_due_date'] = String(defaultDisplayDueDate);
-      toSave['setting_default_template_id'] = defaultTemplateId;
-    } else if (activeTab === 'email') {
-      toSave['setting_sender_name'] = senderName;
-      toSave['setting_email_subject'] = emailSubject;
-      toSave['setting_email_body'] = emailBody;
-      toSave['setting_email_auto_update_status'] = String(emailAutoUpdateStatus);
-    } else if (activeTab === 'payment') {
-      toSave['setting_bank_name'] = bankName;
-      toSave['setting_bsb'] = bsb;
-      toSave['setting_account_number'] = accountNumber;
-      toSave['setting_payment_instructions'] = paymentInstructions;
+    for (const key of keysToSave) {
+      toSave[key] = String(form[key]);
     }
 
     try {
       setIsSaving(true);
       await window.electronAPI.saveSettings(toSave);
-      setInitialSettings(prev => ({
-        ...prev,
-        ...toSave
-      }));
+      setInitialState(prev => prev ? { ...prev, ...parseSettings(toSave) } : parseSettings(toSave));
       setIsSaving(false);
       setSaveSuccess(true);
-
-      // Dispatch event so other components (like Sidebar) can re-fetch settings
       window.dispatchEvent(new Event('settings-updated'));
     } catch (err) {
       setIsSaving(false);
@@ -239,9 +168,7 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
     }
   };
 
-  /**
-   * Render the form corresponding to the active settings tab.
-   */
+  /** Render active settings tab form. */
   const renderForm = (): React.JSX.Element => {
     switch (activeTab) {
       case 'personalisation':
@@ -249,8 +176,8 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
           <div className="flex flex-col gap-5 max-w-lg">
             <Input
               label="Language"
-              value={language}
-              onChange={setLanguage}
+              value={form.setting_language}
+              onChange={(val) => updateField('setting_language', val)}
               placeholder="e.g. en-AU"
             />
             <div>
@@ -266,10 +193,10 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
                     type="radio"
                     name="displayClientNameAs"
                     value="name"
-                    checked={displayClientNameAs === 'name'}
-                    onChange={() => setDisplayClientNameAs('name')}
+                    checked={form.setting_display_client_name_as === 'name'}
+                    onChange={() => updateField('setting_display_client_name_as', 'name')}
                     className={`appearance-none m-0 w-4 h-4 rounded-full cursor-pointer outline-none transition-all flex-shrink-0 ${
-                      displayClientNameAs === 'name'
+                      form.setting_display_client_name_as === 'name'
                         ? 'bg-stone-600 shadow-[inset_0_0_0_3px_#fff,0_0_0_1px_#57534e]'
                         : 'bg-white shadow-1 hover:shadow-md'
                     }`}
@@ -281,10 +208,10 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
                     type="radio"
                     name="displayClientNameAs"
                     value="company"
-                    checked={displayClientNameAs === 'company'}
-                    onChange={() => setDisplayClientNameAs('company')}
+                    checked={form.setting_display_client_name_as === 'company'}
+                    onChange={() => updateField('setting_display_client_name_as', 'company')}
                     className={`appearance-none m-0 w-4 h-4 rounded-full cursor-pointer outline-none transition-all flex-shrink-0 ${
-                      displayClientNameAs === 'company'
+                      form.setting_display_client_name_as === 'company'
                         ? 'bg-stone-600 shadow-[inset_0_0_0_3px_#fff,0_0_0_1px_#57534e]'
                         : 'bg-white shadow-1 hover:shadow-md'
                     }`}
@@ -300,8 +227,8 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
           <div className="flex flex-col gap-5 max-w-lg">
             <Input
               label="Organisation Name"
-              value={orgName}
-              onChange={setOrgName}
+              value={form.setting_org_name}
+              onChange={(val) => updateField('setting_org_name', val)}
               placeholder="e.g. PandQ"
             />
             <Input
@@ -311,14 +238,14 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
                   <HelpBadge tooltipText="Your Australian Business Number (11 digits)." />
                 </span>
               }
-              value={orgAbn}
-              onChange={setOrgAbn}
+              value={form.setting_org_abn}
+              onChange={(val) => updateField('setting_org_abn', val)}
               placeholder="e.g. 12 345 678 901"
             />
             <Input
               label="Address"
-              value={orgAddress}
-              onChange={setOrgAddress}
+              value={form.setting_org_address}
+              onChange={(val) => updateField('setting_org_address', val)}
               placeholder="Full mailing address"
               multiline
               rows={2}
@@ -326,14 +253,14 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
             <div className="grid grid-cols-2 gap-4">
               <Input
                 label="Phone Number"
-                value={orgPhone}
-                onChange={setOrgPhone}
+                value={form.setting_org_phone}
+                onChange={(val) => updateField('setting_org_phone', val)}
                 placeholder="e.g. +61 400 000 000"
               />
               <Input
                 label="Public/Billing Email"
-                value={orgEmail}
-                onChange={setOrgEmail}
+                value={form.setting_org_email}
+                onChange={(val) => updateField('setting_org_email', val)}
                 placeholder="e.g. accounts@pandq.com"
                 type="email"
               />
@@ -345,21 +272,21 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
           <div className="flex flex-col gap-5 max-w-lg">
             <Input
               label="Default Payment Terms (Days)"
-              value={defaultDueDays}
-              onChange={setDefaultDueDays}
+              value={form.setting_default_due_days}
+              onChange={(val) => updateField('setting_default_due_days', val)}
               placeholder="e.g. 14"
               type="number"
             />
             <Input
               label="Default Invoice Prefix"
-              value={invoicePrefix}
-              onChange={setInvoicePrefix}
+              value={form.setting_invoice_prefix}
+              onChange={(val) => updateField('setting_invoice_prefix', val)}
               placeholder="e.g. INV-"
             />
             <Input
               label="Default Notes & Footers"
-              value={defaultNotes}
-              onChange={setDefaultNotes}
+              value={form.setting_default_notes}
+              onChange={(val) => updateField('setting_default_notes', val)}
               placeholder="Terms, thank-you note or disclaimer"
               multiline
               rows={4}
@@ -374,7 +301,7 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
                 </span>
                 <span className="text-xs text-stone-400">Enable GST calculations automatically on all new invoices.</span>
               </div>
-              <Toggle enabled={defaultGstEnabled} onChange={setDefaultGstEnabled} />
+              <Toggle enabled={form.setting_default_gst_enabled} onChange={(val) => updateField('setting_default_gst_enabled', val)} />
             </div>
 
             {/* Toggle: Default Display Due Date */}
@@ -383,15 +310,15 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
                 <span className="text-sm font-medium text-stone-700">Display Due Date to client</span>
                 <span className="text-xs text-stone-400">Toggle whether the due date is visible on new client invoices.</span>
               </div>
-              <Toggle enabled={defaultDisplayDueDate} onChange={setDefaultDisplayDueDate} />
+              <Toggle enabled={form.setting_default_display_due_date} onChange={(val) => updateField('setting_default_display_due_date', val)} />
             </div>
 
             {/* Default Template Selector */}
             <div className="flex flex-col gap-2 pt-2">
               <label className="text-xs font-semibold text-stone-500 uppercase tracking-wider">Default Invoice Template</label>
               <TemplateSelector
-                selectedTemplateId={defaultTemplateId}
-                onSelect={setDefaultTemplateId}
+                selectedTemplateId={form.setting_default_template_id}
+                onSelect={(val) => updateField('setting_default_template_id', val)}
               />
             </div>
           </div>
@@ -401,8 +328,8 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
           <div className="flex flex-col gap-5 max-w-lg">
             <Input
               label="Default Sender Name"
-              value={senderName}
-              onChange={setSenderName}
+              value={form.setting_sender_name}
+              onChange={(val) => updateField('setting_sender_name', val)}
               placeholder="e.g. PandQ Billing"
             />
             <TemplatedInput
@@ -412,8 +339,8 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
                   <HelpBadge tooltipText="Customise the email subject line using variables." onClick={() => setIsTutorialOpen(true)} />
                 </span>
               }
-              value={emailSubject}
-              onChange={setEmailSubject}
+              value={form.setting_email_subject}
+              onChange={(val) => updateField('setting_email_subject', val)}
               placeholder="Use tags to dynamic prefill, e.g. Invoice {invoiceNumber}"
             />
             <TemplatedInput
@@ -423,8 +350,8 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
                   <HelpBadge tooltipText="Customise the email message body using variables." onClick={() => setIsTutorialOpen(true)} />
                 </span>
               }
-              value={emailBody}
-              onChange={setEmailBody}
+              value={form.setting_email_body}
+              onChange={(val) => updateField('setting_email_body', val)}
               placeholder="Write the default body text"
               multiline
               rows={5}
@@ -435,7 +362,7 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
                 <span className="text-sm font-medium text-stone-700">Auto-update to "Sent"</span>
                 <span className="text-xs text-stone-400">Automatically mark invoices as Sent when you email them.</span>
               </div>
-              <Toggle enabled={emailAutoUpdateStatus} onChange={setEmailAutoUpdateStatus} />
+              <Toggle enabled={form.setting_email_auto_update_status} onChange={(val) => updateField('setting_email_auto_update_status', val)} />
             </div>
           </div>
         );
@@ -444,21 +371,21 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
           <div className="flex flex-col gap-5 max-w-lg">
             <Input
               label="Bank Name"
-              value={bankName}
-              onChange={setBankName}
+              value={form.setting_bank_name}
+              onChange={(val) => updateField('setting_bank_name', val)}
               placeholder="e.g. Commonwealth Bank"
             />
             <div className="grid grid-cols-2 gap-4">
               <Input
                 label="BSB"
-                value={bsb}
-                onChange={setBsb}
+                value={form.setting_bsb}
+                onChange={(val) => updateField('setting_bsb', val)}
                 placeholder="e.g. 062-900"
               />
               <Input
                 label="Account Number"
-                value={accountNumber}
-                onChange={setAccountNumber}
+                value={form.setting_account_number}
+                onChange={(val) => updateField('setting_account_number', val)}
                 placeholder="e.g. 1234 5678"
               />
             </div>
@@ -469,8 +396,8 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
                   <HelpBadge tooltipText="Additional terms or bank details printed at the bottom of the invoice page." />
                 </span>
               }
-              value={paymentInstructions}
-              onChange={setPaymentInstructions}
+              value={form.setting_payment_instructions}
+              onChange={(val) => updateField('setting_payment_instructions', val)}
               placeholder="Payment reference instructions"
               multiline
               rows={3}
@@ -563,11 +490,11 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
       {/* ── Settings Content Panel (Right side of page) ── */}
       <main className="flex-1 h-full overflow-y-auto px-10 py-8 flex flex-col relative">
         {(() => {
-          const isOrgNameSet = orgName.trim() !== '' && orgName.trim() !== 'Your Business';
-          const isOrgAbnSet = orgAbn.trim() !== '';
-          const isOrgAddressSet = orgAddress.trim() !== '' && orgAddress.trim() !== 'Your address here';
-          const isOrgEmailSet = orgEmail.trim() !== '';
-          const isBankSet = bsb.trim() !== '' && accountNumber.trim() !== '';
+          const isOrgNameSet = form.setting_org_name.trim() !== '' && form.setting_org_name.trim() !== 'Your Business';
+          const isOrgAbnSet = form.setting_org_abn.trim() !== '';
+          const isOrgAddressSet = form.setting_org_address.trim() !== '' && form.setting_org_address.trim() !== 'Your address here';
+          const isOrgEmailSet = form.setting_org_email.trim() !== '';
+          const isBankSet = form.setting_bsb.trim() !== '' && form.setting_account_number.trim() !== '';
 
           const completedSteps = [isOrgNameSet, isOrgAbnSet, isOrgAddressSet, isOrgEmailSet, isBankSet].filter(Boolean).length;
           const totalSteps = 5;

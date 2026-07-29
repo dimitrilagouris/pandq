@@ -78,15 +78,12 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
         @import url('https://fonts.googleapis.com/css2?family=MonteCarlo&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
       `}} />
 
-      {/* Solid black top bar */}
-      <div className="absolute top-0 left-0 right-0 h-2 bg-stone-900" />
-
       {/* ABN centered at the top */}
       <div className="mt-6 text-center">
         {org.abn ? (
-          <span className="text-[10px] font-bold text-stone-500 uppercase tracking-[0.2em] font-sans">ABN {org.abn}</span>
+          <span className="text-[10px] font-bold text-stone-500 uppercase tracking-[0.2em]">ABN {org.abn}</span>
         ) : (
-          <span className="text-[10px] font-bold text-stone-300 uppercase tracking-[0.2em] font-sans">ABN NOT PROVIDED</span>
+          <span className="text-[10px] font-bold text-stone-300 uppercase tracking-[0.2em]">ABN NOT PROVIDED</span>
         )}
       </div>
 
@@ -104,7 +101,7 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
       {/* Customer Details Block (Print-like, no rounded background) */}
       <div className="border-t border-b border-stone-900 py-6 mb-6 flex justify-between gap-8">
         <div className="flex-1">
-          <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-2 font-sans">Billed to</p>
+          <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-2">Billed to</p>
           {client ? (
             <>
               <p className="text-base font-bold text-stone-900">{client.business_name || client.name}</p>
@@ -119,7 +116,7 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
           )}
         </div>
         <div className="text-right flex-shrink-0">
-          <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-2 font-sans">Invoice Ref</p>
+          <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-2">Invoice Ref</p>
           <p className="text-base font-bold text-stone-900 tracking-tight">{form.invoiceNumber || 'INV-001'}</p>
           <div className="mt-4 text-stone-600 text-sm leading-relaxed">
             <p>{org.email}</p>
@@ -142,15 +139,15 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
         {/* Labour Section (Grouped by Day) */}
         {groupedLabour.length > 0 && (
           <div>
-            <p className="text-xs font-bold text-stone-900 uppercase tracking-widest mb-2 font-sans">Labour</p>
+            <p className="text-xs font-bold text-stone-900 uppercase tracking-widest mb-2">Labour</p>
             <div 
               className="grid gap-3 pb-2 border-b-2 border-stone-900"
               style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}
             >
-              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider font-sans">Date / Description</span>
-              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider text-center font-sans">Hours</span>
-              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider text-right font-sans">Rate</span>
-              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider text-right font-sans">Amount</span>
+              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">Date / Description</span>
+              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider text-center">Hours</span>
+              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider text-right">Rate</span>
+              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider text-right">Amount</span>
             </div>
 
             {groupedLabour.map((group) => {
@@ -193,15 +190,15 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
         {/* Materials Section */}
         {materials.length > 0 && (
           <div>
-            <p className="text-xs font-bold text-stone-900 uppercase tracking-widest mb-2 font-sans">Materials</p>
+            <p className="text-xs font-bold text-stone-900 uppercase tracking-widest mb-2">Materials</p>
             <div 
               className="grid gap-3 pb-2 border-b-2 border-stone-900"
               style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}
             >
-              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider font-sans">Description</span>
-              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider text-center font-sans">Qty</span>
-              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider text-right font-sans">Cost</span>
-              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider text-right font-sans">Amount</span>
+              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">Description</span>
+              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider text-center">Qty</span>
+              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider text-right">Cost</span>
+              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider text-right">Amount</span>
             </div>
 
             {materials.map((item) => {
@@ -258,7 +255,7 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
       <div className="flex flex-col gap-4 mt-auto">
         {form.notes.trim() && (
           <div className="border-t border-stone-900 pt-4">
-            <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-2 font-sans">Notes</p>
+            <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-2">Notes</p>
             <p className="text-sm text-stone-700 whitespace-pre-wrap leading-relaxed">{form.notes}</p>
           </div>
         )}
@@ -266,11 +263,11 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
         {/* Payment details */}
         {(payment.bankName || payment.bsb || payment.accountNumber || payment.instructions) && (
           <div className="pt-4 border-t border-stone-900">
-            <p className="text-[9px] font-bold text-stone-500 uppercase tracking-widest mb-3 font-sans">Payment Details</p>
+            <p className="text-[9px] font-bold text-stone-500 uppercase tracking-widest mb-3">Payment Details</p>
             <div className="grid grid-cols-3 gap-4 text-sm text-stone-800">
-              {payment.bankName && <p><span className="font-bold text-stone-900 font-sans text-[10px] uppercase tracking-wider block mb-0.5">Bank</span> {payment.bankName}</p>}
-              {payment.bsb && <p><span className="font-bold text-stone-900 font-sans text-[10px] uppercase tracking-wider block mb-0.5">BSB</span> {payment.bsb}</p>}
-              {payment.accountNumber && <p><span className="font-bold text-stone-900 font-sans text-[10px] uppercase tracking-wider block mb-0.5">Account</span> {payment.accountNumber}</p>}
+              {payment.bankName && <p><span className="font-bold text-stone-900 text-[10px] uppercase tracking-wider block mb-0.5">Bank</span> {payment.bankName}</p>}
+              {payment.bsb && <p><span className="font-bold text-stone-900 text-[10px] uppercase tracking-wider block mb-0.5">BSB</span> {payment.bsb}</p>}
+              {payment.accountNumber && <p><span className="font-bold text-stone-900 text-[10px] uppercase tracking-wider block mb-0.5">Account</span> {payment.accountNumber}</p>}
             </div>
             {payment.instructions && <p className="mt-4 text-sm italic text-stone-600 whitespace-pre-wrap">{payment.instructions}</p>}
           </div>
@@ -325,8 +322,8 @@ function buildGroupedLabourRowsHtml(items: any[]): string {
 
   return `
   <div style="margin-top: 8px;">
-    <p style="font-family: -apple-system, sans-serif; font-size: 12px; font-weight: 700; color: #1c1917; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Labour</p>
-    <div style="font-family: -apple-system, sans-serif; display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 12px; padding-bottom: 6px; border-bottom: 2px solid #1c1917;">
+    <p style="font-size: 12px; font-weight: 700; color: #1c1917; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Labour</p>
+    <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 12px; padding-bottom: 6px; border-bottom: 2px solid #1c1917;">
       <span style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase;">Date / Description</span>
       <span style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase; text-align: center;">Hours</span>
       <span style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase; text-align: right;">Rate</span>
@@ -356,8 +353,8 @@ function buildMaterialsRowsHtml(items: any[]): string {
 
   return `
   <div style="margin-top: 16px;">
-    <p style="font-family: -apple-system, sans-serif; font-size: 12px; font-weight: 700; color: #1c1917; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Materials</p>
-    <div style="font-family: -apple-system, sans-serif; display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 12px; padding-bottom: 6px; border-bottom: 2px solid #1c1917;">
+    <p style="font-size: 12px; font-weight: 700; color: #1c1917; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Materials</p>
+    <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 12px; padding-bottom: 6px; border-bottom: 2px solid #1c1917;">
       <span style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase;">Description</span>
       <span style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase; text-align: center;">Qty</span>
       <span style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase; text-align: right;">Cost</span>
@@ -393,17 +390,17 @@ function miamiBuildHtml(data: TemplateData): string {
 
   const notesBlock = form.notes.trim() ? `
     <div style="border-top: 1px solid #1c1917; padding-top: 16px;">
-      <p style="font-family: -apple-system, sans-serif; font-size: 9px; font-weight: 700; color: #78716c; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Notes</p>
+      <p style="font-size: 9px; font-weight: 700; color: #78716c; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Notes</p>
       <p style="font-size: 14px; color: #44403c; white-space: pre-wrap; line-height: 1.6;">${form.notes}</p>
     </div>` : '';
 
   const paymentBlock = (payment.bankName || payment.bsb || payment.accountNumber || payment.instructions) ? `
     <div style="border-top: 1px solid #1c1917; padding-top: 16px;">
-      <p style="font-family: -apple-system, sans-serif; font-size: 9px; font-weight: 700; color: #78716c; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px;">Payment Details</p>
+      <p style="font-size: 9px; font-weight: 700; color: #78716c; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px;">Payment Details</p>
       <div style="display: flex; gap: 24px; font-size: 14px; color: #44403c;">
-        ${payment.bankName ? `<div><span style="font-family: -apple-system, sans-serif; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #1c1917; display: block; margin-bottom: 2px;">Bank</span> ${payment.bankName}</div>` : ''}
-        ${payment.bsb ? `<div><span style="font-family: -apple-system, sans-serif; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #1c1917; display: block; margin-bottom: 2px;">BSB</span> ${payment.bsb}</div>` : ''}
-        ${payment.accountNumber ? `<div><span style="font-family: -apple-system, sans-serif; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #1c1917; display: block; margin-bottom: 2px;">Account</span> ${payment.accountNumber}</div>` : ''}
+        ${payment.bankName ? `<div><span style="font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #1c1917; display: block; margin-bottom: 2px;">Bank</span> ${payment.bankName}</div>` : ''}
+        ${payment.bsb ? `<div><span style="font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #1c1917; display: block; margin-bottom: 2px;">BSB</span> ${payment.bsb}</div>` : ''}
+        ${payment.accountNumber ? `<div><span style="font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #1c1917; display: block; margin-bottom: 2px;">Account</span> ${payment.accountNumber}</div>` : ''}
       </div>
       ${payment.instructions ? `<p style="margin-top: 12px; font-size: 14px; font-style: italic; color: #57534e; white-space: pre-wrap;">${payment.instructions}</p>` : ''}
     </div>` : '';
@@ -436,12 +433,9 @@ function miamiBuildHtml(data: TemplateData): string {
 </head>
 <body>
   <div class="card">
-    <!-- Top solid black stripe -->
-    <div style="position: absolute; top: 0; left: 0; right: 0; height: 8px; background: #1c1917;"></div>
-
     <!-- ABN centered at top -->
     <div style="margin-top: 24px; text-align: center;">
-      <span style="font-family: -apple-system, sans-serif; font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase; letter-spacing: 0.2em;">ABN ${org.abn || 'NOT PROVIDED'}</span>
+      <span style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase; letter-spacing: 0.2em;">ABN ${org.abn || 'NOT PROVIDED'}</span>
     </div>
 
     <!-- Business name in MonteCarlo font -->
@@ -453,14 +447,14 @@ function miamiBuildHtml(data: TemplateData): string {
     <!-- Customer Details -->
     <div style="border-top: 1px solid #1c1917; border-bottom: 1px solid #1c1917; padding: 24px 0; margin-bottom: 24px; display: flex; justify-content: space-between; gap: 32px;">
       <div style="flex: 1;">
-        <p style="font-family: -apple-system, sans-serif; font-size: 9px; font-weight: 700; color: #a8a29e; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Billed to</p>
+        <p style="font-size: 9px; font-weight: 700; color: #a8a29e; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Billed to</p>
         <p style="font-size: 16px; font-weight: 700; color: #1c1917;">${clientDisplay}</p>
         ${clientNameLine}
         ${clientAddressLine}
         ${clientEmailLine}
       </div>
       <div style="text-align: right;">
-        <p style="font-family: -apple-system, sans-serif; font-size: 9px; font-weight: 700; color: #a8a29e; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Invoice Ref</p>
+        <p style="font-size: 9px; font-weight: 700; color: #a8a29e; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Invoice Ref</p>
         <p style="font-size: 16px; font-weight: 700; color: #1c1917;">${form.invoiceNumber}</p>
         <div style="margin-top: 16px; font-size: 14px; color: #57534e; line-height: 1.5;">
           <p>${org.email}</p>

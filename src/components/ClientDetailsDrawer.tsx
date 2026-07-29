@@ -14,6 +14,7 @@ import { Badge } from './Badge';
 import { Button } from './Button';
 import { Input } from './Input';
 import { InvoiceStatusFilterPill, FilterPillOption } from './invoice/InvoiceStatusFilterPill';
+import { TactileIconBox } from './TactileIconBox';
 
 type DrawerTab = 'overview' | 'outstanding' | 'invoices';
 
@@ -236,12 +237,9 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
         {/* Client Header Info */}
         <div className="px-6 pb-4 flex flex-col gap-3 flex-shrink-0">
           <div className="flex items-start justify-between">
-            {/* Two-Square Icon Container */}
-            <div className="w-11 h-11 bg-stone-200/80 rounded-2xl flex items-center justify-center flex-shrink-0">
-              <div className="w-8 h-8 bg-white rounded-xl shadow-1 flex items-center justify-center text-stone-800">
-                {client.business_name ? <RiBuildingLine className="w-4 h-4" /> : <RiUser3Line className="w-4 h-4" />}
-              </div>
-            </div>
+            <TactileIconBox
+              icon={client.business_name ? RiBuildingLine : RiUser3Line}
+            />
 
             {isEditing ? (
               <div className="flex items-center gap-2">

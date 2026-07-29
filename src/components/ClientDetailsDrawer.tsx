@@ -218,7 +218,7 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
 
       {/* Drawer Body — smooth slide in & out */}
       <aside
-        className={`relative w-full max-w-[480px] bg-white h-full shadow-2xl flex flex-col z-10 overflow-hidden border-l border-stone-200/80 transition-transform duration-300 ease-out transform ${
+        className={`relative w-full max-w-[480px] bg-white h-full shadow-2xl flex flex-col z-10 overflow-hidden border-l border-stone-200 transition-transform duration-300 ease-out transform ${
           isAnimating ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -234,7 +234,7 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
         </div>
 
         {/* Client Header Info */}
-        <div className="px-6 pb-5 flex flex-col gap-3 border-b border-stone-100 flex-shrink-0">
+        <div className="px-6 pb-4 flex flex-col gap-3 flex-shrink-0">
           <div className="flex items-start justify-between">
             {/* Two-Square Icon Container */}
             <div className="w-11 h-11 bg-stone-200/80 rounded-2xl flex items-center justify-center flex-shrink-0">
@@ -285,18 +285,19 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
               <p className="text-xs font-medium text-stone-500 mt-0.5">{client.business_name}</p>
             )}
           </div>
+        </div>
 
-          <div className="border-y border-stone-100 py-2.5 my-1 flex items-center justify-between text-xs text-stone-500">
-            <span className="flex items-center gap-1.5 text-stone-600 font-medium">
-              <RiFileTextLine className="w-3.5 h-3.5 text-stone-400" />
-              <span>Client ID</span>
-            </span>
-            <span className="font-mono text-stone-900 font-medium">CLI_{client.id}</span>
-          </div>
+        {/* Client ID Section — full width edge-to-edge section */}
+        <div className="w-full border-y border-stone-200 px-6 py-2.5 flex items-center justify-between text-xs text-stone-500 flex-shrink-0">
+          <span className="flex items-center gap-1.5 text-stone-600 font-medium">
+            <RiFileTextLine className="w-3.5 h-3.5 text-stone-400" />
+            <span>Client ID</span>
+          </span>
+          <span className="font-mono text-stone-900 font-medium">CLI_{client.id}</span>
         </div>
 
         {/* Segmented Status Filter Style Tab Navigation */}
-        <div className="px-6 pt-4 pb-2 flex-shrink-0">
+        <div className="px-6 pt-4 pb-4 border-b border-stone-200 flex-shrink-0">
           <InvoiceStatusFilterPill
             options={tabs}
             value={activeTab}
@@ -306,7 +307,7 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
         </div>
 
         {/* Tab Content Panel */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-6">
+        <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-6">
           {activeTab === 'overview' && (
             isEditing ? (
               <div className="flex flex-col gap-4">
@@ -407,7 +408,7 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
             ) : (
               <>
                 {/* Basic Information */}
-                <div>
+                <div className="pb-6 border-b border-stone-200">
                   <h3 className="text-base text-black font-medium select-none mb-3.5">
                     Basic Information
                   </h3>
@@ -432,7 +433,7 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
                 </div>
 
                 {/* Address Information */}
-                <div>
+                <div className="pb-6 border-b border-stone-200">
                   <h3 className="text-base text-black font-medium select-none mb-3.5">
                     Billing Address
                   </h3>
@@ -454,7 +455,7 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
                 </div>
 
                 {onCreateInvoice && (
-                  <div className="pt-2">
+                  <div className="pt-1">
                     <Button
                       variant="primary"
                       fullWidth

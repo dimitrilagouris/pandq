@@ -297,7 +297,7 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
         </div>
 
         {/* Segmented Status Filter Style Tab Navigation */}
-        <div className="px-6 pt-4 pb-4 border-b border-stone-200 flex-shrink-0">
+        <div className="px-6 pt-4 pb-2 flex-shrink-0">
           <InvoiceStatusFilterPill
             options={tabs}
             value={activeTab}

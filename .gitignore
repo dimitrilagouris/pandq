@@ -36,8 +36,9 @@ out/
 *.sln
 *.sw?
 
-# Local environment variables
+# Local environment variables (never commit these)
 .env
+.env.development
 .env.local
 .env.development.local
 .env.test.local

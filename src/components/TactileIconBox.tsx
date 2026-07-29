@@ -1,41 +1,68 @@
 import React from 'react';
 import { IconType } from 'react-icons';
 
+export type IconBoxSize = 'sm' | 'md' | 'lg';
+
 interface TactileIconBoxProps {
-  /** React Icon component or custom React node to display inside the box. */
+  /** React Icon component or custom React node to display inside the inner tile. */
   icon: IconType | React.ReactNode;
-  /** Optional container sizing or positioning style overrides. */
+  /** Size variant controlling outer container and inner tile dimensions. Defaults to 'md'. */
+  size?: IconBoxSize;
+  /** Optional custom outer container className overrides. */
   className?: string;
-  /** Optional icon size or color style overrides. */
+  /** Optional custom icon className overrides. */
   iconClassName?: string;
 }
 
+interface SizeStyles {
+  outer: string;
+  inner: string;
+  icon: string;
+}
+
+const SIZE_MAP: Record<IconBoxSize, SizeStyles> = {
+  sm: { outer: 'w-10 h-10 rounded-xl', inner: 'w-7 h-7 rounded-lg', icon: 'w-4 h-4' },
+  md: { outer: 'w-11 h-11 rounded-2xl', inner: 'w-8 h-8 rounded-xl', icon: 'w-4 h-4' },
+  lg: { outer: 'w-14 h-14 rounded-2xl', inner: 'w-11 h-11 rounded-xl', icon: 'w-6 h-6' },
+};
+
 /**
- * Reusable rounded icon container featuring a 360-degree inner glow and icon drop shadow.
+ * Reusable two-square icon container with stone outer box and floating white inner tile.
  */
 export const TactileIconBox: React.FC<TactileIconBoxProps> = ({
   icon,
-  className = 'w-11 h-11',
-  iconClassName = 'w-5 h-5'
+  size = 'md',
+  className = '',
+  iconClassName = '',
 }) => {
-  /** Renders passed icon element or IconType component with shadow styling. */
+  const currentSize: SizeStyles = SIZE_MAP[size];
+
+  /** Renders passed icon element or IconType component. */
   const renderIconNode = (): React.ReactNode => {
+    const defaultIconClass: string = `${currentSize.icon} ${iconClassName}`.trim();
+
     if (React.isValidElement(icon)) {
-      const existingClassName = (icon.props as { className?: string }).className || '';
+      const existingClassName: string = (icon.props as { className?: string }).className || '';
       return React.cloneElement(icon as React.ReactElement<{ className?: string }>, {
-        className: `${iconClassName} tactile-icon-svg ${existingClassName}`.trim()
+        className: `${defaultIconClass} ${existingClassName}`.trim(),
       });
     }
     if (typeof icon === 'function') {
-      const IconComponent = icon as IconType;
-      return <IconComponent className={`${iconClassName} tactile-icon-svg`} />;
+      const IconComponent: IconType = icon as IconType;
+      return <IconComponent className={defaultIconClass} />;
     }
     return icon;
   };
 
   return (
-    <div className={`tactile-icon-box rounded-2xl flex items-center justify-center flex-shrink-0 ${className}`.trim()}>
-      {renderIconNode()}
+    <div
+      className={`bg-stone-200/80 flex items-center justify-center flex-shrink-0 ${currentSize.outer} ${className}`.trim()}
+    >
+      <div
+        className={`bg-white shadow-1 flex items-center justify-center text-stone-800 ${currentSize.inner}`.trim()}
+      >
+        {renderIconNode()}
+      </div>
     </div>
   );
 };

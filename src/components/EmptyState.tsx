@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from './Button';
+import { TactileIconBox } from './TactileIconBox';
 
 interface EmptyStateProps {
   icon: React.ReactNode;
@@ -23,7 +24,7 @@ export function EmptyState({
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center w-full max-w-lg">
         {/* Icon Container */}
-        <div className="relative w-14 h-14 bg-stone-200 rounded-2xl flex items-center justify-center mb-6">
+        <div className="relative mb-6 flex items-center justify-center">
           {/* Concentric Circles Background */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-10">
             <div className="absolute w-[240px] h-[240px] rounded-full border border-stone-200"></div>
@@ -32,9 +33,10 @@ export function EmptyState({
             <div className="absolute w-[600px] h-[600px] rounded-full border border-stone-200"></div>
           </div>
 
-          <div className="w-11 h-11 bg-white rounded-xl shadow-1 flex items-center justify-center">
-            {icon}
-          </div>
+          <TactileIconBox
+            icon={icon}
+            size="lg"
+          />
         </div>
 
         {/* Typography */}

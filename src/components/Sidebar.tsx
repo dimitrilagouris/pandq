@@ -3,6 +3,7 @@ import * as Icons from 'react-icons/ri';
 import { Button } from './Button';
 import { Page } from '../App';
 import { HorizontalProgress } from './HorizontalProgress';
+import { TactileIconBox } from './TactileIconBox';
 import { getSidebarGroups, getRoutesByGroup } from '../routes/routes';
 
 const {
@@ -158,12 +159,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
             isCollapsed ? 'max-h-0 opacity-0 p-0 mb-0' : 'opacity-100'
           }`}
         >
-          {/* Two-Square Icon Container (matching EmptyState component) */}
-          <div className="w-10 h-10 bg-stone-200/80 rounded-xl flex items-center justify-center flex-shrink-0">
-            <div className="w-7 h-7 bg-white rounded-lg shadow-1 flex items-center justify-center text-stone-800">
-              <MagicIcon className="w-4 h-4" />
-            </div>
-          </div>
+          <TactileIconBox
+            icon={MagicIcon}
+            size="sm"
+          />
 
           {/* Title & Progress */}
           <div className="flex flex-col gap-2">

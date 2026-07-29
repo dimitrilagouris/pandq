@@ -5,6 +5,7 @@ import {
 } from 'react-icons/ri';
 import { Input } from '../Input';
 import { Button } from '../Button';
+import { TactileIconBox } from '../TactileIconBox';
 
 /** Essential first-launch settings: organisation identity and payment details. */
 export interface OnboardingFormState {
@@ -129,12 +130,11 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps): React.J
           key={animKey}
           className={`px-9 pt-9 pb-7 ${direction === 'forward' ? 'animate-slide-forward' : 'animate-slide-backward'}`}
         >
-          {/* Icon — matches EmptyState nested icon design */}
-          <div className="w-14 h-14 bg-stone-200 rounded-2xl flex items-center justify-center mb-5">
-            <div className="w-11 h-11 bg-white rounded-xl shadow-1 flex items-center justify-center text-stone-600">
-              {currentSlide.icon}
-            </div>
-          </div>
+          <TactileIconBox
+            icon={currentSlide.icon}
+            size="lg"
+            className="mb-5"
+          />
 
           {/* Heading */}
           <h1 className="text-[28px] font-semibold text-stone-900 mb-1 leading-snug">

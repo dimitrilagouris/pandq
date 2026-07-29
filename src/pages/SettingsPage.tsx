@@ -249,10 +249,14 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
             <Input
               label="Address"
               value={form.setting_org_address}
-              onChange={(val) => updateField('setting_org_address', val)}
+              onChange={(val) => {
+                if (val.split('\n').length <= 3) {
+                  updateField('setting_org_address', val);
+                }
+              }}
               placeholder="Full mailing address"
               multiline
-              rows={2}
+              rows={3}
             />
             <div className="grid grid-cols-2 gap-4">
               <Input

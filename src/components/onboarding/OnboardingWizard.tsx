@@ -227,10 +227,14 @@ function buildSlides(
           <Input
             label="Address"
             value={form.setting_org_address}
-            onChange={v => update('setting_org_address', v)}
+            onChange={v => {
+              if (v.split('\n').length <= 3) {
+                update('setting_org_address', v);
+              }
+            }}
             placeholder="Full mailing address"
             multiline
-            rows={2}
+            rows={3}
           />
           <div className="grid grid-cols-2 gap-3">
             <Input

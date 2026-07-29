@@ -13,10 +13,14 @@ export function formatDate(dateStr: string): string {
   if (!dateStr) {
     return '—';
   }
+
   try {
     const d = new Date(dateStr + 'T00:00:00');
+
     return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
-  } catch {
+  }
+
+  catch {
     return dateStr;
   }
 }
@@ -47,6 +51,7 @@ export async function handleSingleInvoiceAction(
   onSuccess?: () => Promise<void>
 ): Promise<void> {
   const fullData = await window.electronAPI.getInvoiceById(inv.id);
+
   if (!fullData) {
     return;
   }
@@ -76,14 +81,19 @@ export async function handleSingleInvoiceAction(
       inv.price,
       inv.due_date || '',
     );
+
     const autoUpdate = settings['setting_email_auto_update_status'] !== 'false';
+
     if (autoUpdate) {
       await window.electronAPI.updateInvoiceStatus(inv.id, 'sent');
+
       if (onSuccess) {
         await onSuccess();
       }
     }
-  } else {
+  }
+
+  else {
     await window.electronAPI.printToPDF(fullData.invoice_number, htmlContent);
   }
 }
@@ -105,6 +115,7 @@ export async function handleSendBatchInvoices(
   if (selectedInvoices.length === 0) {
     return;
   }
+
   const recipientEmail = selectedInvoices[0].client_email || '';
 
   const entries: Array<{
@@ -117,6 +128,7 @@ export async function handleSendBatchInvoices(
 
   for (const inv of selectedInvoices) {
     const fullData = await window.electronAPI.getInvoiceById(inv.id);
+
     if (!fullData) {
       continue;
     }
@@ -153,6 +165,7 @@ export async function handleSendBatchInvoices(
   await window.electronAPI.emailMultipleInvoices(entries, recipientEmail);
 
   const autoUpdateSent = settings['setting_email_auto_update_status'] !== 'false';
+
   if (autoUpdateSent) {
     for (const inv of selectedInvoices) {
       await window.electronAPI.updateInvoiceStatus(inv.id, 'sent');

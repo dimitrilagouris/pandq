@@ -27,12 +27,15 @@ export default function App(): React.JSX.Element {
     if (!showDiscardModal) {
       return;
     }
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setShowDiscardModal(false);
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
+
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showDiscardModal]);
 
@@ -40,7 +43,9 @@ export default function App(): React.JSX.Element {
     if (page === activePage) {
       if (page === 'invoice-editor' && editingInvoiceId !== null) {
         // transitioning from editing to new invoice
-      } else {
+      }
+
+      else {
         return;
       }
     }
@@ -48,11 +53,15 @@ export default function App(): React.JSX.Element {
     if (hasUnsavedChanges && !force) {
       setPendingPage(page);
       setShowDiscardModal(true);
-    } else {
+    }
+
+    else {
       setHasUnsavedChanges(false);
+
       if (page === 'invoice-editor' && page !== activePage) {
         setEditingInvoiceId(null);
       }
+
       setActivePage(page);
     }
   };
@@ -61,8 +70,10 @@ export default function App(): React.JSX.Element {
     switch (activePage) {
       case 'dashboard':
         return <DashboardPage onNavigate={handleNavigate} />;
+
       case 'clients':
         return <ClientsPage />;
+
       case 'invoices':
         return (
           <InvoicesPage
@@ -73,6 +84,7 @@ export default function App(): React.JSX.Element {
             }}
           />
         );
+
       case 'invoice-editor':
         return (
           <InvoicePage 
@@ -81,10 +93,13 @@ export default function App(): React.JSX.Element {
             onDirtyChange={setHasUnsavedChanges} 
           />
         );
+
       case 'settings':
         return <SettingsPage onDirtyChange={setHasUnsavedChanges} />;
+
       case 'activities':
         return <ActivitiesPage />;
+
       default:
         return (
           <div className="flex-1 flex items-center justify-center">
@@ -135,10 +150,12 @@ export default function App(): React.JSX.Element {
                 onClick={() => {
                   setHasUnsavedChanges(false);
                   setShowDiscardModal(false);
+
                   if (pendingPage) {
                     if (pendingPage === 'invoice-editor') {
                       setEditingInvoiceId(null);
                     }
+
                     setActivePage(pendingPage);
                   }
                 }}
@@ -152,4 +169,3 @@ export default function App(): React.JSX.Element {
     </div>
   );
 }
-

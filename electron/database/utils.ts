@@ -7,20 +7,27 @@ import { getDb } from './index';
 export function getDatabaseSettings(): Record<string, string> {
   const settingsObj: Record<string, string> = {};
   let db;
+
   try {
     db = getDb();
-  } catch {
+  }
+
+  catch {
     return settingsObj;
   }
 
   try {
     const rows = db.prepare('SELECT key, value FROM settings').all() as Array<{ key: string; value: string }>;
+
     for (const row of rows) {
       settingsObj[row.key] = row.value;
     }
-  } catch (err) {
+  }
+
+  catch (err) {
     console.error('Failed to query settings from DB:', err);
   }
+
   return settingsObj;
 }
 
@@ -38,9 +45,12 @@ export function insertActivityLog(
   details: string | null = null
 ): void {
   let db;
+
   try {
     db = getDb();
-  } catch {
+  }
+
+  catch {
     return;
   }
 
@@ -51,7 +61,9 @@ export function insertActivityLog(
       actionCode ?? null,
       details ?? null
     );
-  } catch (err) {
+  }
+
+  catch (err) {
     console.error('Failed to insert activity log:', err);
   }
 }
@@ -65,10 +77,14 @@ export function formatDate(dateStr: string): string {
   if (!dateStr) {
     return '';
   }
+
   const parts = dateStr.split('-');
+
   if (parts.length !== 3) {
     return dateStr;
   }
+
   const [y, m, d] = parts;
+
   return `${d}/${m}/${y}`;
 }

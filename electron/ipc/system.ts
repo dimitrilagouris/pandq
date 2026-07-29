@@ -8,6 +8,7 @@ import { getDatabaseSettings, insertActivityLog, formatDate } from '../database/
 export function registerSystemHandlers(): void {
   ipcMain.handle('print-to-pdf', async (_event, invoiceNumber: string, htmlContent: string): Promise<boolean> => {
     const win = BrowserWindow.getFocusedWindow();
+
     if (!win) {
       return false;
     }
@@ -32,7 +33,7 @@ export function registerSystemHandlers(): void {
 
     const tempFilePath = path.join(app.getPath('temp'), `print-${Date.now()}.html`);
     fs.writeFileSync(tempFilePath, htmlContent, 'utf-8');
-    
+
     await printWin.loadFile(tempFilePath);
 
     const pdfData = await printWin.webContents.printToPDF({
@@ -48,7 +49,7 @@ export function registerSystemHandlers(): void {
 
     fs.writeFileSync(filePath, pdfData);
     printWin.close();
-    
+
     try {
       fs.unlinkSync(tempFilePath);
     } catch (e) {
@@ -77,7 +78,7 @@ export function registerSystemHandlers(): void {
 
     const tempHtmlPath = path.join(app.getPath('temp'), `print-${Date.now()}.html`);
     fs.writeFileSync(tempHtmlPath, htmlContent, 'utf-8');
-    
+
     await printWin.loadFile(tempHtmlPath);
 
     const pdfData = await printWin.webContents.printToPDF({
@@ -92,7 +93,7 @@ export function registerSystemHandlers(): void {
     });
 
     printWin.close();
-    
+
     try {
       fs.unlinkSync(tempHtmlPath);
     } catch {}
@@ -121,7 +122,6 @@ export function registerSystemHandlers(): void {
       .replace(/{dueDate}/g, formattedDueDate)
       .replace(/{orgName}/g, orgName);
 
-    // Write AppleScript to a temp file to avoid shell escaping issues
     const scriptContent = [
       `set theAttachment to POSIX file "${tempPdfPath}" as alias`,
       `tell application "Mail"`,
@@ -141,16 +141,20 @@ export function registerSystemHandlers(): void {
     return new Promise((resolve) => {
       exec(`osascript "${tempScriptPath}"`, (error) => {
         try { fs.unlinkSync(tempScriptPath); } catch {}
-        
+
         const db = getDb();
         const inv = db.prepare('SELECT id FROM invoices WHERE invoice_number = ?').get(invoiceNumber) as { id: number } | undefined;
+
         insertActivityLog(inv?.id || null, invoiceNumber, 'invoice_sent', `Emailed to ${recipientEmail}`);
 
         if (error) {
           console.error('Failed to open Mail.app via AppleScript:', error);
           shell.openExternal(`mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+
           resolve(false);
-        } else {
+        }
+
+        else {
           resolve(true);
         }
       });
@@ -172,6 +176,7 @@ export function registerSystemHandlers(): void {
 
       const tempHtmlPath = path.join(app.getPath('temp'), `print-${Date.now()}-${Math.random().toString(36).slice(2)}.html`);
       fs.writeFileSync(tempHtmlPath, entry.htmlContent, 'utf-8');
+
       await printWin.loadFile(tempHtmlPath);
 
       const pdfData = await printWin.webContents.printToPDF({
@@ -181,10 +186,12 @@ export function registerSystemHandlers(): void {
       });
 
       printWin.close();
+
       try { fs.unlinkSync(tempHtmlPath); } catch {}
 
       const pdfPath = path.join(app.getPath('temp'), `Invoice-${entry.invoiceNumber}.pdf`);
       fs.writeFileSync(pdfPath, pdfData);
+
       pdfPaths.push(pdfPath);
     }
 
@@ -199,18 +206,21 @@ export function registerSystemHandlers(): void {
     const dueDates = Array.from(new Set(invoiceEntries.map(e => e.dueDate).filter(Boolean))).map(d => formatDate(d as string)).join(', ');
 
     const invoiceNumbers = invoiceEntries.map(e => e.invoiceNumber).join(', ');
-    const subjectRaw = settingSubject.includes('{invoiceNumber}')
-      ? settingSubject.replace(/{invoiceNumber}/g, invoiceNumbers)
-      : `Invoices: ${invoiceNumbers}`;
+
+    let subjectRaw = `Invoices: ${invoiceNumbers}`;
+    if (settingSubject.includes('{invoiceNumber}')) {
+      subjectRaw = settingSubject.replace(/{invoiceNumber}/g, invoiceNumbers);
+    }
 
     const subject = subjectRaw
       .replace(/{clientName}/g, clientName)
       .replace(/{grandTotal}/g, formattedTotal)
       .replace(/{dueDate}/g, dueDates);
 
-    let bodyRaw = settingBody.includes('{invoiceNumber}')
-      ? settingBody.replace(/{invoiceNumber}/g, invoiceNumbers)
-      : `Hi,\n\nPlease find attached ${invoiceEntries.length} invoice${invoiceEntries.length > 1 ? 's' : ''}: ${invoiceNumbers}.\n\nKind regards,\n${orgName}`;
+    let bodyRaw = `Hi,\n\nPlease find attached ${invoiceEntries.length} invoice${invoiceEntries.length > 1 ? 's' : ''}: ${invoiceNumbers}.\n\nKind regards,\n${orgName}`;
+    if (settingBody.includes('{invoiceNumber}')) {
+      bodyRaw = settingBody.replace(/{invoiceNumber}/g, invoiceNumbers);
+    }
 
     const body = bodyRaw
       .replace(/{clientName}/g, clientName)
@@ -244,14 +254,18 @@ export function registerSystemHandlers(): void {
         const db = getDb();
         for (const entry of invoiceEntries) {
           const inv = db.prepare('SELECT id FROM invoices WHERE invoice_number = ?').get(entry.invoiceNumber) as { id: number } | undefined;
+
           insertActivityLog(inv?.id || null, entry.invoiceNumber, 'invoice_sent', `Batch emailed to ${recipientEmail}`);
         }
 
         if (error) {
           console.error('Failed to open Mail.app via AppleScript:', error);
           shell.openExternal(`mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+
           resolve(false);
-        } else {
+        }
+
+        else {
           resolve(true);
         }
       });

@@ -50,10 +50,12 @@ export function Table<T>({
     if (!sort) {
       return data;
     }
+
     return [...data].sort((a, b) => {
       const av = (a as Record<string, unknown>)[sort.key];
       const bv = (b as Record<string, unknown>)[sort.key];
       const cmp = String(av ?? '').localeCompare(String(bv ?? ''), undefined, { numeric: true, sensitivity: 'base' });
+
       return sort.dir === 'asc' ? cmp : -cmp;
     });
   }, [data, sort]);
@@ -61,8 +63,15 @@ export function Table<T>({
   const handleSort = useCallback((key: string): void => {
     setSort(prev => {
       if (prev?.key === key) {
-        return prev.dir === 'asc' ? { key, dir: 'desc' } : null;
+        let nextDir: SortDir = 'desc';
+
+        if (prev.dir === 'desc') {
+          return null;
+        }
+
+        return { key, dir: nextDir };
       }
+
       return { key, dir: 'asc' };
     });
   }, []);
@@ -73,14 +82,27 @@ export function Table<T>({
   const someSelected = !allSelected && allKeys.some(k => selected.has(k));
 
   const toggleAll = (): void => {
-    const next = allSelected ? new Set<string | number>() : new Set(allKeys);
+    let next = new Set(allKeys);
+
+    if (allSelected) {
+      next = new Set<string | number>();
+    }
+
     setSelected(next);
     onSelectionChange?.(next);
   };
 
   const toggleRow = (key: string | number): void => {
     const next = new Set(selected);
-    next.has(key) ? next.delete(key) : next.add(key);
+
+    if (next.has(key)) {
+      next.delete(key);
+    }
+
+    else {
+      next.add(key);
+    }
+
     setSelected(next);
     onSelectionChange?.(next);
   };
@@ -137,6 +159,7 @@ export function Table<T>({
             {sorted.map((row) => {
               const key = keyExtractor(row);
               const isSelected = selected.has(key);
+
               return (
                 <div
                   key={key}
@@ -220,7 +243,10 @@ const SortIcon: React.FC<SortIconProps> = ({ sortKey, sort }) => {
   if (sort?.key !== sortKey) {
     return <RiArrowUpDownLine className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />;
   }
-  return sort.dir === 'asc'
-    ? <RiArrowUpLine className="w-3 h-3 text-stone-700" />
-    : <RiArrowDownLine className="w-3 h-3 text-stone-700" />;
+
+  if (sort.dir === 'asc') {
+    return <RiArrowUpLine className="w-3 h-3 text-stone-700" />;
+  }
+
+  return <RiArrowDownLine className="w-3 h-3 text-stone-700" />;
 };

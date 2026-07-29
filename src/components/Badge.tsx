@@ -20,18 +20,23 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
  */
 export function getInvoiceStatusVariant(status: string): BadgeVariant {
   const normalized: string = status.toLowerCase();
+
   if (normalized.startsWith('sent')) {
     return 'blue';
   }
+
   if (normalized.startsWith('paid')) {
     return 'lime';
   }
+
   if (normalized.startsWith('cancelled')) {
     return 'red';
   }
+
   if (normalized.startsWith('overdue')) {
     return 'amber';
   }
+
   return 'gray';
 }
 
@@ -42,21 +47,27 @@ export function getInvoiceStatusVariant(status: string): BadgeVariant {
  */
 export function getActivityActionVariant(actionCode: string): BadgeVariant {
   const code: string = actionCode.toLowerCase();
+
   if (code.includes('created')) {
     return 'blue';
   }
+
   if (code.includes('updated') || code.includes('toggled')) {
     return 'pink';
   }
+
   if (code.includes('sent')) {
     return 'orange';
   }
+
   if (code.includes('status_updated')) {
     return 'lime';
   }
+
   if (code.includes('deleted') || code.includes('removed')) {
     return 'red';
   }
+
   return 'gray';
 }
 
@@ -76,15 +87,21 @@ export const Badge: React.FC<BadgeProps> = ({
 
   if (variant) {
     resolvedVariant = variant;
-  } else if (invoiceStatus !== undefined) {
+  }
+
+  else if (invoiceStatus !== undefined) {
     resolvedVariant = getInvoiceStatusVariant(invoiceStatus);
-  } else if (activityAction !== undefined) {
+  }
+
+  else if (activityAction !== undefined) {
     resolvedVariant = getActivityActionVariant(activityAction);
   }
 
-  const sizeStyles = size === 'lg'
-    ? 'px-3 py-1 rounded-md text-xs font-medium uppercase'
-    : 'px-2 py-0.5 rounded-md text-[10px] font-medium uppercase';
+  let sizeStyles = 'px-2 py-0.5 rounded-md text-[10px] font-medium uppercase';
+
+  if (size === 'lg') {
+    sizeStyles = 'px-3 py-1 rounded-md text-xs font-medium uppercase';
+  }
 
   const baseStyles: string = `inline-flex items-center tracking-wider ${sizeStyles}`;
 

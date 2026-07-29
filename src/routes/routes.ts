@@ -106,9 +106,9 @@ export const ROUTES: RouteDefinition[] = [
  * Returns only the routes that should appear in the sidebar, sorted by order.
  */
 export function getSidebarRoutes(): RouteDefinition[] {
-  return ROUTES
-    .filter((r) => r.inSidebar)
-    .sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+  const routes = ROUTES.filter((r) => r.inSidebar);
+
+  return routes.sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
 }
 
 /**
@@ -117,12 +117,14 @@ export function getSidebarRoutes(): RouteDefinition[] {
 export function getSidebarGroups(): string[] {
   const seen = new Set<string>();
   const groups: string[] = [];
+
   for (const route of getSidebarRoutes()) {
     if (route.sidebarGroup && !seen.has(route.sidebarGroup)) {
       seen.add(route.sidebarGroup);
       groups.push(route.sidebarGroup);
     }
   }
+
   return groups;
 }
 
@@ -132,5 +134,7 @@ export function getSidebarGroups(): string[] {
  * @param group - The sidebarGroup label to filter by.
  */
 export function getRoutesByGroup(group: string): RouteDefinition[] {
-  return getSidebarRoutes().filter((r) => r.sidebarGroup === group);
+  const routes = getSidebarRoutes();
+
+  return routes.filter((r) => r.sidebarGroup === group);
 }

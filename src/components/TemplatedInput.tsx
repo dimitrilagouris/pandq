@@ -38,6 +38,7 @@ const tagHtml = (token: string, label: string): string => {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 10px; height: 10px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
     </span>
   `.trim();
+
   return `<span class="inline-flex items-center gap-1 bg-stone-200 text-stone-850 pl-2 pr-1 py-0.5 rounded-lg text-xs font-medium select-none mx-0.5 cursor-default border-0" data-token="${token}" contenteditable="false">${icon}<span>${label}</span>${closeButton}</span>`;
 };
 
@@ -52,8 +53,10 @@ const textToHtml = (text: string): string => {
   Object.entries(TOKEN_TO_LABEL).forEach(([token, label]) => {
     const escapedToken = token.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
     const regex = new RegExp(escapedToken, 'g');
+
     html = html.replace(regex, tagHtml(token, label));
   });
+
   return html;
 };
 
@@ -72,17 +75,18 @@ const htmlToText = (html: string): string => {
   const spans = tempDiv.querySelectorAll('span[data-token]');
   spans.forEach((span) => {
     const token = span.getAttribute('data-token');
+
     if (token) {
       span.replaceWith(document.createTextNode(token));
     }
   });
 
   let text = tempDiv.textContent ?? tempDiv.innerText ?? '';
-  
+
   if (html.startsWith('<div>') && text.startsWith('\n')) {
     text = text.substring(1);
   }
-  
+
   return text;
 };
 
@@ -134,19 +138,20 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
 
   const updateMenuPosition = (): void => {
     const sel = window.getSelection();
+
     if (sel && sel.rangeCount > 0 && editorRef.current) {
       const range = sel.getRangeAt(0);
       const rect = range.getBoundingClientRect();
       const editorRect = editorRef.current.getBoundingClientRect();
-      
+
       let left = rect.left - editorRect.left;
       let top = rect.top - editorRect.top;
-      
+
       if (rect.top === 0 && rect.left === 0) {
         left = 8;
         top = 8;
       }
-      
+
       setMenuCoords({ top, left });
     }
   };
@@ -156,7 +161,9 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
     if (!editorRef.current) {
       return;
     }
+
     const currentText = htmlToText(editorRef.current.innerHTML);
+
     if (currentText !== value) {
       const targetHtml = textToHtml(value);
       editorRef.current.innerHTML = targetHtml;
@@ -175,24 +182,31 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent): void => {
       const target = e.target as HTMLElement;
+
       if (editorRef.current && editorRef.current.contains(target)) {
         return;
       }
+
       if (target.closest('.slash-menu-container')) {
         return;
       }
+
       closeMenu();
     };
+
     document.addEventListener('mousedown', handleOutsideClick);
+
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
   /** Delete the '/' and typed search query right before inserting a tag. */
   const deleteTriggerAndQuery = (): void => {
     const sel = window.getSelection();
+
     if (!sel || !sel.rangeCount || !triggerNodeRef.current) {
       return;
     }
+
     const range = sel.getRangeAt(0);
 
     range.setStart(triggerNodeRef.current, triggerOffsetRef.current);
@@ -204,6 +218,7 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
     if (!editorRef.current) {
       return;
     }
+
     editorRef.current.focus();
 
     if (replaceSlash) {
@@ -213,6 +228,7 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
     const tagHtmlStr = tagHtml(token, labelText) + '&nbsp;';
 
     const sel = window.getSelection();
+
     if (sel && sel.rangeCount) {
       const range = sel.getRangeAt(0);
       range.deleteContents();
@@ -222,9 +238,11 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
       const frag = document.createDocumentFragment();
       let node: Node | null;
       let lastInsertedNode: Node | null = null;
+
       while ((node = el.firstChild)) {
         lastInsertedNode = frag.appendChild(node);
       }
+
       range.insertNode(frag);
 
       // Move cursor right after the inserted space node
@@ -237,8 +255,8 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
       }
     }
 
-    // Trigger update
     const newText = htmlToText(editorRef.current.innerHTML);
+
     onChange(newText);
     closeMenu();
   };
@@ -249,16 +267,23 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         setSelectedIndex((prev) => (prev + 1) % filteredTags.length);
-      } else if (e.key === 'ArrowUp') {
+      }
+
+      else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setSelectedIndex((prev) => (prev - 1 + filteredTags.length) % filteredTags.length);
-      } else if (e.key === 'Enter' || e.key === 'Tab') {
+      }
+
+      else if (e.key === 'Enter' || e.key === 'Tab') {
         e.preventDefault();
         const selected = filteredTags[selectedIndex];
+
         if (selected) {
           insertTag(selected.token, selected.label, true);
         }
-      } else if (e.key === 'Escape') {
+      }
+
+      else if (e.key === 'Escape') {
         e.preventDefault();
         closeMenu();
       }
@@ -268,10 +293,11 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
   /** Listens for '/' typing to display tag options. */
   const handleKeyUp = (_e: React.KeyboardEvent<HTMLDivElement>): void => {
     const sel = window.getSelection();
+
     if (!sel || !sel.rangeCount) {
       return;
     }
-    
+
     const range = sel.getRangeAt(0);
     const container = range.startContainer;
     const offset = range.startOffset;
@@ -279,19 +305,22 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
     if (container.nodeType === Node.TEXT_NODE) {
       const text = container.nodeValue || '';
       const charBeforeCursor = text.substring(offset - 1, offset);
+
       if (charBeforeCursor === '/' && !showMenu) {
-        // Calculate coords synchronously so it renders at the correct spot on the very first frame
         if (editorRef.current) {
           const rect = range.getBoundingClientRect();
           const editorRect = editorRef.current.getBoundingClientRect();
           let left = rect.left - editorRect.left;
           let top = rect.top - editorRect.top;
+
           if (rect.top === 0 && rect.left === 0) {
             left = 8;
             top = 8;
           }
+
           setMenuCoords({ top, left });
         }
+
         setShowMenu(true);
         setSelectedIndex(0);
         setSearchQuery('');
@@ -303,17 +332,25 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
     if (showMenu) {
       if (sel.rangeCount > 0 && triggerNodeRef.current === container) {
         const start = triggerOffsetRef.current;
+
         if (offset > start && offset <= (container.nodeValue || '').length) {
           const query = (container.nodeValue || '').substring(start + 1, offset);
+
           if (query.includes(' ')) {
             closeMenu();
-          } else {
+          }
+
+          else {
             setSearchQuery(query);
           }
-        } else {
+        }
+
+        else {
           closeMenu();
         }
-      } else {
+      }
+
+      else {
         closeMenu();
       }
     }
@@ -323,10 +360,12 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
   const handleEditorClick = (e: React.MouseEvent<HTMLDivElement>): void => {
     const target = e.target as HTMLElement;
     const closeBtn = target.closest('.remove-tag-btn');
+
     if (closeBtn && editorRef.current) {
       e.preventDefault();
       e.stopPropagation();
       const tagSpan = closeBtn.closest('span[data-token]');
+
       if (tagSpan) {
         tagSpan.remove();
         handleInput();
@@ -338,6 +377,7 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
   const handleInput = (): void => {
     if (editorRef.current) {
       const newText = htmlToText(editorRef.current.innerHTML);
+
       onChange(newText);
     }
   };

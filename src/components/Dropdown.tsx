@@ -72,7 +72,9 @@ export const Dropdown: React.FC<DropdownProps> = ({
         setIsOpen(false);
       }
     };
+
     document.addEventListener('mousedown', handleClickOutside);
+
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
@@ -81,10 +83,13 @@ export const Dropdown: React.FC<DropdownProps> = ({
     if (!isOpen) {
       return;
     }
+
     const handleScroll = () => {
       setIsOpen(false);
     };
+
     window.addEventListener('scroll', handleScroll, true);
+
     return () => window.removeEventListener('scroll', handleScroll, true);
   }, [isOpen]);
 
@@ -94,9 +99,11 @@ export const Dropdown: React.FC<DropdownProps> = ({
   const textClass = isPlaceholder ? 'text-stone-300 font-regular' : 'text-stone-900 font-regular';
   const labelToDisplay = isPlaceholder && placeholder ? placeholder : triggerLabel;
 
-  const baseClass = variant === 'input'
-    ? `w-full h-10 px-3 text-left text-sm bg-white border border-transparent rounded-xl shadow-1 transition-all duration-150 focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-400 focus:ring-offset-1 flex items-center justify-between select-none cursor-pointer ${textClass}`
-    : 'inline-flex items-center gap-1.5 px-3 py-1 text-xs font-regular rounded-lg cursor-pointer hover:opacity-85 transition-all select-none border-0';
+  let baseClass = 'inline-flex items-center gap-1.5 px-3 py-1 text-xs font-regular rounded-lg cursor-pointer hover:opacity-85 transition-all select-none border-0';
+
+  if (variant === 'input') {
+    baseClass = `w-full h-10 px-3 text-left text-sm bg-white border border-transparent rounded-xl shadow-1 transition-all duration-150 focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-400 focus:ring-offset-1 flex items-center justify-between select-none cursor-pointer ${textClass}`;
+  }
 
   /** Handle keyboard navigation within the dropdown. */
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -105,22 +112,30 @@ export const Dropdown: React.FC<DropdownProps> = ({
         e.preventDefault();
         setIsOpen(true);
       }
+
       return;
     }
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setFocusedIndex(prev => (prev < options.length - 1 ? prev + 1 : prev));
-    } else if (e.key === 'ArrowUp') {
+    }
+
+    else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setFocusedIndex(prev => (prev > 0 ? prev - 1 : prev));
-    } else if (e.key === 'Enter') {
+    }
+
+    else if (e.key === 'Enter') {
       e.preventDefault();
+
       if (focusedIndex >= 0 && focusedIndex < options.length) {
         onSelect(options[focusedIndex].value);
         setIsOpen(false);
       }
-    } else if (e.key === 'Escape') {
+    }
+
+    else if (e.key === 'Escape') {
       e.preventDefault();
       setIsOpen(false);
     }
@@ -129,13 +144,18 @@ export const Dropdown: React.FC<DropdownProps> = ({
   /** Derive the text and background classes for each menu item. */
   const getItemClasses = (opt: DropdownOption, isFocused: boolean): string => {
     if (opt.danger) {
-      return isFocused
-        ? 'text-red-400 bg-red-500/15'
-        : 'text-red-400 bg-transparent hover:bg-red-500/15';
+      if (isFocused) {
+        return 'text-red-400 bg-red-500/15';
+      }
+
+      return 'text-red-400 bg-transparent hover:bg-red-500/15';
     }
-    return isFocused
-      ? 'text-stone-100 bg-white/10'
-      : 'text-stone-200 bg-transparent hover:bg-white/10';
+
+    if (isFocused) {
+      return 'text-stone-100 bg-white/10';
+    }
+
+    return 'text-stone-200 bg-transparent hover:bg-white/10';
   };
 
   return (

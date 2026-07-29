@@ -37,8 +37,10 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   const handleOpen = () => {
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
+
       setCoords({ top: rect.bottom + 6, left: rect.left });
     }
+
     setIsOpen(!isOpen);
   };
 
@@ -47,13 +49,17 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     if (!dateStr) {
       return new Date();
     }
+
     const parts = dateStr.split('-');
+
     if (parts.length !== 3) {
       return new Date();
     }
+
     const y = parseInt(parts[0], 10);
     const m = parseInt(parts[1], 10) - 1;
     const d = parseInt(parts[2], 10);
+
     return new Date(y, m, d);
   };
 
@@ -67,6 +73,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   useEffect(() => {
     if (isOpen) {
       const current = parseDateString(value);
+
       setViewYear(current.getFullYear());
       setViewMonth(current.getMonth());
     }
@@ -76,6 +83,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
+
       if (
         containerRef.current && !containerRef.current.contains(target) &&
         (!popupRef.current || !popupRef.current.contains(target))
@@ -83,7 +91,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         setIsOpen(false);
       }
     };
+
     document.addEventListener('mousedown', handleClickOutside);
+
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
@@ -92,11 +102,13 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     if (!isOpen) {
       return;
     }
+
     const handleScroll = () => setIsOpen(false);
     const handleResize = () => setIsOpen(false);
 
     window.addEventListener('scroll', handleScroll, true);
     window.addEventListener('resize', handleResize);
+
     return () => {
       window.removeEventListener('scroll', handleScroll, true);
       window.removeEventListener('resize', handleResize);
@@ -108,6 +120,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
+
     return `${y}-${m}-${d}`;
   };
 
@@ -116,7 +129,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     if (!dateStr) {
       return '';
     }
+
     const date = parseDateString(dateStr);
+
     return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
   };
 
@@ -128,7 +143,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     if (viewMonth === 0) {
       setViewMonth(11);
       setViewYear(viewYear - 1);
-    } else {
+    }
+
+    else {
       setViewMonth(viewMonth - 1);
     }
   };
@@ -137,13 +154,16 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     if (viewMonth === 11) {
       setViewMonth(0);
       setViewYear(viewYear + 1);
-    } else {
+    }
+
+    else {
       setViewMonth(viewMonth + 1);
     }
   };
 
   const handleSelectDay = (day: number) => {
     const nextDate = new Date(viewYear, viewMonth, day);
+
     onChange(formatDateString(nextDate));
     setIsOpen(false);
   };
@@ -157,10 +177,12 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 
   // Generate day grid cells
   const dayCells = [];
+
   // Empty slots for preceding month days
   for (let i = 0; i < firstDayIndex; i++) {
     dayCells.push(<div key={`empty-${i}`} className="h-8 w-8" />);
   }
+
   // Days of the current month
   for (let day = 1; day <= daysInMonth; day++) {
     const isSelected = selectedDate.getDate() === day &&
@@ -203,7 +225,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         {(() => {
           const isPlaceholder = !value;
           const textClass = isPlaceholder ? 'text-stone-300 font-regular' : 'text-stone-900 font-regular';
-          
+
           if (variant === 'inline') {
             return (
               <button

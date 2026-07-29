@@ -18,11 +18,14 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, className =
   useLayoutEffect(() => {
     if (showTooltip && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
+
       setCoords({
         top: rect.top - 8,
         left: rect.left + rect.width / 2,
       });
-    } else {
+    }
+
+    else {
       setCoords(null);
     }
   }, [showTooltip]);
@@ -31,9 +34,12 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, className =
     if (!showTooltip) {
       return;
     }
+
     const hide = () => setShowTooltip(false);
+
     window.addEventListener('scroll', hide, true);
     window.addEventListener('resize', hide);
+
     return () => {
       window.removeEventListener('scroll', hide, true);
       window.removeEventListener('resize', hide);
@@ -52,6 +58,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, className =
       >
         {children}
       </div>
+
       {showTooltip && coords && createPortal(
         <div
           className="font-light fixed z-[9999] w-max max-w-[200px] bg-stone-900 text-white text-[11px] leading-normal rounded-xl p-2.5 shadow-22 text-center animate-in fade-in zoom-in-95 duration-100 pointer-events-none"

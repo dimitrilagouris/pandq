@@ -21,7 +21,7 @@ interface SizeStyles {
 }
 
 const SIZE_MAP: Record<IconBoxSize, SizeStyles> = {
-  sm: { outer: 'w-10 h-10 rounded-xl', inner: 'w-7 h-7 rounded-lg', icon: 'w-4 h-4' },
+  sm: { outer: 'w-8 h-8 rounded-lg', inner: 'w-6 h-6 rounded-md', icon: 'w-3.5 h-3.5' },
   md: { outer: 'w-11 h-11 rounded-2xl', inner: 'w-8 h-8 rounded-xl', icon: 'w-4 h-4' },
   lg: { outer: 'w-14 h-14 rounded-2xl', inner: 'w-11 h-11 rounded-xl', icon: 'w-6 h-6' },
 };

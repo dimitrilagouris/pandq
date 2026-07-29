@@ -30,6 +30,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
     const loadSettings = async () => {
       try {
         const settings = await window.electronAPI.getSettings();
+
         setOrgName(settings.setting_org_name || 'My business');
 
         const isOrgNameSet = (settings.setting_org_name || '').trim() !== '' && (settings.setting_org_name || '').trim() !== 'Your Business';
@@ -39,16 +40,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
         const isBankSet = (settings.setting_bsb || '').trim() !== '' && (settings.setting_account_number || '').trim() !== '';
 
         const completed = [isOrgNameSet, isOrgAbnSet, isOrgAddressSet, isOrgEmailSet, isBankSet].filter(Boolean).length;
+
         setCompletedSteps(completed);
-      } catch (err) {
+      }
+
+      catch (err) {
         console.error('Failed to load settings in sidebar', err);
       }
     };
+
     loadSettings();
 
-    // Re-fetch if settings are updated
     const handleSettingsUpdated = () => loadSettings();
+
     window.addEventListener('settings-updated', handleSettingsUpdated);
+
     return () => window.removeEventListener('settings-updated', handleSettingsUpdated);
   }, []);
 
@@ -60,12 +66,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
       }`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-6 pb-4 whitespace-nowrap overflow-hidden">
+      <div className="flex items-center justify-between px-3 pt-6 pb-4 whitespace-nowrap overflow-hidden">
         <div 
-          className="flex items-center gap-2 cursor-pointer"
+          className="flex items-center gap-2 cursor-pointer pl-1"
           onClick={() => setIsCollapsed(!isCollapsed)}
         >
-          <div className="flex items-center justify-center w-5 h-5 flex-shrink-0">
+          <div className="flex items-center justify-center w-8 h-8 flex-shrink-0">
             <svg className="w-5 h-auto text-black" viewBox="0 0 553 766" role="img" xmlns="http://www.w3.org/2000/svg">
               <title>Two-arc logo shape</title>
               <desc>Two comma-shaped arcs; the top-right arc's outer edge now flows smoothly into its straight approach to the paddle end.</desc>
@@ -73,11 +79,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
               <path d="M 255.3,380.0 c -13.7,1.2 -34.9,5.2 -51.6,9.9 c -32.8,9.2 -64,24.5 -91.3,44.9 c -14.5,10.9 -36.7,32.1 -48,46.3 c -23.2,28.8 -42.9,66.4 -53.1,101.3 c -4.5,15.7 -8.4,35.9 -10,52.1 c -0.7,7.3 -1.3,39.7 -1.3,72.1 l 0,59.1 l 83.3,0 l 83.3,0 l 0,-7.7 c 0.1,-4.1 0.4,-30.1 0.7,-57.6 l 0.4,-50 l 2,-9.5 c 7.6,-36 33.9,-67.2 69.6,-82.8 c 11.3,-4.9 26.3,-8.3 38.3,-8.5 l 9.1,-0.3 l 0.3,-85.2 l 0.4,-85.1 l -13.3,0.3 c -7.3,0.1 -15.7,0.4 -18.7,0.7 z" fill="currentColor" />
             </svg>
           </div>
-          <span className={`font-semibold text-stone-900 text-lg transition-all duration-300 ${isCollapsed ? 'max-w-0 opacity-0 overflow-hidden' : 'max-w-[100px] opacity-100'}`}>PandQ</span>
+          <span className={`font-semibold text-stone-900 text-lg transition-all duration-300 ease-in-out ${
+            isCollapsed ? 'max-w-0 opacity-0 overflow-hidden' : 'max-w-[100px] opacity-100'
+          }`}>PandQ</span>
         </div>
         <button 
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className={`text-stone-400 hover:text-stone-900 transition-all duration-300 flex-shrink-0 ${
+          className={`text-stone-400 hover:text-stone-900 transition-all duration-300 ease-in-out flex-shrink-0 pr-1 ${
             isCollapsed ? 'max-w-0 opacity-0 pointer-events-none' : 'max-w-[20px] opacity-100'
           }`}
         >
@@ -86,8 +94,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
       </div>
 
       {/* Action Icons */}
-      <div className={`flex items-center gap-4 px-5 py-2 transition-all duration-300 ${
-        isCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100'
+      <div className={`flex items-center gap-4 px-4 py-2 transition-all duration-300 ease-in-out overflow-hidden ${
+        isCollapsed ? 'opacity-0 max-h-0 py-0 pointer-events-none' : 'opacity-100 max-h-12'
       }`}>
         <button className="text-stone-400 hover:text-stone-900 transition-colors">
           <EqIcon className="w-5 h-5" />
@@ -101,20 +109,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
       </div>
 
       {/* New Invoice Button */}
-      <div className={`py-3 transition-all duration-300 overflow-hidden ${isCollapsed ? 'px-3' : 'px-5'}`}>
+      <div className="px-3 py-2 flex-shrink-0">
         <Button
           variant="primary"
           onClick={() => onNavigate('invoice-editor')}
           title={isCollapsed ? "New Invoice" : undefined}
-          className={`transition-all duration-300 flex items-center justify-center whitespace-nowrap overflow-hidden ${
-            isCollapsed ? 'w-10 h-10 !px-0 rounded-xl' : 'w-full'
-          }`}
+          className="w-full h-10 flex items-center justify-center whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out"
         >
-          <div className="flex items-center justify-center">
-            <div className="flex items-center flex-shrink-0">
+          <div className="flex flex-row items-center justify-center">
+            <div className="flex items-center justify-center w-5 h-5 flex-shrink-0">
               <AddIcon className="w-5 h-5" />
             </div>
-            <span className={`transition-all duration-300 overflow-hidden ${
+            <span className={`transition-all duration-300 ease-in-out overflow-hidden text-left ${
               isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[150px] opacity-100 ml-2'
             }`}>
               New Invoice
@@ -124,17 +130,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
       </div>
 
       {/* Navigation */}
-      <div className="pt-4 flex-1 overflow-hidden">
+      <div className="pt-2 flex-1 overflow-hidden">
         {getSidebarGroups().map((group) => (
           <div key={group}>
-            <div className={`px-5 transition-all duration-300 overflow-hidden ${
+            <div className={`px-4 transition-all duration-300 ease-in-out overflow-hidden ${
               isCollapsed ? 'opacity-0 max-h-0 pb-0' : 'opacity-100 max-h-[30px] pb-2'
             }`}>
               <span className="text-xs font-medium text-stone-400 uppercase tracking-wider whitespace-nowrap">{group}</span>
             </div>
-            <nav className="flex flex-col gap-0.5 transition-all duration-300 px-3">
+            <nav className="flex flex-col gap-0.5 px-3">
               {getRoutesByGroup(group).map((route) => {
                 const IconComponent = route.icon;
+
                 return (
                   <NavItem
                     key={route.key}
@@ -154,18 +161,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
       {/* Setup Card */}
       {completedSteps < 5 && !isCardDismissed && (
         <div 
-          className={`bg-white rounded-2xl shadow-1 p-4 mx-3 mb-3 flex flex-col gap-3 flex-shrink-0 transition-all duration-300 overflow-hidden ${
-            isCollapsed ? 'max-h-0 opacity-0 p-0 mb-0' : 'opacity-100'
+          className={`bg-white rounded-2xl shadow-1 p-4 mx-3 mb-3 flex flex-col gap-3 flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden ${
+            isCollapsed ? 'max-h-0 opacity-0 p-0 mb-0' : 'opacity-100 max-h-64'
           }`}
         >
-          {/* Two-Square Icon Container (matching EmptyState component) */}
           <div className="w-10 h-10 bg-stone-200/80 rounded-xl flex items-center justify-center flex-shrink-0">
             <div className="w-7 h-7 bg-white rounded-lg shadow-1 flex items-center justify-center text-stone-800">
               <MagicIcon className="w-4 h-4" />
             </div>
           </div>
 
-          {/* Title & Progress */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-stone-900">Finish setting up</span>
@@ -174,7 +179,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
             <HorizontalProgress current={completedSteps} total={5} className="!h-1.5" barColor="#1c1917" />
           </div>
 
-          {/* Continue Button */}
           <Button
             variant="outline"
             size="sm"
@@ -188,25 +192,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
       )}
 
       {/* Footer Settings & Profile */}
-      <div className={`pb-4 flex flex-col gap-2 transition-all duration-300 overflow-hidden ${isCollapsed ? 'px-3' : 'px-3'}`}>
+      <div className="pb-4 px-3 flex flex-col gap-2 flex-shrink-0">
         <div 
-          className={`flex items-center rounded-xl transition-all duration-300 hover:bg-stone-200 cursor-pointer group whitespace-nowrap overflow-hidden ${
-            isCollapsed ? 'p-1' : 'px-3 py-2'
-          }`}
+          className="w-full h-10 flex items-center rounded-xl transition-colors duration-150 hover:bg-stone-200 cursor-pointer group whitespace-nowrap overflow-hidden px-1"
           title={isCollapsed ? orgName : undefined}
         >
-          <div className="w-8 h-8 rounded-full bg-stone-300 text-stone-700 flex items-center justify-center text-xs font-bold flex-shrink-0 uppercase">
+          <div className="w-8 h-8 rounded-full bg-stone-300 text-stone-700 flex items-center justify-center text-xs font-bold flex-shrink-0 uppercase ml-0.5">
             {orgName.charAt(0)}
           </div>
-          <div className={`flex items-center justify-between transition-all duration-300 overflow-hidden ${
-            isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[200px] opacity-100 ml-3 flex-1'
+          <div className={`flex items-center justify-between transition-all duration-300 ease-in-out overflow-hidden ${
+            isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[200px] opacity-100 ml-2.5 flex-1'
           }`}>
             <span className="text-sm font-medium text-stone-900 truncate pr-2">{orgName}</span>
             <LogoutIcon className="w-5 h-5 text-stone-400 group-hover:text-stone-900 transition-colors flex-shrink-0" />
           </div>
         </div>
       </div>
-
     </aside>
   );
 };
@@ -224,18 +225,17 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick, isColla
     <button
       onClick={onClick}
       title={isCollapsed ? label : undefined}
-      className={`w-full flex items-center transition-all duration-300 ease-in-out text-sm font-regular whitespace-nowrap overflow-hidden
-        h-10 px-3 rounded-xl
+      className={`w-full h-10 flex items-center transition-colors duration-150 text-sm font-regular whitespace-nowrap overflow-hidden rounded-xl px-2.5
         ${active ? 'bg-stone-200 text-stone-900' : 'text-stone-600 hover:bg-stone-200 hover:text-stone-900'}
       `}
     >
-      <div className={`flex items-center justify-center w-[18px] h-[18px] flex-shrink-0 transition-colors duration-200 ${
+      <div className={`flex items-center justify-center w-5 h-5 flex-shrink-0 transition-colors duration-200 ${
         active ? 'text-stone-900' : 'text-stone-400'
       }`}>
         {icon}
       </div>
-      <span className={`transition-all duration-300 overflow-hidden text-left ${
-        isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[150px] opacity-100 ml-3'
+      <span className={`transition-all duration-300 ease-in-out overflow-hidden text-left ${
+        isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[150px] opacity-100 ml-2.5'
       }`}>
         {label}
       </span>

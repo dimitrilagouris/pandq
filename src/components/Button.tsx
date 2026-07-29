@@ -46,7 +46,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({
   return (
     <button ref={ref} className={combinedClasses} {...props}>
       {leftIcon && <span className="flex-shrink-0 flex items-center justify-center">{leftIcon}</span>}
-      {children && <span>{children}</span>}
+      {children && <span className="inline-flex items-center justify-center flex-row">{children}</span>}
       {rightIcon && <span className="flex-shrink-0 flex items-center justify-center">{rightIcon}</span>}
     </button>
   );

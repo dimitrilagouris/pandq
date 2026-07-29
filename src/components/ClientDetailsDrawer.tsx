@@ -305,10 +305,10 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
         </div>
 
         {/* Tab Content Panel */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-6">
+        <div className="flex-1 overflow-y-auto py-5 flex flex-col gap-6">
           {activeTab === 'overview' && (
             isEditing ? (
-              <div className="flex flex-col gap-4">
+              <div className="w-full px-6 flex flex-col gap-4">
                 <h3 className="text-base text-black font-medium select-none">
                   Edit Client Details
                 </h3>
@@ -406,7 +406,7 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
             ) : (
               <>
                 {/* Basic Information */}
-                <div className="pb-6 border-b border-stone-200">
+                <div className="w-full px-6 pb-6 border-b border-stone-200">
                   <h3 className="text-base text-black font-medium select-none mb-3.5">
                     Basic Information
                   </h3>
@@ -431,7 +431,7 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
                 </div>
 
                 {/* Address Information */}
-                <div className="pb-6 border-b border-stone-200">
+                <div className="w-full px-6 pb-6 border-b border-stone-200">
                   <h3 className="text-base text-black font-medium select-none mb-3.5">
                     Billing Address
                   </h3>
@@ -453,7 +453,7 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
                 </div>
 
                 {onCreateInvoice && (
-                  <div className="pt-1">
+                  <div className="w-full px-6 pt-1">
                     <Button
                       variant="primary"
                       fullWidth
@@ -469,7 +469,7 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
           )}
 
           {activeTab === 'outstanding' && (
-            <div className="flex flex-col gap-2.5">
+            <div className="w-full px-6 flex flex-col gap-2.5">
               <h3 className="text-base text-black font-medium select-none mb-3">
                 Outstanding Invoices ({outstandingInvoices.length})
               </h3>
@@ -506,7 +506,7 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
           )}
 
           {activeTab === 'invoices' && (
-            <div className="flex flex-col gap-2.5">
+            <div className="w-full px-6 flex flex-col gap-2.5">
               <h3 className="text-base text-black font-medium select-none mb-3">
                 All Client Invoices ({clientInvoices.length})
               </h3>

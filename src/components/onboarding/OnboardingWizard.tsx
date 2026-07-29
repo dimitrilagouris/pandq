@@ -282,14 +282,6 @@ function buildSlides(
               placeholder="e.g. 1234 5678"
             />
           </div>
-          <Input
-            label="Payment Instructions"
-            value={form.setting_payment_instructions}
-            onChange={v => update('setting_payment_instructions', v)}
-            placeholder="e.g. Please use invoice number as reference"
-            multiline
-            rows={2}
-          />
         </div>
       ),
     },

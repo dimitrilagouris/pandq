@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './layout/Sidebar';
 import { Button } from './components/Button';
-import ClientsPage from './features/clients/ClientsPage';
-import InvoicePage from './features/invoices/InvoicePage';
-import InvoicesPage from './features/invoices/InvoicesPage';
-import SettingsPage from './features/settings/SettingsPage';
-import ActivitiesPage from './features/activities/ActivitiesPage';
-import { DashboardPage } from './features/dashboard/DashboardPage';
+import ClientsPage from './pages/ClientsPage';
+import InvoicePage from './pages/InvoicePage';
+import InvoicesPage from './pages/InvoicesPage';
+import SettingsPage from './pages/SettingsPage';
+import ActivitiesPage from './pages/ActivitiesPage';
+import { DashboardPage } from './pages/DashboardPage';
 import type { PageKey } from './routes/routes';
 
 /** Re-export so existing consumers importing `Page` from App.tsx still work. */

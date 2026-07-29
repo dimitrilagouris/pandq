@@ -31,9 +31,9 @@ export const DashboardCard: React.FC<DashboardCardProps> = ({
   headerAction,
 }) => {
   return (
-    <div className="rounded-2xl bg-stone-200 overflow-hidden shadow-1 flex flex-col h-full">
+    <div className="rounded-2xl bg-stone-200 flex flex-col h-full p-1.5 gap-1">
       {/* Header strip */}
-      <div className="flex items-center justify-between px-4 py-3 flex-shrink-0">
+      <div className="flex items-center justify-between px-3 pt-2 pb-1.5 flex-shrink-0">
         <div className="flex items-center gap-2">
           <span className="text-stone-400">{icon}</span>
           <span className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
@@ -45,8 +45,8 @@ export const DashboardCard: React.FC<DashboardCardProps> = ({
         )}
       </div>
 
-      {/* White card body */}
-      <div className="bg-stone-50 rounded-2xl px-5 py-4 flex flex-col gap-1 flex-1">
+      {/* White card body with shadow (no border, unclipped shadow) */}
+      <div className="bg-white rounded-xl px-4 py-3.5 flex flex-col gap-1 flex-1 shadow-1">
         <div className="flex items-baseline gap-3 mt-1">
           <span className="text-2xl font-bold text-stone-900 tracking-tight">
             {value}

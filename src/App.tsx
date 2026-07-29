@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { OnboardingWizard } from './components/onboarding/OnboardingWizard';
 import { Sidebar } from './layout/Sidebar';
 import { Button } from './components/Button';
 import ClientsPage from './pages/ClientsPage';
@@ -12,15 +13,29 @@ import type { PageKey } from './routes/routes';
 /** Re-export so existing consumers importing `Page` from App.tsx still work. */
 export type Page = PageKey;
 
+/** localStorage key — persists first-launch state across app sessions. */
+const ONBOARDING_KEY = 'miko_onboarding_complete';
+
 /**
  * Main application component — manages active page and layout.
  */
+
 export default function App(): React.JSX.Element {
   const [activePage, setActivePage] = useState<Page>('invoices');
   const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [pendingPage, setPendingPage] = useState<Page | null>(null);
   const [showDiscardModal, setShowDiscardModal] = useState<boolean>(false);
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(
+    // VITE_SHOW_ONBOARDING=true in .env.development.local forces the wizard on every launch for debugging.
+    () => import.meta.env.VITE_SHOW_ONBOARDING === 'true' || localStorage.getItem(ONBOARDING_KEY) !== 'true'
+  );
+
+  /** Mark onboarding done so it never appears again. */
+  const handleOnboardingComplete = (): void => {
+    localStorage.setItem(ONBOARDING_KEY, 'true');
+    setShowOnboarding(false);
+  };
 
   // Handle Escape key to close the discard confirmation modal
   useEffect(() => {
@@ -111,6 +126,7 @@ export default function App(): React.JSX.Element {
 
   return (
     <div className="flex h-screen w-full bg-stone-100 overflow-hidden font-sans">
+      {showOnboarding && <OnboardingWizard onComplete={handleOnboardingComplete} />}
       <Sidebar
         activePage={activePage}
         onNavigate={handleNavigate}

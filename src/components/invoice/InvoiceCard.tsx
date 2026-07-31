@@ -17,6 +17,8 @@ interface InvoiceCardProps {
   isSelected: boolean;
   /** Card click callback. */
   onClick: (e: React.MouseEvent) => void;
+  /** Card double-click callback. */
+  onDoubleClick?: (e: React.MouseEvent) => void;
   /** Card right-click context menu callback. */
   onContextMenu: (e: React.MouseEvent) => void;
 }
@@ -38,6 +40,7 @@ export const InvoiceCard: React.FC<InvoiceCardProps> = ({
   isSelectionMode,
   isSelected,
   onClick,
+  onDoubleClick,
   onContextMenu,
 }): React.JSX.Element => {
   const parts = invoice.status.split('|');
@@ -62,6 +65,7 @@ export const InvoiceCard: React.FC<InvoiceCardProps> = ({
   return (
     <div
       onClick={onClick}
+      onDoubleClick={onDoubleClick}
       onContextMenu={onContextMenu}
       className={`scroll-animate-card border rounded-2xl p-3 shadow-sm transition-colors flex flex-col justify-between relative group hover:z-50 focus-within:z-50 cursor-pointer hover:border-stone-300 ${
         isSelected

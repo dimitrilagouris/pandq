@@ -364,6 +364,7 @@ export default function InvoicesPage({ onNavigate, onEditInvoice }: InvoicesPage
                   isSelectionMode={isSelectionMode}
                   isSelected={isSelectionMode ? selectedIds.has(inv.id) : selectedPreviewId === inv.id}
                   onClick={(e) => handleCardClick(inv, e)}
+                  onDoubleClick={() => onEditInvoice(inv.id)}
                   onContextMenu={(e) => {
                     e.preventDefault();
                     setContextMenu({ x: e.clientX, y: e.clientY, invoice: inv });

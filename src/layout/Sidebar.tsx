@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import * as Icons from 'react-icons/ri';
-import { Button } from '../components/Button';
+import { Button } from '../components/common/Button.tsx';
 import { Page } from '../App';
-import { HorizontalProgress } from '../components/HorizontalProgress';
-import { TactileIconBox } from '../components/TactileIconBox';
+import { HorizontalProgress } from '../components/common/HorizontalProgress.tsx';
+import { TactileIconBox } from '../components/common/TactileIconBox.tsx';
 import { getSidebarGroups, getRoutesByGroup } from '../routes/routes';
 
 const {

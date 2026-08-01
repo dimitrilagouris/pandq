@@ -11,7 +11,7 @@ import {
   RiFlagLine,
 } from 'react-icons/ri';
 import { Invoice, Flag } from '../../types/models';
-import { DropdownFooter } from '../Dropdown';
+import { DropdownFooter } from '../common/Dropdown.tsx';
 
 export interface ContextMenuState {
   x: number;

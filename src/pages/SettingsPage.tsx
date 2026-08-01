@@ -7,14 +7,14 @@ import {
   RiBankCardLine,
   RiCheckboxCircleFill
 } from 'react-icons/ri';
-import { Button } from '../components/Button';
-import { Input } from '../components/Input';
-import { TemplatedInput } from '../components/TemplatedInput';
+import { Button } from '../components/common/Button.tsx';
+import { Input } from '../components/common/Input.tsx';
+import { TemplatedInput } from '../components/common/TemplatedInput.tsx';
 import { TemplateSelector } from '../components/invoice/TemplateSelector';
-import { HelpBadge } from '../components/HelpBadge';
-import { TutorialModal } from '../components/TutorialModal';
-import { CircularProgress } from '../components/CircularProgress';
-import { Toggle } from '../components/Toggle';
+import { HelpBadge } from '../components/common/HelpBadge.tsx';
+import { TutorialModal } from '../components/settings/TutorialModal.tsx';
+import { CircularProgress } from '../components/common/CircularProgress.tsx';
+import { Toggle } from '../components/common/Toggle.tsx';
 
 type SettingsTab = 'personalisation' | 'organisation' | 'invoice' | 'email' | 'payment';
 

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Button, ButtonProps } from './Button';
+import { Button, ButtonProps } from '../common/Button.tsx';
 
 export type BannerColor = 'orange' | 'stone';
 

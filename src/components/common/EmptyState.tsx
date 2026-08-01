@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button } from './Button';
-import { TactileIconBox } from './TactileIconBox';
+import { Button } from './Button.tsx';
+import { TactileIconBox } from './TactileIconBox.tsx';
 
 interface EmptyStateProps {
   icon: React.ReactNode;

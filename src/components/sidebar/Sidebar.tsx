@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import * as Icons from 'react-icons/ri';
-import { Button } from './Button';
-import { Page } from '../App';
-import { HorizontalProgress } from './HorizontalProgress';
-import { TactileIconBox } from './TactileIconBox';
-import { getSidebarGroups, getRoutesByGroup } from '../routes/routes';
+import { Button } from '../common/Button.tsx';
+import { Page } from '../../App.tsx';
+import { HorizontalProgress } from '../common/HorizontalProgress.tsx';
+import { TactileIconBox } from '../common/TactileIconBox.tsx';
+import { getSidebarGroups, getRoutesByGroup } from '../../routes/routes.ts';
 
 const {
   RiEqualizerLine: EqIcon,

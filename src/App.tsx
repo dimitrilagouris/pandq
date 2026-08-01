@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { OnboardingWizard } from './components/onboarding/OnboardingWizard';
 import { Sidebar } from './layout/Sidebar';
-import { Button } from './components/Button';
+import { Button } from './components/common/Button.tsx';
 import ClientsPage from './pages/ClientsPage';
 import InvoicePage from './pages/InvoicePage';
 import InvoicesPage from './pages/InvoicesPage';

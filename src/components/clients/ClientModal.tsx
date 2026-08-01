@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Client } from '../types/models';
-import { Input } from './Input';
-import { Button } from './Button';
+import { Client } from '../../types/models.ts';
+import { Input } from '../common/Input.tsx';
+import { Button } from '../common/Button.tsx';
 import { RiCloseLine, RiArrowDownSLine, RiUser3Line, RiBuildingLine, RiPhoneLine, RiMailLine, RiMapPinLine } from 'react-icons/ri';
 
 interface ClientFormData {

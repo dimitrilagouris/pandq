@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Invoice } from '../../types/models';
-import { Button } from '../Button';
-import { Input } from '../Input';
+import { Button } from '../common/Button.tsx';
+import { Input } from '../common/Input.tsx';
 import { RiCloseLine, RiDeleteBinLine, RiAlertLine } from 'react-icons/ri';
 
 export interface DeleteInvoiceModalProps {

@@ -9,12 +9,12 @@ import {
   RiCheckboxCircleFill,
   RiArrowDownSLine
 } from 'react-icons/ri';
-import { Client, Invoice } from '../types/models';
-import { Badge } from './Badge';
-import { Button } from './Button';
-import { Input } from './Input';
-import { InvoiceStatusFilterPill, FilterPillOption } from './invoice/InvoiceStatusFilterPill';
-import { TactileIconBox } from './TactileIconBox';
+import { Client, Invoice } from '../../types/models.ts';
+import { Badge } from '../common/Badge.tsx';
+import { Button } from '../common/Button.tsx';
+import { Input } from '../common/Input.tsx';
+import { InvoiceStatusFilterPill, FilterPillOption } from '../invoice/InvoiceStatusFilterPill.tsx';
+import { TactileIconBox } from '../common/TactileIconBox.tsx';
 
 type DrawerTab = 'overview' | 'outstanding' | 'invoices';
 

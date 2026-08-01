@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { RiArrowDownSLine } from 'react-icons/ri';
 import { ActivityLog } from '../types/models';
-import { Table, ColumnDef } from '../components/Table';
-import { Input } from '../components/Input';
-import { Dropdown, DropdownOption } from '../components/Dropdown';
-import { Badge } from '../components/Badge';
-import { DatePicker } from '../components/DatePicker';
+import { Table, ColumnDef } from '../components/common/Table.tsx';
+import { Input } from '../components/common/Input.tsx';
+import { Dropdown, DropdownOption } from '../components/common/Dropdown.tsx';
+import { Badge } from '../components/common/Badge.tsx';
+import { DatePicker } from '../components/common/DatePicker.tsx';
 
 interface SearchableInvoiceDropdownProps {
   value: string;

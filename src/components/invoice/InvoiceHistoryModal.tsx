@@ -15,7 +15,7 @@ import { ActivityLog } from '../../types/models';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Badge } from '../Badge';
+import { Badge } from '../common/Badge.tsx';
 
 /** Helper component to set map zoom and center dynamically when modified from external buttons. */
 function MapController({ zoom, center, recenterCount }: { zoom: number; center: [number, number]; recenterCount: number }) {

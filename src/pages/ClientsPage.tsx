@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { RiAddLine, RiSearchLine, RiDeleteBinLine, RiPencilLine, RiUser3Line } from 'react-icons/ri';
 import { Client, Invoice } from '../types/models';
-import { Table, ColumnDef } from '../components/Table';
-import { Button } from '../components/Button';
-import { ClientModal } from '../components/ClientModal';
-import { ClientDetailsDrawer } from '../components/ClientDetailsDrawer';
-import { Input } from '../components/Input';
-import { EmptyState } from '../components/EmptyState';
-import { Tooltip } from '../components/Tooltip';
+import { Table, ColumnDef } from '../components/common/Table.tsx';
+import { Button } from '../components/common/Button.tsx';
+import { ClientModal } from '../components/clients/ClientModal.tsx';
+import { ClientDetailsDrawer } from '../components/clients/ClientDetailsDrawer.tsx';
+import { Input } from '../components/common/Input.tsx';
+import { EmptyState } from '../components/common/EmptyState.tsx';
+import { Tooltip } from '../components/common/Tooltip.tsx';
 
 /**
  * Clients page — lists all clients with search, add, edit, delete actions and details drawer.

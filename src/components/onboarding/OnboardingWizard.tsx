@@ -3,9 +3,9 @@ import {
   RiBuildingLine,
   RiBankCardLine,
 } from 'react-icons/ri';
-import { Input } from '../Input';
-import { Button } from '../Button';
-import { TactileIconBox } from '../TactileIconBox';
+import { Input } from '../common/Input.tsx';
+import { Button } from '../common/Button.tsx';
+import { TactileIconBox } from '../common/TactileIconBox.tsx';
 
 /** Essential first-launch settings: organisation identity and payment details. */
 export interface OnboardingFormState {

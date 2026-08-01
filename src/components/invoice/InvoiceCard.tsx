@@ -1,7 +1,7 @@
 import React from 'react';
 import { RiCheckLine, RiFlagFill } from 'react-icons/ri';
 import { Invoice, InvoiceStatus } from '../../types/models';
-import { Badge, BadgeVariant } from '../Badge';
+import { Badge, BadgeVariant } from '../common/Badge.tsx';
 import { formatCurrency, formatDate } from './invoiceActionHelpers';
 
 interface InvoiceCardProps {

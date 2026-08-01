@@ -19,13 +19,13 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 import { Client } from '../../types/models';
-import { Input } from '../Input';
-import { DatePicker } from '../DatePicker';
-import { Dropdown } from '../Dropdown';
-import { Button } from '../Button';
-import { HelpBadge } from '../HelpBadge';
-import { Toggle } from '../Toggle';
-import { CollapsibleSection } from '../CollapsibleSection';
+import { Input } from '../common/Input.tsx';
+import { DatePicker } from '../common/DatePicker.tsx';
+import { Dropdown } from '../common/Dropdown.tsx';
+import { Button } from '../common/Button.tsx';
+import { HelpBadge } from '../common/HelpBadge.tsx';
+import { Toggle } from '../common/Toggle.tsx';
+import { CollapsibleSection } from './CollapsibleSection.tsx';
 import { InvoiceFormState, LineItem } from './invoiceTypes';
 import { templates } from './templates/registry';
 import { TemplateSelector } from './TemplateSelector';

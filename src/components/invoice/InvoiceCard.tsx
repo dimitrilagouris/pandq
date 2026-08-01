@@ -2,7 +2,7 @@ import React from 'react';
 import { RiCheckLine, RiFlagFill } from 'react-icons/ri';
 import { Invoice, InvoiceStatus } from '../../types/models';
 import { Badge, BadgeVariant } from '../Badge';
-import { formatDate } from './invoiceActionHelpers';
+import { formatCurrency, formatDate } from './invoiceActionHelpers';
 
 interface InvoiceCardProps {
   /** The invoice item to render. */
@@ -110,11 +110,11 @@ export const InvoiceCard: React.FC<InvoiceCardProps> = ({
           </span>
         </div>
 
-        {/* Bottom Row: Invoice ID, Client Address, Flags */}
+        {/* Bottom Row: Price, Client Address, Flags */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 overflow-hidden">
             <span className="font-normal text-stone-600 text-sm leading-none tracking-tight flex-shrink-0">
-              {invoice.invoice_number}
+              {formatCurrency(invoice.price || 0)}
             </span>
             <span className="text-xs font-normal text-stone-500 truncate max-w-[160px]">
               {invoice.client_address || ''}

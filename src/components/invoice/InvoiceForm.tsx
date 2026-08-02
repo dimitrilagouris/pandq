@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { RiAddLine, RiDeleteBinLine, RiPencilLine, RiDraggable, RiUserLine, RiHashtag, RiArrowDownSLine, RiCheckLine, RiCalendarEventLine, RiTimeLine, RiMoneyDollarCircleLine, RiArchiveLine, RiCloseLine } from 'react-icons/ri';
+import { RiAddLine, RiDeleteBinLine, RiPencilLine, RiDraggable, RiUserLine, RiHashtag, RiArrowDownSLine, RiCheckLine, RiCalendarEventLine, RiTimeLine, RiArchiveLine, RiCloseLine } from 'react-icons/ri';
 import {
   DndContext,
   closestCenter,
@@ -21,13 +21,11 @@ import { CSS } from '@dnd-kit/utilities';
 import { Client } from '../../types/models';
 import { Input } from '../common/Input.tsx';
 import { DatePicker } from '../common/DatePicker.tsx';
-import { Dropdown } from '../common/Dropdown.tsx';
 import { Button } from '../common/Button.tsx';
 import { HelpBadge } from '../common/HelpBadge.tsx';
 import { Toggle } from '../common/Toggle.tsx';
 import { CollapsibleSection } from './CollapsibleSection.tsx';
 import { InvoiceFormState, LineItem } from './invoiceTypes';
-import { templates } from './templates/registry';
 import { TemplateSelector } from './TemplateSelector';
 
 interface InvoiceFormProps {

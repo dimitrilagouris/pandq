@@ -34,20 +34,6 @@ interface ClientFormData {
   address: string;
 }
 
-/** Helper to derive status badge variant. */
-function getStatusVariant(statusStr: string): 'neutral' | 'info' | 'success' | 'warning' | 'error' {
-  const code = (statusStr.split('|')[0]) || 'draft';
-  switch (code) {
-    case 'paid': return 'success';
-    case 'sent': return 'info';
-    case 'overdue': return 'error';
-    case 'cancelled': return 'neutral';
-    case 'draft':
-    default:
-      return 'warning';
-  }
-}
-
 /** Format currency with Australian locale. */
 function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(amount);
@@ -60,7 +46,7 @@ export const ClientDetailsDrawer: React.FC<ClientDetailsDrawerProps> = ({
   client,
   invoices,
   onClose,
-  onEditClient,
+  onEditClient: _onEditClient,
   onClientUpdated,
   onCreateInvoice
 }) => {

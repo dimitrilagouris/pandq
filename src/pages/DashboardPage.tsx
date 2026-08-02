@@ -3,7 +3,7 @@ import { StatusDistributionCard, StatusMetric } from '../components/dashboard/St
 import { Invoice, InvoiceStatus } from '../types/models';
 import { Badge, BadgeVariant } from '../components/common/Badge.tsx';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { RiMoneyDollarCircleLine, RiTimeLine, RiCheckboxCircleLine, RiReceiptLine } from 'react-icons/ri';
+import { RiTimeLine, RiCheckboxCircleLine, RiReceiptLine } from 'react-icons/ri';
 import { DashboardCard } from '../components/dashboard/DashboardCard';
 import { Table, ColumnDef } from '../components/common/Table.tsx';
 import { Page } from '../App';
@@ -211,8 +211,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   // Aggregate totals
   const totalPaidVal = metrics.find(m => m.id === 'paid')?.value || 0;
   const totalPendingVal = (metrics.find(m => m.id === 'sent')?.value || 0) + (metrics.find(m => m.id === 'overdue')?.value || 0);
-  const totalDraftVal = metrics.find(m => m.id === 'draft')?.value || 0;
-  const totalRevenueVal = totalPaidVal + totalPendingVal;
 
   // Compute metrics for the comparison period (previous 30 days or previous year)
   const comparisonMetrics = useMemo(() => {

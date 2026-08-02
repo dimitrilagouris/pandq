@@ -25,7 +25,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [orgName, setOrgName] = useState('My business');
   const [completedSteps, setCompletedSteps] = useState(0);
-  const [isCardDismissed, setIsCardDismissed] = useState(false);
+  const [isCardDismissed, _setIsCardDismissed] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {

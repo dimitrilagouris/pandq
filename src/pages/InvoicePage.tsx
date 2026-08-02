@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { RiMailLine, RiFileTextLine, RiSaveLine, RiShareBoxLine, RiArrowRightSLine, RiAddLine, RiSubtractLine, RiArrowLeftLine } from 'react-icons/ri';
+import { RiMailLine, RiFileTextLine, RiSaveLine, RiShareBoxLine, RiAddLine, RiSubtractLine, RiArrowLeftLine } from 'react-icons/ri';
 import { Client } from '../types/models';
 import { Button } from '../components/common/Button.tsx';
 import { InvoiceForm } from '../components/invoice/InvoiceForm';
-import { InvoicePreview, computeTotals, buildTemplateData } from '../components/invoice/InvoicePreview';
+import { InvoicePreview, computeTotals } from '../components/invoice/InvoicePreview';
 import { PreviewCanvas, PreviewCanvasHandle } from '../components/invoice/PreviewCanvas';
 import { InvoiceFormState } from '../components/invoice/invoiceTypes';
-import { getTemplate } from '../components/invoice/templates/registry';
 import { hydrateFormState } from '../components/invoice/invoiceAdapters';
 import { Page } from '../App';
 
@@ -603,7 +602,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
                   type="button"
                   onClick={() => {
                     setCanvasScale(0.8);
-                    canvasRef.current?.resetView(0.8);
+                    canvasRef.current?.recenter(0.8);
                   }}
                   className="px-3 py-1.5 text-xs text-stone-600 hover:text-stone-900 border-l border-stone-300 transition-colors font-medium"
                 >

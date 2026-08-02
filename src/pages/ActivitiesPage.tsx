@@ -220,7 +220,7 @@ export default function ActivitiesPage(): React.JSX.Element {
   const columns: ColumnDef<ActivityLog>[] = [
     {
       header: 'Timestamp',
-      accessor: 'timestamp',
+      key: 'timestamp',
       width: '1.8fr',
       render: (log) => {
         let formattedDate = log.timestamp;
@@ -242,7 +242,7 @@ export default function ActivitiesPage(): React.JSX.Element {
     },
     {
       header: 'Invoice',
-      accessor: 'invoice_number',
+      key: 'invoice_number',
       width: '1.2fr',
       render: (log) => (
         <span>{log.invoice_number || '—'}</span>
@@ -250,7 +250,7 @@ export default function ActivitiesPage(): React.JSX.Element {
     },
     {
       header: 'Action',
-      accessor: 'action_label',
+      key: 'action_label',
       width: '1.5fr',
       render: (log) => {
         const code = log.action_code || '';
@@ -263,7 +263,7 @@ export default function ActivitiesPage(): React.JSX.Element {
     },
     {
       header: 'Details',
-      accessor: 'details',
+      key: 'details',
       width: '4fr',
       render: (log) => (
         <span className="leading-normal">{log.details || ''}</span>

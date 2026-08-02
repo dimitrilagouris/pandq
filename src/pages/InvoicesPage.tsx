@@ -388,7 +388,7 @@ export default function InvoicesPage({ onNavigate, onEditInvoice }: InvoicesPage
                     variant="outline"
                     size="sm"
                     leftIcon={<RiEdit2Line className="w-3.5 h-3.5" />}
-                    onClick={() => onEditInvoice(previewForm.id!)}
+                    onClick={() => onEditInvoice(selectedPreviewId!)}
                   >
                     Open in Editor
                   </Button>
@@ -416,7 +416,7 @@ export default function InvoicesPage({ onNavigate, onEditInvoice }: InvoicesPage
                       type="button"
                       onClick={() => {
                         setCanvasScale(0.85);
-                        canvasRef.current?.resetView(0.85);
+                        canvasRef.current?.recenter(0.85);
                       }}
                       className="px-3 py-1.5 text-xs text-stone-600 hover:text-stone-900 border-l border-stone-300 transition-colors font-medium"
                     >

@@ -113,7 +113,7 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
 }) => {
   const [showMenu, setShowMenu] = useState<boolean>(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
-  const [menuCoords, setMenuCoords] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const [menuCoords, setMenuCoords] = useState<{ top: number; left: number; placement: 'above' | 'below' }>({ top: 0, left: 0, placement: 'above' });
   const [searchQuery, setSearchQuery] = useState<string>('');
   const triggerNodeRef = useRef<Node | null>(null);
   const triggerOffsetRef = useRef<number>(-1);
@@ -136,24 +136,46 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
     setSelectedIndex(0);
   }, [searchQuery]);
 
+  /**
+   * Positions the menu below the caret line by default so it never overlaps
+   * text being typed. Falls back to above the caret when the viewport has
+   * insufficient room below.
+   */
   const updateMenuPosition = (): void => {
-    const sel = window.getSelection();
-
-    if (sel && sel.rangeCount > 0 && editorRef.current) {
-      const range = sel.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      const editorRect = editorRef.current.getBoundingClientRect();
-
-      let left = rect.left - editorRect.left;
-      let top = rect.top - editorRect.top;
-
-      if (rect.top === 0 && rect.left === 0) {
-        left = 8;
-        top = 8;
-      }
-
-      setMenuCoords({ top, left });
+    if (!editorRef.current) {
+      return;
     }
+
+    const sel = window.getSelection();
+    const editorRect = editorRef.current.getBoundingClientRect();
+    const menuHeight = 220;
+    const menuWidth = 240;
+
+    let caretBottom = editorRect.bottom;
+    let caretTop = editorRect.top;
+    let caretLeft = editorRect.left;
+
+    // Use caret rect when available for accurate per-line positioning.
+    if (sel && sel.rangeCount > 0) {
+      const rect = sel.getRangeAt(0).getBoundingClientRect();
+
+      if (rect.width > 0 || rect.height > 0) {
+        caretBottom = rect.bottom;
+        caretTop = rect.top;
+        caretLeft = rect.left;
+      }
+    }
+
+    const spaceBelow = window.innerHeight - caretBottom;
+    const spaceAbove = caretTop;
+
+    // Prefer below so the menu never obscures the line being typed.
+    const placement: 'above' | 'below' = spaceBelow >= menuHeight || spaceBelow >= spaceAbove ? 'below' : 'above';
+
+    const top = placement === 'below' ? caretBottom : caretTop;
+    const left = Math.min(caretLeft, window.innerWidth - menuWidth - 8);
+
+    setMenuCoords({ top, left, placement });
   };
 
   // Sync value from parent to contenteditable innerHTML (only when the parsed text differs to prevent cursor resetting)
@@ -307,20 +329,7 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
       const charBeforeCursor = text.substring(offset - 1, offset);
 
       if (charBeforeCursor === '/' && !showMenu) {
-        if (editorRef.current) {
-          const rect = range.getBoundingClientRect();
-          const editorRect = editorRef.current.getBoundingClientRect();
-          let left = rect.left - editorRect.left;
-          let top = rect.top - editorRect.top;
-
-          if (rect.top === 0 && rect.left === 0) {
-            left = 8;
-            top = 8;
-          }
-
-          setMenuCoords({ top, left });
-        }
-
+        // Position is calculated in the showMenu effect via updateMenuPosition.
         setShowMenu(true);
         setSelectedIndex(0);
         setSearchQuery('');
@@ -412,14 +421,20 @@ export const TemplatedInput: React.FC<TemplatedInputProps> = ({
           className="w-full px-3 py-2 text-sm text-stone-900 bg-white border border-transparent rounded-xl shadow-1 transition-all duration-150 focus:outline-none focus:border-stone-400 focus:ring-2 focus:ring-stone-400 focus:ring-offset-1 overflow-y-auto outline-none"
         />
 
-        {/* Floating Slash Menu */}
+        {/* Floating Slash Menu — rendered fixed to the viewport so it never clips inside overflow containers */}
         {showMenu && (
-          <div 
-            className="slash-menu-container absolute z-50 bg-stone-700/95 backdrop-blur-md border border-white/5 rounded-2xl shadow-2xl p-1.5 w-60 flex flex-col gap-0.5 animate-dropdown-pop origin-bottom"
-            style={{ 
-              left: `${menuCoords.left}px`, 
-              top: `${menuCoords.top}px`,
-              transform: 'translateY(-100%) translateY(-8px)'
+          <div
+            className="slash-menu-container z-50 bg-stone-700/95 backdrop-blur-md border border-white/5 rounded-2xl shadow-2xl p-1.5 w-60 flex flex-col gap-0.5 animate-dropdown-pop"
+            style={{
+              position: 'fixed',
+              left: `${menuCoords.left}px`,
+              top: menuCoords.placement === 'above'
+                ? `${menuCoords.top}px`
+                : `${menuCoords.top + 4}px`,
+              transform: menuCoords.placement === 'above'
+                ? 'translateY(calc(-100% - 8px))'
+                : 'none',
+              transformOrigin: menuCoords.placement === 'above' ? 'bottom left' : 'top left',
             }}
           >
             {filteredTags.map((tag, idx) => (

@@ -91,7 +91,7 @@ const htmlToText = (html: string): string => {
 };
 
 interface TemplatedInputProps {
-  label: string;
+  label: React.ReactNode;
   value: string;
   onChange: (value: string) => void;
   multiline?: boolean;

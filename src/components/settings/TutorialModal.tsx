@@ -12,7 +12,8 @@ interface PageData {
   content: React.ReactNode;
 }
 
-const InvoiceIdIcon = () => (
+/** Renders the invoice ID icon. */
+const InvoiceIdIcon: React.FC = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 inline-block shrink-0">
     <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z" />
     <path d="M16 8H8" />
@@ -21,14 +22,16 @@ const InvoiceIdIcon = () => (
   </svg>
 );
 
-const ClientNameIcon = () => (
+/** Renders the client name icon. */
+const ClientNameIcon: React.FC = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 inline-block shrink-0">
     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
     <circle cx="12" cy="7" r="4" />
   </svg>
 );
 
-const OrgNameIcon = () => (
+/** Renders the organisation name icon. */
+const OrgNameIcon: React.FC = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 inline-block shrink-0">
     <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
     <line x1="9" y1="22" x2="9" y2="16" />
@@ -43,7 +46,8 @@ const OrgNameIcon = () => (
   </svg>
 );
 
-const DueDateIcon = () => (
+/** Renders the due date icon. */
+const DueDateIcon: React.FC = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 inline-block shrink-0">
     <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
     <line x1="16" y1="2" x2="16" y2="6" />
@@ -52,7 +56,8 @@ const DueDateIcon = () => (
   </svg>
 );
 
-const GrandTotalIcon = () => (
+/** Renders the grand total icon. */
+const GrandTotalIcon: React.FC = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 inline-block shrink-0">
     <circle cx="8" cy="8" r="6" />
     <circle cx="18" cy="18" r="4" />
@@ -60,15 +65,17 @@ const GrandTotalIcon = () => (
   </svg>
 );
 
-const CloseIcon = () => (
-  <span className="ml-1.5 text-stone-400 flex items-center justify-center p-0.5 rounded-full hover:bg-stone-300/60 transition-colors cursor-pointer" style={{ display: 'inline-flex', verticalAlign: 'middle' }}>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: '10px', height: '10px' }}>
+/** Renders the close icon. */
+const CloseIcon: React.FC = () => (
+  <span className="ml-1.5 text-stone-400 inline-flex items-center justify-center p-0.5 rounded-full hover:bg-stone-300/60 transition-colors cursor-pointer align-middle">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-[10px] h-[10px]">
       <line x1="18" y1="6" x2="6" y2="18"></line>
       <line x1="6" y1="6" x2="18" y2="18"></line>
     </svg>
   </span>
 );
 
+/** Renders a display tag chip with icon and label. */
 const DisplayTag: React.FC<{ icon: React.ReactNode; label: string }> = ({ icon, label }) => (
   <span className="inline-flex items-center gap-1 bg-stone-200 text-stone-855 pl-2 pr-1 py-0.5 rounded-lg text-xs font-medium select-none mx-0.5 cursor-default border-0 shadow-sm align-middle">
     {icon}
@@ -77,8 +84,9 @@ const DisplayTag: React.FC<{ icon: React.ReactNode; label: string }> = ({ icon, 
   </span>
 );
 
+/** Renders the tutorial modal walkthrough dialog. */
 export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose }) => {
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState<number>(0);
 
   // Close on Escape key press
   useEffect(() => {
@@ -105,10 +113,16 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose })
       description: "Insert dynamic invoice variables into your subject lines and email messages.",
       content: (
         <div className="flex flex-col gap-3">
-          {/* Empty slot for video/gif */}
-          <div className="w-full h-36 rounded-xl border-2 border-dashed border-stone-300 bg-stone-150/45 flex flex-col items-center justify-center text-stone-450 select-none">
-            <span className="text-xs font-medium text-stone-650">Video / GIF Tutorial Placeholder</span>
-            <span className="text-[10px] text-stone-550 opacity-80 mt-1">Insert media showing the / autocomplete command menu</span>
+          {/* Walkthrough video tutorial */}
+          <div className="w-full h-[210px] rounded-xl border border-stone-200/80 bg-stone-200/50 overflow-hidden shadow-sm flex items-center justify-center">
+            <video
+              src="/social%20mp4%2030.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="w-full h-full object-cover"
+            />
           </div>
           <p className="text-[14px] text-stone-600 leading-relaxed">
             When editing email subjects or messages, press the <kbd className="inline-flex items-center justify-center w-5 h-5 bg-white rounded-md shadow-1 text-stone-900 font-bold border border-stone-200/50 text-[14px] mx-1 align-middle select-none">/</kbd> key. An autocomplete menu will pop up showing all available template commands.
@@ -207,18 +221,20 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ isOpen, onClose })
     }
   ];
 
-  const handlePrev = () => {
-    setCurrentPage(prev => Math.max(0, prev - 1));
+  /** Handles navigation to the previous tutorial page. */
+  const handlePrev = (): void => {
+    setCurrentPage((prev: number) => Math.max(0, prev - 1));
   };
 
-  const handleNext = () => {
-    setCurrentPage(prev => Math.min(pages.length - 1, prev + 1));
+  /** Handles navigation to the next tutorial page. */
+  const handleNext = (): void => {
+    setCurrentPage((prev: number) => Math.min(pages.length - 1, prev + 1));
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/40">
       <div
-        className="w-full max-w-md h-[495px] bg-stone-100 text-stone-800 border border-stone-200/80 rounded-2xl shadow-22 mx-4 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-[14px]"
+        className="w-full max-w-md h-[525px] bg-stone-100 text-stone-800 border border-stone-200/80 rounded-2xl shadow-22 mx-4 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-[14px]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

@@ -570,8 +570,17 @@ interface LineItemCardProps extends SortableLineItemCardProps {
 const LineItemCard: React.FC<LineItemCardProps> = ({
   item, isEditing, onEdit, onDelete, onUpdate, dragHandleProps, isDragging
 }) => {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const workers = item.workers ?? [];
   const hasMultipleWorkers = workers.length > 1;
+
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      const textarea = textareaRef.current;
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  }, [isEditing, item.description]);
 
   /** Compute total from workers if present, otherwise use legacy fields. */
   const total = (item.type === 'labour' && workers.length > 0)
@@ -624,15 +633,16 @@ const LineItemCard: React.FC<LineItemCardProps> = ({
           <div className="flex items-start gap-2">
             {isEditing ? (
               <textarea
+                ref={textareaRef}
                 value={item.description}
                 onChange={(e) => onUpdate({ description: e.target.value })}
                 placeholder={item.type === 'labour' ? "Labour description" : "Material description"}
-                className="font-medium text-sm text-stone-900 bg-transparent outline-none flex-1 placeholder-stone-300 resize-none h-[40px] leading-tight"
-                rows={2}
+                className="font-medium text-sm text-stone-900 bg-transparent outline-none flex-1 placeholder-stone-300 resize-none overflow-hidden min-h-[24px] leading-tight break-words"
+                rows={1}
                 autoFocus
               />
             ) : (
-              <span className="font-medium text-sm text-stone-900 line-clamp-2 flex-1 leading-tight">
+              <span className="font-medium text-sm text-stone-900 line-clamp-2 flex-1 leading-tight break-words whitespace-pre-wrap">
                 {item.description || 'Untitled'}
               </span>
             )}

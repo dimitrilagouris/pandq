@@ -117,7 +117,7 @@ const MinimalPreview: React.FC<TemplateData> = ({ form, totals, client, org, pay
                       className="grid gap-2 py-1.5 border-b border-stone-50 bg-stone-50/50"
                       style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}
                     >
-                      <span className="text-xs text-stone-500 pl-3">↳ {w.name || 'Worker'}</span>
+                      <span className="text-xs text-stone-500 pl-3">{w.name || 'Worker'}</span>
                       <span className="text-xs text-stone-500 text-center">{w.hours} hrs</span>
                       <span className="text-xs text-stone-500 text-right">{formatCurrency(w.rate)}</span>
                       <span className="text-xs text-stone-500 text-right">{formatCurrency(w.hours * w.rate)}</span>
@@ -230,7 +230,7 @@ function minimalBuildHtml(data: TemplateData): string {
       const itemTotal = workers.reduce((sum, w) => sum + (w.hours * w.rate), 0);
       const workerRows = workers.map(w => `
       <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 8px; padding: 6px 0; border-bottom: 1px solid #fafaf9; background: rgba(250,250,249,0.5);">
-        <span style="font-size: 12px; color: #78716c; padding-left: 12px;">↳ ${w.name || 'Worker'}</span>
+        <span style="font-size: 12px; color: #78716c; padding-left: 12px;">${w.name || 'Worker'}</span>
         <span style="font-size: 12px; color: #78716c; text-align: center;">${w.hours} hrs</span>
         <span style="font-size: 12px; color: #78716c; text-align: right;">${formatCurrency(w.rate)}</span>
         <span style="font-size: 12px; color: #78716c; text-align: right;">${formatCurrency(w.hours * w.rate)}</span>

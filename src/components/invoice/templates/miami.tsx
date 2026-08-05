@@ -190,7 +190,7 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
                             </div>
                             {workers.map((w: any) => (
                               <div key={w.id} className="grid gap-3 text-[10px] text-stone-400 pl-2" style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}>
-                                <span>↳ {w.name || 'Worker'}</span>
+                                <span>{w.name || 'Worker'}</span>
                                 <span className="text-center">{w.hours}</span>
                                 <span className="text-right">{formatCurrency(w.rate)}</span>
                                 <span className="text-right">{formatCurrency(w.hours * w.rate)}</span>
@@ -332,7 +332,7 @@ function buildGroupedLabourRowsHtml(items: any[]): string {
         const itemTotal = workers.reduce((s: number, w: any) => s + (w.hours * w.rate), 0);
         const wRows = workers.map((w: any) => `
           <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 12px; padding: 2px 0 2px 8px; font-size: 10px; color: #a8a29e;">
-            <span>↳ ${w.name || 'Worker'}</span>
+            <span>${w.name || 'Worker'}</span>
             <span style="text-align: center;">${w.hours}</span>
             <span style="text-align: right;">${formatCurrency(w.rate)}</span>
             <span style="text-align: right;">${formatCurrency(w.hours * w.rate)}</span>

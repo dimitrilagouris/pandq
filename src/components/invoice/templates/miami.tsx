@@ -83,12 +83,15 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
         @import url('https://fonts.googleapis.com/css2?family=MonteCarlo&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
       `}} />
 
-      {/* ABN centered at the top */}
-      <div className="mt-6 text-center">
+      {/* Top Header Block (ABN & Physical Address centered) */}
+      <div className="mt-6 text-center flex flex-col items-center gap-1">
         {org.abn ? (
           <span className="text-[10px] font-bold text-stone-500 uppercase tracking-[0.2em]">ABN {org.abn}</span>
         ) : (
           <span className="text-[10px] font-bold text-stone-300 uppercase tracking-[0.2em]">ABN NOT PROVIDED</span>
+        )}
+        {org.address && (
+          <span className="text-xs text-stone-600 tracking-wider font-serif whitespace-pre-wrap">{org.address}</span>
         )}
       </div>
 
@@ -124,7 +127,7 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
           <p className="text-[9px] font-bold text-stone-400 uppercase tracking-widest mb-2">Invoice Ref</p>
           <p className="text-base font-bold text-stone-900 tracking-tight">{form.invoiceNumber || 'INV-001'}</p>
           <div className="mt-4 text-stone-600 text-sm leading-relaxed">
-            <p>{org.email}</p>
+            {org.email && <p>{org.email}</p>}
             {org.phone && <p>{org.phone}</p>}
           </div>
         </div>
@@ -487,9 +490,10 @@ function miamiBuildHtml(data: TemplateData): string {
 </head>
 <body>
   <div class="card">
-    <!-- ABN centered at top -->
-    <div style="margin-top: 24px; text-align: center;">
+    <!-- ABN & Physical Address centered at top -->
+    <div style="margin-top: 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px;">
       <span style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase; letter-spacing: 0.2em;">ABN ${org.abn || 'NOT PROVIDED'}</span>
+      ${org.address ? `<span style="font-size: 12px; color: #57534e; font-family: 'Playfair Display', serif; white-space: pre-wrap;">${org.address}</span>` : ''}
     </div>
 
     <!-- Business name in MonteCarlo font -->
@@ -511,7 +515,7 @@ function miamiBuildHtml(data: TemplateData): string {
         <p style="font-size: 9px; font-weight: 700; color: #a8a29e; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Invoice Ref</p>
         <p style="font-size: 16px; font-weight: 700; color: #1c1917;">${form.invoiceNumber}</p>
         <div style="margin-top: 16px; font-size: 14px; color: #57534e; line-height: 1.5;">
-          <p>${org.email}</p>
+          ${org.email ? `<p>${org.email}</p>` : ''}
           ${org.phone ? `<p>${org.phone}</p>` : ''}
         </div>
       </div>

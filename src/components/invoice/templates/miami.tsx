@@ -147,7 +147,7 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
             <p className="text-xs font-bold text-stone-900 uppercase tracking-widest mb-2">Labour</p>
             <div 
               className="grid gap-3 pb-2 border-b-2 border-stone-900"
-              style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}
+              style={{ gridTemplateColumns: 'minmax(0, 1fr) 60px 80px 80px' }}
             >
               <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">Date / Description</span>
               <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider text-center">Hours</span>
@@ -163,7 +163,7 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
               return (
                 <div key={group.date || 'undated'} className="border-b border-stone-200 py-3">
                   {/* Group Header Row */}
-                  <div className="grid gap-3 font-bold text-stone-900" style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}>
+                  <div className="grid gap-3 font-bold text-stone-900" style={{ gridTemplateColumns: 'minmax(0, 1fr) 60px 80px 80px' }}>
                     <span className="text-sm">
                       {group.date ? formatDate(group.date) : 'Labour (Undated)'}
                     </span>
@@ -182,15 +182,15 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
                         const itemTotal = workers.reduce((s: number, w: any) => s + (w.hours * w.rate), 0);
                         return (
                           <React.Fragment key={item.id}>
-                            <div className="grid gap-3 text-xs text-stone-500" style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}>
-                              <span>{item.description || <span className="italic text-stone-300">No description</span>}</span>
+                            <div className="grid gap-3 text-xs text-stone-500" style={{ gridTemplateColumns: 'minmax(0, 1fr) 60px 80px 80px' }}>
+                              <span className="whitespace-pre-wrap break-words">{item.description || <span className="italic text-stone-300">No description</span>}</span>
                               <span className="text-center"></span>
                               <span className="text-right"></span>
                               <span className="text-right">{formatCurrency(itemTotal)}</span>
                             </div>
                             {workers.map((w: any) => (
-                              <div key={w.id} className="grid gap-3 text-[10px] text-stone-400 pl-2" style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}>
-                                <span>{w.name || 'Worker'}</span>
+                              <div key={w.id} className="grid gap-3 text-[10px] text-stone-400 pl-2" style={{ gridTemplateColumns: 'minmax(0, 1fr) 60px 80px 80px' }}>
+                                <span className="break-words">{w.name || 'Worker'}</span>
                                 <span className="text-center">{w.hours}</span>
                                 <span className="text-right">{formatCurrency(w.rate)}</span>
                                 <span className="text-right">{formatCurrency(w.hours * w.rate)}</span>
@@ -203,8 +203,8 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
                       const qty = (workers.length === 1) ? workers[0].hours : (item.hours ?? item.quantity ?? 0);
                       const rate = (workers.length === 1) ? workers[0].rate : item.unitPrice;
                       return (
-                        <div key={item.id} className="grid gap-3 text-xs text-stone-500" style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}>
-                          <span>{item.description || <span className="italic text-stone-300">No description</span>}</span>
+                        <div key={item.id} className="grid gap-3 text-xs text-stone-500" style={{ gridTemplateColumns: 'minmax(0, 1fr) 60px 80px 80px' }}>
+                          <span className="whitespace-pre-wrap break-words">{item.description || <span className="italic text-stone-300">No description</span>}</span>
                           <span className="text-center">{qty}</span>
                           <span className="text-right">{formatCurrency(rate)}</span>
                           <span className="text-right">{formatCurrency(qty * rate)}</span>
@@ -224,7 +224,7 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
             <p className="text-xs font-bold text-stone-900 uppercase tracking-widest mb-2">Materials</p>
             <div 
               className="grid gap-3 pb-2 border-b-2 border-stone-900"
-              style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}
+              style={{ gridTemplateColumns: 'minmax(0, 1fr) 60px 80px 80px' }}
             >
               <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider">Description</span>
               <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wider text-center">Qty</span>
@@ -238,10 +238,10 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
                 <div
                   key={item.id}
                   className="grid gap-3 py-3 border-b border-stone-200"
-                  style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}
+                  style={{ gridTemplateColumns: 'minmax(0, 1fr) 60px 80px 80px' }}
                 >
-                  <span className="text-sm text-stone-850 flex flex-col">
-                    <span className="font-medium">{item.description || <span className="text-stone-300 italic">No description</span>}</span>
+                  <span className="text-sm text-stone-850 flex flex-col min-w-0">
+                    <span className="font-medium whitespace-pre-wrap break-words">{item.description || <span className="text-stone-300 italic">No description</span>}</span>
                   </span>
                   <span className="text-sm text-stone-600 text-center self-center">{qty}</span>
                   <span className="text-sm text-stone-600 text-right self-center">{formatCurrency(item.unitPrice)}</span>
@@ -331,15 +331,15 @@ function buildGroupedLabourRowsHtml(items: any[]): string {
       if (hasMultipleWorkers) {
         const itemTotal = workers.reduce((s: number, w: any) => s + (w.hours * w.rate), 0);
         const wRows = workers.map((w: any) => `
-          <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 12px; padding: 2px 0 2px 8px; font-size: 10px; color: #a8a29e;">
-            <span>${w.name || 'Worker'}</span>
+          <div style="display: grid; grid-template-columns: minmax(0, 1fr) 60px 80px 80px; gap: 12px; padding: 2px 0 2px 8px; font-size: 10px; color: #a8a29e;">
+            <span style="word-break: break-word; overflow-wrap: break-word;">${w.name || 'Worker'}</span>
             <span style="text-align: center;">${w.hours}</span>
             <span style="text-align: right;">${formatCurrency(w.rate)}</span>
             <span style="text-align: right;">${formatCurrency(w.hours * w.rate)}</span>
           </div>`).join('');
         return `
-        <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 12px; padding: 4px 0; font-size: 12px; color: #57534e;">
-          <span>${item.description || 'No description'}</span>
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 60px 80px 80px; gap: 12px; padding: 4px 0; font-size: 12px; color: #57534e;">
+          <span style="white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word;">${item.description || 'No description'}</span>
           <span style="text-align: center;"></span>
           <span style="text-align: right;"></span>
           <span style="text-align: right;">${formatCurrency(itemTotal)}</span>
@@ -350,8 +350,8 @@ function buildGroupedLabourRowsHtml(items: any[]): string {
       const qty = (workers.length === 1) ? workers[0].hours : (item.hours ?? item.quantity ?? 0);
       const rate = (workers.length === 1) ? workers[0].rate : item.unitPrice;
       return `
-      <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 12px; padding: 4px 0; font-size: 12px; color: #57534e;">
-        <span>${item.description || 'No description'}</span>
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 60px 80px 80px; gap: 12px; padding: 4px 0; font-size: 12px; color: #57534e;">
+        <span style="white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word;">${item.description || 'No description'}</span>
         <span style="text-align: center;">${qty}</span>
         <span style="text-align: right;">${formatCurrency(rate)}</span>
         <span style="text-align: right;">${formatCurrency(qty * rate)}</span>
@@ -361,7 +361,7 @@ function buildGroupedLabourRowsHtml(items: any[]): string {
     return `
     <div style="border-bottom: 1px solid #e7e5e4; padding: 12px 0;">
       <!-- Group Header -->
-      <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 12px; font-weight: 700; color: #1c1917; font-size: 14px;">
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 60px 80px 80px; gap: 12px; font-weight: 700; color: #1c1917; font-size: 14px;">
         <span>${group.date ? formatDate(group.date) : 'Labour (Undated)'}</span>
         <span style="text-align: center;">${group.totalHours}</span>
         <span style="text-align: right;">${rateDisplay}</span>
@@ -377,7 +377,7 @@ function buildGroupedLabourRowsHtml(items: any[]): string {
   return `
   <div style="margin-top: 8px;">
     <p style="font-size: 12px; font-weight: 700; color: #1c1917; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Labour</p>
-    <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 12px; padding-bottom: 6px; border-bottom: 2px solid #1c1917;">
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 60px 80px 80px; gap: 12px; padding-bottom: 6px; border-bottom: 2px solid #1c1917;">
       <span style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase;">Date / Description</span>
       <span style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase; text-align: center;">Hours</span>
       <span style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase; text-align: right;">Rate</span>
@@ -397,8 +397,8 @@ function buildMaterialsRowsHtml(items: any[]): string {
   const rows = materials.map(item => {
     const qty = item.quantity ?? 0;
     return `
-    <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 12px; padding: 12px 0; border-bottom: 1px solid #e7e5e4;">
-      <span style="font-size: 14px; color: #292524; font-weight: 500;">${item.description || 'No description'}</span>
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 60px 80px 80px; gap: 12px; padding: 12px 0; border-bottom: 1px solid #e7e5e4;">
+      <span style="font-size: 14px; color: #292524; font-weight: 500; white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word;">${item.description || 'No description'}</span>
       <span style="font-size: 14px; color: #57534e; text-align: center; margin-top: auto; margin-bottom: auto;">${qty}</span>
       <span style="font-size: 14px; color: #57534e; text-align: right; margin-top: auto; margin-bottom: auto;">${formatCurrency(item.unitPrice)}</span>
       <span style="font-size: 14px; font-weight: 600; color: #1c1917; text-align: right; margin-top: auto; margin-bottom: auto;">${formatCurrency(qty * item.unitPrice)}</span>
@@ -408,7 +408,7 @@ function buildMaterialsRowsHtml(items: any[]): string {
   return `
   <div style="margin-top: 16px;">
     <p style="font-size: 12px; font-weight: 700; color: #1c1917; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Materials</p>
-    <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 12px; padding-bottom: 6px; border-bottom: 2px solid #1c1917;">
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 60px 80px 80px; gap: 12px; padding-bottom: 6px; border-bottom: 2px solid #1c1917;">
       <span style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase;">Description</span>
       <span style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase; text-align: center;">Qty</span>
       <span style="font-size: 10px; font-weight: 700; color: #78716c; text-transform: uppercase; text-align: right;">Cost</span>

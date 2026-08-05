@@ -80,7 +80,7 @@ const MinimalPreview: React.FC<TemplateData> = ({ form, totals, client, org, pay
           {/* Table header */}
           <div
             className="grid gap-2 pb-2 border-b-2 border-stone-200"
-            style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}
+            style={{ gridTemplateColumns: 'minmax(0, 1fr) 60px 80px 80px' }}
           >
             <span className="text-[10px] font-semibold text-stone-500 uppercase tracking-wider">Description</span>
             <span className="text-[10px] font-semibold text-stone-500 uppercase tracking-wider text-center">Qty</span>
@@ -98,10 +98,10 @@ const MinimalPreview: React.FC<TemplateData> = ({ form, totals, client, org, pay
                 <React.Fragment key={item.id}>
                   <div
                     className="grid gap-2 py-2.5 border-b border-stone-100"
-                    style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}
+                    style={{ gridTemplateColumns: 'minmax(0, 1fr) 60px 80px 80px' }}
                   >
-                    <span className="text-sm text-stone-800 flex flex-col">
-                      <span>{item.description || <span className="text-stone-300 italic">No description</span>}</span>
+                    <span className="text-sm text-stone-800 flex flex-col min-w-0">
+                      <span className="whitespace-pre-wrap break-words">{item.description || <span className="text-stone-300 italic">No description</span>}</span>
                       {item.date && (
                         <span className="text-[10px] text-stone-400 mt-0.5">{formatDate(item.date)}</span>
                       )}
@@ -115,9 +115,9 @@ const MinimalPreview: React.FC<TemplateData> = ({ form, totals, client, org, pay
                     <div
                       key={w.id}
                       className="grid gap-2 py-1.5 border-b border-stone-50 bg-stone-50/50"
-                      style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}
+                      style={{ gridTemplateColumns: 'minmax(0, 1fr) 60px 80px 80px' }}
                     >
-                      <span className="text-xs text-stone-500 pl-3">{w.name || 'Worker'}</span>
+                      <span className="text-xs text-stone-500 pl-3 min-w-0 break-words">{w.name || 'Worker'}</span>
                       <span className="text-xs text-stone-500 text-center">{w.hours} hrs</span>
                       <span className="text-xs text-stone-500 text-right">{formatCurrency(w.rate)}</span>
                       <span className="text-xs text-stone-500 text-right">{formatCurrency(w.hours * w.rate)}</span>
@@ -137,10 +137,10 @@ const MinimalPreview: React.FC<TemplateData> = ({ form, totals, client, org, pay
               <div
                 key={item.id}
                 className="grid gap-2 py-2.5 border-b border-stone-100"
-                style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}
+                style={{ gridTemplateColumns: 'minmax(0, 1fr) 60px 80px 80px' }}
               >
-                <span className="text-sm text-stone-800 flex flex-col">
-                  <span>{item.description || <span className="text-stone-300 italic">No description</span>}</span>
+                <span className="text-sm text-stone-800 flex flex-col min-w-0">
+                  <span className="whitespace-pre-wrap break-words">{item.description || <span className="text-stone-300 italic">No description</span>}</span>
                   {item.date && (
                     <span className="text-[10px] text-stone-400 mt-0.5">{formatDate(item.date)}</span>
                   )}
@@ -229,15 +229,15 @@ function minimalBuildHtml(data: TemplateData): string {
     if (hasMultipleWorkers) {
       const itemTotal = workers.reduce((sum, w) => sum + (w.hours * w.rate), 0);
       const workerRows = workers.map(w => `
-      <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 8px; padding: 6px 0; border-bottom: 1px solid #fafaf9; background: rgba(250,250,249,0.5);">
-        <span style="font-size: 12px; color: #78716c; padding-left: 12px;">${w.name || 'Worker'}</span>
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 60px 80px 80px; gap: 8px; padding: 6px 0; border-bottom: 1px solid #fafaf9; background: rgba(250,250,249,0.5);">
+        <span style="font-size: 12px; color: #78716c; padding-left: 12px; word-break: break-word; overflow-wrap: break-word;">${w.name || 'Worker'}</span>
         <span style="font-size: 12px; color: #78716c; text-align: center;">${w.hours} hrs</span>
         <span style="font-size: 12px; color: #78716c; text-align: right;">${formatCurrency(w.rate)}</span>
         <span style="font-size: 12px; color: #78716c; text-align: right;">${formatCurrency(w.hours * w.rate)}</span>
       </div>`).join('');
       return `
-      <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 8px; padding: 10px 0; border-bottom: 1px solid #f5f5f4;">
-        <span style="font-size: 14px; color: #292524;">
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 60px 80px 80px; gap: 8px; padding: 10px 0; border-bottom: 1px solid #f5f5f4;">
+        <span style="font-size: 14px; color: #292524; min-width: 0; white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word;">
           ${item.description || 'No description'}
           ${item.date ? `<span style="font-size: 10px; color: #a8a29e; margin-top: 2px; display: block;">${formatDate(item.date)}</span>` : ''}
           <span style="font-size: 10px; color: #a8a29e; text-transform: capitalize; display: block;">${item.type}</span>
@@ -259,8 +259,8 @@ function minimalBuildHtml(data: TemplateData): string {
       ? `<span style="font-size: 10px; color: #a8a29e; margin-top: 2px; display: block;">${formatDate(item.date)}</span>`
       : '';
     return `
-    <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 8px; padding: 10px 0; border-bottom: 1px solid #f5f5f4;">
-      <span style="font-size: 14px; color: #292524;">
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 60px 80px 80px; gap: 8px; padding: 10px 0; border-bottom: 1px solid #f5f5f4;">
+      <span style="font-size: 14px; color: #292524; min-width: 0; white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word;">
         ${item.description || 'No description'}
         ${dateLine}
         <span style="font-size: 10px; color: #a8a29e; text-transform: capitalize; display: block;">${item.type}</span>
@@ -363,7 +363,7 @@ function minimalBuildHtml(data: TemplateData): string {
 
       <!-- Line items table -->
       <div>
-        <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 8px; padding-bottom: 8px; border-bottom: 2px solid #e7e5e4;">
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 60px 80px 80px; gap: 8px; padding-bottom: 8px; border-bottom: 2px solid #e7e5e4;">
           <span style="font-size: 10px; font-weight: 600; color: #78716c; text-transform: uppercase; letter-spacing: 0.05em;">Description</span>
           <span style="font-size: 10px; font-weight: 600; color: #78716c; text-transform: uppercase; letter-spacing: 0.05em; text-align: center;">Qty</span>
           <span style="font-size: 10px; font-weight: 600; color: #78716c; text-transform: uppercase; letter-spacing: 0.05em; text-align: right;">Rate</span>

@@ -77,7 +77,7 @@ const ClassicPreview: React.FC<TemplateData> = ({ form, totals, client, org, pay
 
       {/* Table */}
       <div className="mb-8">
-        <div className="grid gap-4 pb-2 border-b-2" style={{ gridTemplateColumns: '1fr 80px 60px 100px', borderColor: BLUE }}>
+        <div className="grid gap-4 pb-2 border-b-2" style={{ gridTemplateColumns: 'minmax(0, 1fr) 80px 60px 100px', borderColor: BLUE }}>
           <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: BLUE }}>Description</span>
           <span className="text-[10px] font-bold uppercase tracking-wider text-center" style={{ color: BLUE }}>Unit Cost</span>
           <span className="text-[10px] font-bold uppercase tracking-wider text-center" style={{ color: BLUE }}>Qty</span>
@@ -93,9 +93,9 @@ const ClassicPreview: React.FC<TemplateData> = ({ form, totals, client, org, pay
             return (
               <React.Fragment key={item.id}>
                 {/* Parent row — description only */}
-                <div className="grid gap-4 py-4 border-b border-stone-300" style={{ gridTemplateColumns: '1fr 80px 60px 100px' }}>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium text-stone-800">{item.description || 'No description'}</span>
+                <div className="grid gap-4 py-4 border-b border-stone-300" style={{ gridTemplateColumns: 'minmax(0, 1fr) 80px 60px 100px' }}>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-medium text-stone-800 whitespace-pre-wrap break-words">{item.description || 'No description'}</span>
                     {item.date && <span className="text-xs text-stone-400 mt-1">{formatDate(item.date)}</span>}
                   </div>
                   <span className="text-sm text-stone-800 text-center"></span>
@@ -104,8 +104,8 @@ const ClassicPreview: React.FC<TemplateData> = ({ form, totals, client, org, pay
                 </div>
                 {/* Worker sub-rows */}
                 {workers.map((w) => (
-                  <div key={w.id} className="grid gap-4 py-2 border-b border-stone-200 bg-stone-50/50" style={{ gridTemplateColumns: '1fr 80px 60px 100px' }}>
-                    <span className="text-xs text-stone-500 pl-4">{w.name || 'Worker'}</span>
+                  <div key={w.id} className="grid gap-4 py-2 border-b border-stone-200 bg-stone-50/50" style={{ gridTemplateColumns: 'minmax(0, 1fr) 80px 60px 100px' }}>
+                    <span className="text-xs text-stone-500 pl-4 min-w-0 break-words">{w.name || 'Worker'}</span>
                     <span className="text-xs text-stone-500 text-center">{formatCurrency(w.rate)}</span>
                     <span className="text-xs text-stone-500 text-center">{w.hours} hrs</span>
                     <span className="text-xs text-stone-500 text-right">{formatCurrency(w.hours * w.rate)}</span>
@@ -122,9 +122,9 @@ const ClassicPreview: React.FC<TemplateData> = ({ form, totals, client, org, pay
             ? workers[0].rate
             : item.unitPrice;
           return (
-            <div key={item.id} className="grid gap-4 py-4 border-b border-stone-300" style={{ gridTemplateColumns: '1fr 80px 60px 100px' }}>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-stone-800">{item.description || 'No description'}</span>
+            <div key={item.id} className="grid gap-4 py-4 border-b border-stone-300" style={{ gridTemplateColumns: 'minmax(0, 1fr) 80px 60px 100px' }}>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-medium text-stone-800 whitespace-pre-wrap break-words">{item.description || 'No description'}</span>
                 {item.date && <span className="text-xs text-stone-400 mt-1">{formatDate(item.date)}</span>}
               </div>
               <span className="text-sm text-stone-800 text-center">{formatCurrency(rate)}</span>
@@ -221,17 +221,17 @@ function classicBuildHtml(data: TemplateData): string {
     if (hasMultipleWorkers) {
       const itemTotal = workers.reduce((sum, w) => sum + (w.hours * w.rate), 0);
       const workerRows = workers.map(w => `
-        <div style="display: grid; grid-template-columns: 1fr 80px 60px 100px; gap: 16px; padding: 8px 0; border-bottom: 1px solid #e7e5e4; background: rgba(250,250,249,0.5);">
-          <span style="font-size: 12px; color: #78716c; padding-left: 16px;">${w.name || 'Worker'}</span>
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 80px 60px 100px; gap: 16px; padding: 8px 0; border-bottom: 1px solid #e7e5e4; background: rgba(250,250,249,0.5);">
+          <span style="font-size: 12px; color: #78716c; padding-left: 16px; word-break: break-word; overflow-wrap: break-word;">${w.name || 'Worker'}</span>
           <span style="font-size: 12px; color: #78716c; text-align: center;">${formatCurrency(w.rate)}</span>
           <span style="font-size: 12px; color: #78716c; text-align: center;">${w.hours} hrs</span>
           <span style="font-size: 12px; color: #78716c; text-align: right;">${formatCurrency(w.hours * w.rate)}</span>
         </div>
       `).join('');
       return `
-        <div style="display: grid; grid-template-columns: 1fr 80px 60px 100px; gap: 16px; padding: 16px 0; border-bottom: 1px solid #d6d3d1;">
-          <div style="display: flex; flex-direction: column;">
-            <span style="font-size: 14px; font-weight: 500; color: #292524;">${item.description || 'No description'}</span>
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 80px 60px 100px; gap: 16px; padding: 16px 0; border-bottom: 1px solid #d6d3d1;">
+          <div style="display: flex; flex-direction: column; min-width: 0;">
+            <span style="font-size: 14px; font-weight: 500; color: #292524; white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word;">${item.description || 'No description'}</span>
             ${item.date ? `<span style="font-size: 12px; color: #a8a29e; margin-top: 4px;">${formatDate(item.date)}</span>` : ''}
           </div>
           <span style="font-size: 14px; color: #292524; text-align: center;"></span>
@@ -245,9 +245,9 @@ function classicBuildHtml(data: TemplateData): string {
     const qty = (item.type === 'labour' && workers.length === 1) ? workers[0].hours : (item.hours ?? item.quantity ?? 0);
     const rate = (item.type === 'labour' && workers.length === 1) ? workers[0].rate : item.unitPrice;
     return `
-      <div style="display: grid; grid-template-columns: 1fr 80px 60px 100px; gap: 16px; padding: 16px 0; border-bottom: 1px solid #d6d3d1;">
-        <div style="display: flex; flex-direction: column;">
-          <span style="font-size: 14px; font-weight: 500; color: #292524;">${item.description || 'No description'}</span>
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 80px 60px 100px; gap: 16px; padding: 16px 0; border-bottom: 1px solid #d6d3d1;">
+        <div style="display: flex; flex-direction: column; min-width: 0;">
+          <span style="font-size: 14px; font-weight: 500; color: #292524; white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word;">${item.description || 'No description'}</span>
           ${item.date ? `<span style="font-size: 12px; color: #a8a29e; margin-top: 4px;">${formatDate(item.date)}</span>` : ''}
         </div>
         <span style="font-size: 14px; color: #292524; text-align: center;">${formatCurrency(rate)}</span>
@@ -336,7 +336,7 @@ function classicBuildHtml(data: TemplateData): string {
 
     <!-- Table -->
     <div style="margin-bottom: 32px;">
-      <div style="display: grid; grid-template-columns: 1fr 80px 60px 100px; gap: 16px; padding-bottom: 8px; border-bottom: 2px solid ${BLUE};">
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 80px 60px 100px; gap: 16px; padding-bottom: 8px; border-bottom: 2px solid ${BLUE};">
         <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: ${BLUE};">Description</span>
         <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; text-align: center; color: ${BLUE};">Unit Cost</span>
         <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; text-align: center; color: ${BLUE};">Qty</span>

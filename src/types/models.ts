@@ -84,6 +84,15 @@ export interface ActivityLog {
   timestamp: string;
 }
 
+/** A single worker row persisted against a labour line item. */
+export interface PersistedWorker {
+  id: number;
+  item_id: number;
+  name: string;
+  hours: number;
+  rate: number;
+}
+
 /** A single persisted line item, as returned from the DB. */
 export interface PersistedInvoiceItem {
   id: number;
@@ -94,6 +103,7 @@ export interface PersistedInvoiceItem {
   rate: number;
   quantity: number | null;
   date: string | null;
+  workers?: PersistedWorker[];
 }
 
 /** A persisted discount row. */

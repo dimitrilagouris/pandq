@@ -9,6 +9,9 @@ const GST_RATE = 0.1;
 /** Derive invoice totals from form state. */
 export function computeTotals(form: InvoiceFormState): InvoiceTotals {
   const subtotal = form.items.reduce((sum, item) => {
+    if (item.type === 'labour' && item.workers && item.workers.length > 0) {
+      return sum + item.workers.reduce((wSum, w) => wSum + (w.hours * w.rate), 0);
+    }
     const qty = item.type === 'labour' ? (item.hours ?? item.quantity ?? 0) : (item.quantity ?? 0);
     return sum + qty * item.unitPrice;
   }, 0);

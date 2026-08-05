@@ -279,6 +279,25 @@ export function initDatabase(basePath: string): void {
       }
     }
 
+    // Version 10: Create invoice_item_workers table for multi-person labour
+    if (currentVersion < 10) {
+      try {
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS invoice_item_workers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            item_id INTEGER NOT NULL,
+            name TEXT,
+            hours REAL NOT NULL,
+            rate REAL NOT NULL,
+            FOREIGN KEY (item_id) REFERENCES invoice_items(id) ON DELETE CASCADE
+          );
+        `);
+        db.pragma('user_version = 10');
+      } catch (err) {
+        console.error('Failed to run Version 10 migration (invoice_item_workers):', err);
+      }
+    }
+
   } catch (err) {
     console.error('Failed to run schema migrations:', err);
   }

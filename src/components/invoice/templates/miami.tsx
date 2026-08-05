@@ -29,8 +29,13 @@ function getGroupedLabour(items: any[]): GroupedLabour[] {
 
   for (const item of labourItems) {
     const key = item.date || '';
-    const qty = item.hours ?? item.quantity ?? 0;
-    const amount = qty * item.unitPrice;
+    const workers = item.workers ?? [];
+    const qty = (workers.length === 1) ? workers[0].hours
+      : (workers.length > 1) ? workers.reduce((s: number, w: any) => s + w.hours, 0)
+      : (item.hours ?? item.quantity ?? 0);
+    const amount = (workers.length > 0)
+      ? workers.reduce((s: number, w: any) => s + (w.hours * w.rate), 0)
+      : qty * item.unitPrice;
     const existing = groupsMap.get(key);
 
     if (existing) {
@@ -170,13 +175,39 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
                   {/* Sub-items list */}
                   <div className="mt-1.5 flex flex-col gap-1 pl-4">
                     {group.items.map((item) => {
-                      const qty = item.hours ?? item.quantity ?? 0;
+                      const workers = item.workers ?? [];
+                      const hasMultipleWorkers = workers.length > 1;
+
+                      if (hasMultipleWorkers) {
+                        const itemTotal = workers.reduce((s: number, w: any) => s + (w.hours * w.rate), 0);
+                        return (
+                          <React.Fragment key={item.id}>
+                            <div className="grid gap-3 text-xs text-stone-500" style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}>
+                              <span>{item.description || <span className="italic text-stone-300">No description</span>}</span>
+                              <span className="text-center"></span>
+                              <span className="text-right"></span>
+                              <span className="text-right">{formatCurrency(itemTotal)}</span>
+                            </div>
+                            {workers.map((w: any) => (
+                              <div key={w.id} className="grid gap-3 text-[10px] text-stone-400 pl-2" style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}>
+                                <span>↳ {w.name || 'Worker'}</span>
+                                <span className="text-center">{w.hours}</span>
+                                <span className="text-right">{formatCurrency(w.rate)}</span>
+                                <span className="text-right">{formatCurrency(w.hours * w.rate)}</span>
+                              </div>
+                            ))}
+                          </React.Fragment>
+                        );
+                      }
+
+                      const qty = (workers.length === 1) ? workers[0].hours : (item.hours ?? item.quantity ?? 0);
+                      const rate = (workers.length === 1) ? workers[0].rate : item.unitPrice;
                       return (
                         <div key={item.id} className="grid gap-3 text-xs text-stone-500" style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}>
                           <span>{item.description || <span className="italic text-stone-300">No description</span>}</span>
                           <span className="text-center">{qty}</span>
-                          <span className="text-right">{formatCurrency(item.unitPrice)}</span>
-                          <span className="text-right">{formatCurrency(qty * item.unitPrice)}</span>
+                          <span className="text-right">{formatCurrency(rate)}</span>
+                          <span className="text-right">{formatCurrency(qty * rate)}</span>
                         </div>
                       );
                     })}
@@ -294,13 +325,36 @@ function buildGroupedLabourRowsHtml(items: any[]): string {
     const rateDisplay = allSameRate ? formatCurrency(firstRate) : '—';
 
     const subrows = group.items.map(item => {
-      const qty = item.hours ?? item.quantity ?? 0;
+      const workers = item.workers ?? [];
+      const hasMultipleWorkers = workers.length > 1;
+
+      if (hasMultipleWorkers) {
+        const itemTotal = workers.reduce((s: number, w: any) => s + (w.hours * w.rate), 0);
+        const wRows = workers.map((w: any) => `
+          <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 12px; padding: 2px 0 2px 8px; font-size: 10px; color: #a8a29e;">
+            <span>↳ ${w.name || 'Worker'}</span>
+            <span style="text-align: center;">${w.hours}</span>
+            <span style="text-align: right;">${formatCurrency(w.rate)}</span>
+            <span style="text-align: right;">${formatCurrency(w.hours * w.rate)}</span>
+          </div>`).join('');
+        return `
+        <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 12px; padding: 4px 0; font-size: 12px; color: #57534e;">
+          <span>${item.description || 'No description'}</span>
+          <span style="text-align: center;"></span>
+          <span style="text-align: right;"></span>
+          <span style="text-align: right;">${formatCurrency(itemTotal)}</span>
+        </div>
+        ${wRows}`;
+      }
+
+      const qty = (workers.length === 1) ? workers[0].hours : (item.hours ?? item.quantity ?? 0);
+      const rate = (workers.length === 1) ? workers[0].rate : item.unitPrice;
       return `
       <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 12px; padding: 4px 0; font-size: 12px; color: #57534e;">
         <span>${item.description || 'No description'}</span>
         <span style="text-align: center;">${qty}</span>
-        <span style="text-align: right;">${formatCurrency(item.unitPrice)}</span>
-        <span style="text-align: right;">${formatCurrency(qty * item.unitPrice)}</span>
+        <span style="text-align: right;">${formatCurrency(rate)}</span>
+        <span style="text-align: right;">${formatCurrency(qty * rate)}</span>
       </div>`;
     }).join('');
 

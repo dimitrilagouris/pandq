@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { RiAddLine, RiDeleteBinLine, RiPencilLine, RiDraggable, RiUserLine, RiHashtag, RiArrowDownSLine, RiCheckLine, RiCalendarEventLine, RiTimeLine, RiArchiveLine, RiCloseLine } from 'react-icons/ri';
+import { RiAddLine, RiDeleteBinLine, RiPencilLine, RiDraggable, RiUserLine, RiHashtag, RiArrowDownSLine, RiCheckLine, RiCalendarEventLine, RiTimeLine, RiArchiveLine, RiCloseLine, RiTeamLine } from 'react-icons/ri';
 import {
   DndContext,
   closestCenter,
@@ -25,7 +25,7 @@ import { Button } from '../common/Button.tsx';
 import { HelpBadge } from '../common/HelpBadge.tsx';
 import { Toggle } from '../common/Toggle.tsx';
 import { CollapsibleSection } from './CollapsibleSection.tsx';
-import { InvoiceFormState, LineItem } from './invoiceTypes';
+import { InvoiceFormState, LabourWorker, LineItem } from './invoiceTypes';
 import { TemplateSelector } from './TemplateSelector';
 
 interface InvoiceFormProps {
@@ -119,9 +119,9 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
       hours: type === 'labour' ? 1 : undefined,
       date: type === 'labour' ? new Date().toISOString().slice(0, 10) : undefined,
       unitPrice: 0,
+      workers: type === 'labour' ? [{ id: crypto.randomUUID(), name: '', hours: 1, rate: 0 }] : undefined,
     };
     onChange({ items: [...form.items, newItem] });
-    // Auto-expand newly created item for editing
     setEditingItemId(newItem.id);
   };
 
@@ -570,9 +570,39 @@ interface LineItemCardProps extends SortableLineItemCardProps {
 const LineItemCard: React.FC<LineItemCardProps> = ({
   item, isEditing, onEdit, onDelete, onUpdate, dragHandleProps, isDragging
 }) => {
-  const total = item.type === 'labour'
-    ? (item.hours ?? item.quantity ?? 0) * item.unitPrice
-    : item.quantity * item.unitPrice;
+  const workers = item.workers ?? [];
+  const hasMultipleWorkers = workers.length > 1;
+
+  /** Compute total from workers if present, otherwise use legacy fields. */
+  const total = (item.type === 'labour' && workers.length > 0)
+    ? workers.reduce((sum, w) => sum + (w.hours * w.rate), 0)
+    : item.type === 'labour'
+      ? (item.hours ?? item.quantity ?? 0) * item.unitPrice
+      : item.quantity * item.unitPrice;
+
+  /** Total hours across all workers. */
+  const totalHours = workers.reduce((sum, w) => sum + w.hours, 0);
+
+  /** Add a new empty worker to this labour item. */
+  const addWorker = (): void => {
+    const newWorker: LabourWorker = { id: crypto.randomUUID(), name: '', hours: 1, rate: workers[0]?.rate ?? 0 };
+    onUpdate({ workers: [...workers, newWorker] });
+  };
+
+  /** Remove a worker by id. Prevents removing the last one. */
+  const removeWorker = (workerId: string): void => {
+    if (workers.length <= 1) {
+      return;
+    }
+    onUpdate({ workers: workers.filter(w => w.id !== workerId) });
+  };
+
+  /** Update a single worker's fields. */
+  const updateWorker = (workerId: string, patch: Partial<LabourWorker>): void => {
+    onUpdate({
+      workers: workers.map(w => w.id === workerId ? { ...w, ...patch } : w),
+    });
+  };
 
   return (
     <div
@@ -590,7 +620,7 @@ const LineItemCard: React.FC<LineItemCardProps> = ({
         {/* Content area */}
         <div className={`flex-1 flex flex-col gap-1.5 min-w-0 ${!isEditing ? 'cursor-pointer' : ''}`} onClick={!isEditing ? onEdit : undefined}>
           
-          {/* Top row: Description & Badge */}
+          {/* Top row: Description */}
           <div className="flex items-start gap-2">
             {isEditing ? (
               <textarea
@@ -609,10 +639,11 @@ const LineItemCard: React.FC<LineItemCardProps> = ({
           </div>
 
           {/* Bottom row: Details */}
-          <div className="flex items-center gap-4 text-xs text-stone-500 mt-0.5">
+          <div className="flex flex-col gap-2 text-xs text-stone-500 mt-0.5">
              {item.type === 'labour' ? (
                isEditing ? (
-                 <div className="flex items-center gap-6 flex-wrap">
+                 <div className="flex flex-col gap-2">
+                   {/* Date picker row */}
                    <div className="flex items-center gap-1.5">
                      <RiCalendarEventLine className="w-3.5 h-3.5 text-stone-400" />
                      <DatePicker 
@@ -621,16 +652,56 @@ const LineItemCard: React.FC<LineItemCardProps> = ({
                        onChange={(val) => onUpdate({date: val})} 
                      />
                    </div>
-                   <div className="flex items-center gap-1">
-                     <RiTimeLine className="w-3.5 h-3.5 text-stone-400" />
-                     <input type="number" value={item.hours !== undefined ? item.hours : ''} onChange={e => onUpdate({hours: Number(e.target.value) || 0})} className="bg-transparent outline-none text-stone-600 w-10 border-b border-dashed border-stone-300 focus:border-stone-400 font-medium" placeholder="0" />
-                     <span>hrs</span>
+
+                   {/* Worker rows */}
+                   <div className="flex flex-col gap-1.5">
+                     {workers.map((worker, idx) => (
+                       <div key={worker.id} className="flex items-center gap-2 flex-wrap">
+                         {hasMultipleWorkers && (
+                           <div className="flex items-center gap-1 min-w-[80px]">
+                             <RiUserLine className="w-3.5 h-3.5 text-stone-400 flex-shrink-0" />
+                             <input
+                               type="text"
+                               value={worker.name}
+                               onChange={e => updateWorker(worker.id, { name: e.target.value })}
+                               className="bg-transparent outline-none text-stone-600 w-[70px] border-b border-dashed border-stone-300 focus:border-stone-400 font-medium"
+                               placeholder={`Person ${idx + 1}`}
+                             />
+                           </div>
+                         )}
+                         <div className="flex items-center gap-1">
+                           <RiTimeLine className="w-3.5 h-3.5 text-stone-400" />
+                           <input type="number" value={worker.hours || ''} onChange={e => updateWorker(worker.id, { hours: Number(e.target.value) || 0 })} className="bg-transparent outline-none text-stone-600 w-10 border-b border-dashed border-stone-300 focus:border-stone-400 font-medium" placeholder="0" />
+                           <span>hrs</span>
+                         </div>
+                         <div className="flex items-center gap-1">
+                           <span className="text-stone-400 font-medium">$</span>
+                           <input type="number" value={worker.rate || ''} onChange={e => updateWorker(worker.id, { rate: Number(e.target.value) || 0 })} className="bg-transparent outline-none text-stone-600 w-12 border-b border-dashed border-stone-300 focus:border-stone-400 font-medium" placeholder="0.00" />
+                           <span>/hr</span>
+                         </div>
+                         {hasMultipleWorkers && (
+                           <button
+                             type="button"
+                             onClick={() => removeWorker(worker.id)}
+                             className="p-0.5 text-stone-300 hover:text-red-500 transition-colors rounded"
+                             title="Remove person"
+                           >
+                             <RiCloseLine className="w-3.5 h-3.5" />
+                           </button>
+                         )}
+                       </div>
+                     ))}
                    </div>
-                   <div className="flex items-center gap-1">
-                     <span className="text-stone-400 font-medium">$</span>
-                     <input type="number" value={item.unitPrice || ''} onChange={e => onUpdate({unitPrice: Number(e.target.value) || 0})} className="bg-transparent outline-none text-stone-600 w-12 border-b border-dashed border-stone-300 focus:border-stone-400 font-medium" placeholder="0.00" />
-                     <span>/hr</span>
-                   </div>
+
+                   {/* Add person button */}
+                   <button
+                     type="button"
+                     onClick={addWorker}
+                     className="flex items-center gap-1 text-[11px] text-stone-400 hover:text-stone-600 transition-colors w-fit mt-0.5"
+                   >
+                     <RiAddLine className="w-3 h-3" />
+                     <span>Add Person</span>
+                   </button>
                  </div>
                ) : (
                  <div className="flex items-center gap-6">
@@ -640,14 +711,22 @@ const LineItemCard: React.FC<LineItemCardProps> = ({
                        <span className="font-medium text-stone-600">{formatShortDate(item.date)}</span>
                      </div>
                    )}
+                   {hasMultipleWorkers && (
+                     <div className="flex items-center gap-1.5">
+                       <RiTeamLine className="w-3.5 h-3.5 text-stone-400" />
+                       <span className="font-medium text-stone-600">{workers.length} people</span>
+                     </div>
+                   )}
                    <div className="flex items-center gap-1.5">
                      <RiTimeLine className="w-3.5 h-3.5 text-stone-400" />
-                     <span className="font-medium text-stone-600">{item.hours ?? 0} hrs</span>
+                     <span className="font-medium text-stone-600">{totalHours} hrs</span>
                    </div>
-                   <div className="flex items-center gap-1.5">
-                     <span className="text-stone-400 font-medium">$</span>
-                     <span className="font-medium text-stone-600">{item.unitPrice}/hr</span>
-                   </div>
+                   {!hasMultipleWorkers && workers.length === 1 && (
+                     <div className="flex items-center gap-1.5">
+                       <span className="text-stone-400 font-medium">$</span>
+                       <span className="font-medium text-stone-600">{workers[0].rate}/hr</span>
+                     </div>
+                   )}
                  </div>
                )
              ) : (

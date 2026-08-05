@@ -1,5 +1,5 @@
-import { InvoiceDetail, PersistedInvoiceItem } from '../../types/models';
-import { InvoiceFormState, LineItem } from './invoiceTypes';
+import { InvoiceDetail, PersistedInvoiceItem, PersistedWorker } from '../../types/models';
+import { InvoiceFormState, LabourWorker, LineItem } from './invoiceTypes';
 
 /**
  * Extracts invoice notes from a status string stored in the "status|notes" database format.
@@ -53,7 +53,7 @@ export function hydrateFormState(detail: InvoiceDetail): InvoiceFormState {
       hours = item.hours;
     }
 
-    return {
+    const baseItem: LineItem = {
       id: itemId,
       type: itemType,
       description: item.description || '',
@@ -62,6 +62,36 @@ export function hydrateFormState(detail: InvoiceDetail): InvoiceFormState {
       date: item.date || undefined,
       unitPrice: item.rate ?? 0,
     };
+
+    /* Hydrate workers for labour items. */
+    if (itemType === 'labour') {
+      const persistedWorkers: PersistedWorker[] = item.workers ?? [];
+      if (persistedWorkers.length > 0) {
+        baseItem.workers = persistedWorkers.map((w: PersistedWorker) => ({
+          id: String(w.id),
+          name: w.name || '',
+          hours: w.hours ?? 0,
+          rate: w.rate ?? 0,
+        }));
+      } else if (hours !== undefined && hours > 0) {
+        /* Backwards compat: legacy item with hours/rate on the parent row. */
+        baseItem.workers = [{
+          id: crypto.randomUUID(),
+          name: '',
+          hours: hours,
+          rate: item.rate ?? 0,
+        }];
+      } else {
+        baseItem.workers = [{
+          id: crypto.randomUUID(),
+          name: '',
+          hours: 0,
+          rate: 0,
+        }];
+      }
+    }
+
+    return baseItem;
   });
 
   let discount = 0;

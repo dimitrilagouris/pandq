@@ -5,7 +5,8 @@ import { Button } from '../components/common/Button.tsx';
 import { InvoiceForm } from '../components/invoice/InvoiceForm';
 import { InvoicePreview, computeTotals } from '../components/invoice/InvoicePreview';
 import { PreviewCanvas, PreviewCanvasHandle } from '../components/invoice/PreviewCanvas';
-import { InvoiceFormState } from '../components/invoice/invoiceTypes';
+import { InvoiceFormState, LineItem } from '../components/invoice/invoiceTypes';
+import type { InvoiceItemPayload } from '../types/electron';
 import { hydrateFormState } from '../components/invoice/invoiceAdapters';
 import { Page } from '../App';
 
@@ -163,6 +164,19 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
       ) {
         return true;
       }
+      /* Compare worker arrays for labour items. */
+      const cWorkers = c.workers ?? [];
+      const initWorkers = init.workers ?? [];
+      if (cWorkers.length !== initWorkers.length) {
+        return true;
+      }
+      for (let j = 0; j < cWorkers.length; j++) {
+        const cw = cWorkers[j];
+        const iw = initWorkers[j];
+        if (!iw || cw.name !== iw.name || cw.hours !== iw.hours || cw.rate !== iw.rate) {
+          return true;
+        }
+      }
     }
     return false;
   }, []);
@@ -178,6 +192,19 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
     setForm(prev => ({ ...prev, ...patch }));
   }, []);
 
+  /** Maps form LineItems to the IPC payload shape, including workers. */
+  const buildItemsPayload = (items: LineItem[]): InvoiceItemPayload[] => {
+    return items.map(item => ({
+      type: item.type,
+      description: item.description,
+      hours: item.type === 'labour' ? (item.hours ?? item.quantity ?? 0) : null,
+      rate: item.unitPrice,
+      quantity: item.type === 'materials' ? (item.quantity ?? 0) : null,
+      date: item.type === 'labour' ? (item.date ?? '') : null,
+      workers: item.workers?.map(w => ({ name: w.name, hours: w.hours, rate: w.rate })),
+    }));
+  };
+
   const handleSave = async (_status: 'draft' | 'sent'): Promise<void> => {
     if (!form.clientId) {
       setError('Please select a client before saving.');
@@ -191,14 +218,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
     try {
       setIsSaving(true);
       const totals = computeTotals(form);
-      const items = form.items.map(item => ({
-        type: item.type,
-        description: item.description,
-        hours: item.type === 'labour' ? (item.hours ?? item.quantity ?? 0) : null,
-        rate: item.unitPrice,
-        quantity: item.type === 'materials' ? (item.quantity ?? 0) : null,
-        date: item.type === 'labour' ? (item.date ?? '') : null,
-      }));
+      const items = buildItemsPayload(form.items);
 
       if (invoiceId) {
         await window.electronAPI.updateInvoice({
@@ -261,14 +281,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
       setIsSaving(true);
 
       const totals = computeTotals(form);
-      const items = form.items.map(item => ({
-        type: item.type,
-        description: item.description,
-        hours: item.type === 'labour' ? (item.hours ?? item.quantity ?? 0) : null,
-        rate: item.unitPrice,
-        quantity: item.type === 'materials' ? (item.quantity ?? 0) : null,
-        date: item.type === 'labour' ? (item.date ?? '') : null,
-      }));
+      const items = buildItemsPayload(form.items);
 
       // 1. Auto-save state to database first
       if (invoiceId) {
@@ -383,14 +396,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
       setIsSaving(true);
 
       const totals = computeTotals(form);
-      const items = form.items.map(item => ({
-        type: item.type,
-        description: item.description,
-        hours: item.type === 'labour' ? (item.hours ?? item.quantity ?? 0) : null,
-        rate: item.unitPrice,
-        quantity: item.type === 'materials' ? (item.quantity ?? 0) : null,
-        date: item.type === 'labour' ? (item.date ?? '') : null,
-      }));
+      const items = buildItemsPayload(form.items);
 
       // 1. Auto-save state to database first
       let currentInvoiceId = invoiceId;

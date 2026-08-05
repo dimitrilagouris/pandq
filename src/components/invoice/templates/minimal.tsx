@@ -89,7 +89,50 @@ const MinimalPreview: React.FC<TemplateData> = ({ form, totals, client, org, pay
           </div>
 
           {form.items.map((item) => {
-            const qty = item.type === 'labour' ? (item.hours ?? item.quantity ?? 0) : (item.quantity ?? 0);
+            const workers = item.workers ?? [];
+            const hasMultipleWorkers = item.type === 'labour' && workers.length > 1;
+
+            if (hasMultipleWorkers) {
+              const itemTotal = workers.reduce((sum, w) => sum + (w.hours * w.rate), 0);
+              return (
+                <React.Fragment key={item.id}>
+                  <div
+                    className="grid gap-2 py-2.5 border-b border-stone-100"
+                    style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}
+                  >
+                    <span className="text-sm text-stone-800 flex flex-col">
+                      <span>{item.description || <span className="text-stone-300 italic">No description</span>}</span>
+                      {item.date && (
+                        <span className="text-[10px] text-stone-400 mt-0.5">{formatDate(item.date)}</span>
+                      )}
+                      <span className="text-[10px] text-stone-400 capitalize">{item.type}</span>
+                    </span>
+                    <span className="text-sm text-stone-600 text-center"></span>
+                    <span className="text-sm text-stone-600 text-right"></span>
+                    <span className="text-sm font-medium text-stone-900 text-right">{formatCurrency(itemTotal)}</span>
+                  </div>
+                  {workers.map((w) => (
+                    <div
+                      key={w.id}
+                      className="grid gap-2 py-1.5 border-b border-stone-50 bg-stone-50/50"
+                      style={{ gridTemplateColumns: '1fr 60px 80px 80px' }}
+                    >
+                      <span className="text-xs text-stone-500 pl-3">↳ {w.name || 'Worker'}</span>
+                      <span className="text-xs text-stone-500 text-center">{w.hours} hrs</span>
+                      <span className="text-xs text-stone-500 text-right">{formatCurrency(w.rate)}</span>
+                      <span className="text-xs text-stone-500 text-right">{formatCurrency(w.hours * w.rate)}</span>
+                    </div>
+                  ))}
+                </React.Fragment>
+              );
+            }
+
+            const qty = (item.type === 'labour' && workers.length === 1)
+              ? workers[0].hours
+              : item.type === 'labour' ? (item.hours ?? item.quantity ?? 0) : (item.quantity ?? 0);
+            const rate = (item.type === 'labour' && workers.length === 1)
+              ? workers[0].rate
+              : item.unitPrice;
             return (
               <div
                 key={item.id}
@@ -104,8 +147,8 @@ const MinimalPreview: React.FC<TemplateData> = ({ form, totals, client, org, pay
                   <span className="text-[10px] text-stone-400 capitalize">{item.type}</span>
                 </span>
                 <span className="text-sm text-stone-600 text-center">{qty}</span>
-                <span className="text-sm text-stone-600 text-right">{formatCurrency(item.unitPrice)}</span>
-                <span className="text-sm font-medium text-stone-900 text-right">{formatCurrency(qty * item.unitPrice)}</span>
+                <span className="text-sm text-stone-600 text-right">{formatCurrency(rate)}</span>
+                <span className="text-sm font-medium text-stone-900 text-right">{formatCurrency(qty * rate)}</span>
               </div>
             );
           })}
@@ -180,7 +223,38 @@ function minimalBuildHtml(data: TemplateData): string {
     ? `<p style="font-size: 11px; color: #78716c;">${client.email}</p>` : '';
 
   const itemRows = form.items.map(item => {
-    const qty = item.type === 'labour' ? (item.hours ?? item.quantity ?? 0) : (item.quantity ?? 0);
+    const workers = item.workers ?? [];
+    const hasMultipleWorkers = item.type === 'labour' && workers.length > 1;
+
+    if (hasMultipleWorkers) {
+      const itemTotal = workers.reduce((sum, w) => sum + (w.hours * w.rate), 0);
+      const workerRows = workers.map(w => `
+      <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 8px; padding: 6px 0; border-bottom: 1px solid #fafaf9; background: rgba(250,250,249,0.5);">
+        <span style="font-size: 12px; color: #78716c; padding-left: 12px;">↳ ${w.name || 'Worker'}</span>
+        <span style="font-size: 12px; color: #78716c; text-align: center;">${w.hours} hrs</span>
+        <span style="font-size: 12px; color: #78716c; text-align: right;">${formatCurrency(w.rate)}</span>
+        <span style="font-size: 12px; color: #78716c; text-align: right;">${formatCurrency(w.hours * w.rate)}</span>
+      </div>`).join('');
+      return `
+      <div style="display: grid; grid-template-columns: 1fr 60px 80px 80px; gap: 8px; padding: 10px 0; border-bottom: 1px solid #f5f5f4;">
+        <span style="font-size: 14px; color: #292524;">
+          ${item.description || 'No description'}
+          ${item.date ? `<span style="font-size: 10px; color: #a8a29e; margin-top: 2px; display: block;">${formatDate(item.date)}</span>` : ''}
+          <span style="font-size: 10px; color: #a8a29e; text-transform: capitalize; display: block;">${item.type}</span>
+        </span>
+        <span style="font-size: 14px; color: #57534e; text-align: center;"></span>
+        <span style="font-size: 14px; color: #57534e; text-align: right;"></span>
+        <span style="font-size: 14px; font-weight: 500; color: #1c1917; text-align: right;">${formatCurrency(itemTotal)}</span>
+      </div>
+      ${workerRows}`;
+    }
+
+    const qty = (item.type === 'labour' && workers.length === 1)
+      ? workers[0].hours
+      : item.type === 'labour' ? (item.hours ?? item.quantity ?? 0) : (item.quantity ?? 0);
+    const rate = (item.type === 'labour' && workers.length === 1)
+      ? workers[0].rate
+      : item.unitPrice;
     const dateLine = item.date
       ? `<span style="font-size: 10px; color: #a8a29e; margin-top: 2px; display: block;">${formatDate(item.date)}</span>`
       : '';
@@ -192,8 +266,8 @@ function minimalBuildHtml(data: TemplateData): string {
         <span style="font-size: 10px; color: #a8a29e; text-transform: capitalize; display: block;">${item.type}</span>
       </span>
       <span style="font-size: 14px; color: #57534e; text-align: center;">${qty}</span>
-      <span style="font-size: 14px; color: #57534e; text-align: right;">${formatCurrency(item.unitPrice)}</span>
-      <span style="font-size: 14px; font-weight: 500; color: #1c1917; text-align: right;">${formatCurrency(qty * item.unitPrice)}</span>
+      <span style="font-size: 14px; color: #57534e; text-align: right;">${formatCurrency(rate)}</span>
+      <span style="font-size: 14px; font-weight: 500; color: #1c1917; text-align: right;">${formatCurrency(qty * rate)}</span>
     </div>`;
   }).join('');
 

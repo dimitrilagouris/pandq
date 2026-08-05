@@ -1,3 +1,11 @@
+/** A single worker assigned to a labour task. */
+export interface LabourWorker {
+  id: string;
+  name: string;
+  hours: number;
+  rate: number;
+}
+
 /** Local state shape for a single invoice line item (not yet persisted). */
 export interface LineItem {
   /** Locally-unique identifier for React key and mutation targeting. */
@@ -8,6 +16,8 @@ export interface LineItem {
   hours?: number;
   date?: string;
   unitPrice: number;
+  /** Optional list of workers for labour items — enables multi-person billing. */
+  workers?: LabourWorker[];
 }
 
 /** Full invoice form state held in memory until saved. */

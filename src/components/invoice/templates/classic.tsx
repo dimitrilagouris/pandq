@@ -85,16 +85,51 @@ const ClassicPreview: React.FC<TemplateData> = ({ form, totals, client, org, pay
         </div>
 
         {form.items.length > 0 ? form.items.map((item) => {
-          const qty = item.hours ?? item.quantity ?? 0;
+          const workers = item.workers ?? [];
+          const hasMultipleWorkers = item.type === 'labour' && workers.length > 1;
+
+          if (hasMultipleWorkers) {
+            const itemTotal = workers.reduce((sum, w) => sum + (w.hours * w.rate), 0);
+            return (
+              <React.Fragment key={item.id}>
+                {/* Parent row — description only */}
+                <div className="grid gap-4 py-4 border-b border-stone-300" style={{ gridTemplateColumns: '1fr 80px 60px 100px' }}>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-stone-800">{item.description || 'No description'}</span>
+                    {item.date && <span className="text-xs text-stone-400 mt-1">{formatDate(item.date)}</span>}
+                  </div>
+                  <span className="text-sm text-stone-800 text-center"></span>
+                  <span className="text-sm text-stone-800 text-center"></span>
+                  <span className="text-sm font-medium text-stone-800 text-right">{formatCurrency(itemTotal)}</span>
+                </div>
+                {/* Worker sub-rows */}
+                {workers.map((w) => (
+                  <div key={w.id} className="grid gap-4 py-2 border-b border-stone-200 bg-stone-50/50" style={{ gridTemplateColumns: '1fr 80px 60px 100px' }}>
+                    <span className="text-xs text-stone-500 pl-4">↳ {w.name || 'Worker'}</span>
+                    <span className="text-xs text-stone-500 text-center">{formatCurrency(w.rate)}</span>
+                    <span className="text-xs text-stone-500 text-center">{w.hours} hrs</span>
+                    <span className="text-xs text-stone-500 text-right">{formatCurrency(w.hours * w.rate)}</span>
+                  </div>
+                ))}
+              </React.Fragment>
+            );
+          }
+
+          const qty = (item.type === 'labour' && workers.length === 1)
+            ? workers[0].hours
+            : item.hours ?? item.quantity ?? 0;
+          const rate = (item.type === 'labour' && workers.length === 1)
+            ? workers[0].rate
+            : item.unitPrice;
           return (
             <div key={item.id} className="grid gap-4 py-4 border-b border-stone-300" style={{ gridTemplateColumns: '1fr 80px 60px 100px' }}>
               <div className="flex flex-col">
                 <span className="text-sm font-medium text-stone-800">{item.description || 'No description'}</span>
                 {item.date && <span className="text-xs text-stone-400 mt-1">{formatDate(item.date)}</span>}
               </div>
-              <span className="text-sm text-stone-800 text-center">{formatCurrency(item.unitPrice)}</span>
+              <span className="text-sm text-stone-800 text-center">{formatCurrency(rate)}</span>
               <span className="text-sm text-stone-800 text-center">{qty}</span>
-              <span className="text-sm text-stone-800 text-right">{formatCurrency(qty * item.unitPrice)}</span>
+              <span className="text-sm text-stone-800 text-right">{formatCurrency(qty * rate)}</span>
             </div>
           );
         }) : (
@@ -180,16 +215,44 @@ function classicBuildHtml(data: TemplateData): string {
   const clientDisplay = client ? (client.business_name || client.name || 'No client selected') : 'No client selected';
 
   const itemsHtml = form.items.map(item => {
-    const qty = item.hours ?? item.quantity ?? 0;
+    const workers = item.workers ?? [];
+    const hasMultipleWorkers = item.type === 'labour' && workers.length > 1;
+
+    if (hasMultipleWorkers) {
+      const itemTotal = workers.reduce((sum, w) => sum + (w.hours * w.rate), 0);
+      const workerRows = workers.map(w => `
+        <div style="display: grid; grid-template-columns: 1fr 80px 60px 100px; gap: 16px; padding: 8px 0; border-bottom: 1px solid #e7e5e4; background: rgba(250,250,249,0.5);">
+          <span style="font-size: 12px; color: #78716c; padding-left: 16px;">↳ ${w.name || 'Worker'}</span>
+          <span style="font-size: 12px; color: #78716c; text-align: center;">${formatCurrency(w.rate)}</span>
+          <span style="font-size: 12px; color: #78716c; text-align: center;">${w.hours} hrs</span>
+          <span style="font-size: 12px; color: #78716c; text-align: right;">${formatCurrency(w.hours * w.rate)}</span>
+        </div>
+      `).join('');
+      return `
+        <div style="display: grid; grid-template-columns: 1fr 80px 60px 100px; gap: 16px; padding: 16px 0; border-bottom: 1px solid #d6d3d1;">
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-size: 14px; font-weight: 500; color: #292524;">${item.description || 'No description'}</span>
+            ${item.date ? `<span style="font-size: 12px; color: #a8a29e; margin-top: 4px;">${formatDate(item.date)}</span>` : ''}
+          </div>
+          <span style="font-size: 14px; color: #292524; text-align: center;"></span>
+          <span style="font-size: 14px; color: #292524; text-align: center;"></span>
+          <span style="font-size: 14px; font-weight: 500; color: #292524; text-align: right;">${formatCurrency(itemTotal)}</span>
+        </div>
+        ${workerRows}
+      `;
+    }
+
+    const qty = (item.type === 'labour' && workers.length === 1) ? workers[0].hours : (item.hours ?? item.quantity ?? 0);
+    const rate = (item.type === 'labour' && workers.length === 1) ? workers[0].rate : item.unitPrice;
     return `
       <div style="display: grid; grid-template-columns: 1fr 80px 60px 100px; gap: 16px; padding: 16px 0; border-bottom: 1px solid #d6d3d1;">
         <div style="display: flex; flex-direction: column;">
           <span style="font-size: 14px; font-weight: 500; color: #292524;">${item.description || 'No description'}</span>
           ${item.date ? `<span style="font-size: 12px; color: #a8a29e; margin-top: 4px;">${formatDate(item.date)}</span>` : ''}
         </div>
-        <span style="font-size: 14px; color: #292524; text-align: center;">${formatCurrency(item.unitPrice)}</span>
+        <span style="font-size: 14px; color: #292524; text-align: center;">${formatCurrency(rate)}</span>
         <span style="font-size: 14px; color: #292524; text-align: center;">${qty}</span>
-        <span style="font-size: 14px; color: #292524; text-align: right;">${formatCurrency(qty * item.unitPrice)}</span>
+        <span style="font-size: 14px; color: #292524; text-align: right;">${formatCurrency(qty * rate)}</span>
       </div>
     `;
   }).join('');

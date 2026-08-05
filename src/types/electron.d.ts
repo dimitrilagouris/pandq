@@ -24,6 +24,13 @@ export interface UpdateClientPayload extends CreateClientPayload {
   id: number;
 }
 
+/** A single worker entry sent over IPC for a labour line item. */
+export interface WorkerPayload {
+  name: string;
+  hours: number;
+  rate: number;
+}
+
 /** A single line item as sent over IPC. */
 export interface InvoiceItemPayload {
   type: string;
@@ -32,6 +39,7 @@ export interface InvoiceItemPayload {
   rate: number;
   quantity: number | null;
   date: string | null;
+  workers?: WorkerPayload[];
 }
 
 /** Payload for creating a new invoice. */

@@ -61,7 +61,11 @@ export function registerInvoiceHandlers(): void {
       return null;
     }
 
-    const items = db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ?').all(id);
+    const items = db.prepare('SELECT * FROM invoice_items WHERE invoice_id = ?').all(id) as any[];
+    const getWorkers = db.prepare('SELECT * FROM invoice_item_workers WHERE item_id = ?');
+    for (const item of items) {
+      item.workers = getWorkers.all(item.id);
+    }
     const discounts = db.prepare('SELECT * FROM discounts WHERE invoice_id = ?').all(id);
 
     return { ...invoice, items, discounts };
@@ -106,6 +110,9 @@ export function registerInvoiceHandlers(): void {
     const insertItem = db.prepare(
       'INSERT INTO invoice_items (invoice_id, type, description, hours, rate, quantity, date) VALUES (?, ?, ?, ?, ?, ?, ?)'
     );
+    const insertWorker = db.prepare(
+      'INSERT INTO invoice_item_workers (item_id, name, hours, rate) VALUES (?, ?, ?, ?)'
+    );
     const deleteDiscounts = db.prepare('DELETE FROM discounts WHERE invoice_id = ?');
     const insertDiscount = db.prepare(
       'INSERT INTO discounts (invoice_id, description, amount, type) VALUES (?, ?, ?, ?)'
@@ -120,7 +127,13 @@ export function registerInvoiceHandlers(): void {
       deleteItems.run(invoiceId);
 
       for (const item of items) {
-        insertItem.run(invoiceId, item.type ?? null, item.description ?? null, item.hours ?? null, item.rate ?? null, item.quantity ?? null, item.date ?? null);
+        const itemResult = insertItem.run(invoiceId, item.type ?? null, item.description ?? null, item.hours ?? null, item.rate ?? null, item.quantity ?? null, item.date ?? null);
+        const itemId = itemResult.lastInsertRowid as number;
+        if (item.workers && item.workers.length > 0) {
+          for (const worker of item.workers) {
+            insertWorker.run(itemId, worker.name ?? null, worker.hours ?? 0, worker.rate ?? 0);
+          }
+        }
       }
 
       deleteDiscounts.run(invoiceId);
@@ -240,6 +253,9 @@ export function registerInvoiceHandlers(): void {
     const insertItem = db.prepare(
       'INSERT INTO invoice_items (invoice_id, type, description, hours, rate, quantity, date) VALUES (?, ?, ?, ?, ?, ?, ?)'
     );
+    const insertWorker = db.prepare(
+      'INSERT INTO invoice_item_workers (item_id, name, hours, rate) VALUES (?, ?, ?, ?)'
+    );
     const insertDiscount = db.prepare(
       'INSERT INTO discounts (invoice_id, description, amount, type) VALUES (?, ?, ?, ?)'
     );
@@ -253,7 +269,13 @@ export function registerInvoiceHandlers(): void {
       const invoiceId = result.lastInsertRowid as number;
 
       for (const item of items) {
-        insertItem.run(invoiceId, item.type ?? null, item.description ?? null, item.hours ?? null, item.rate ?? null, item.quantity ?? null, item.date ?? null);
+        const itemResult = insertItem.run(invoiceId, item.type ?? null, item.description ?? null, item.hours ?? null, item.rate ?? null, item.quantity ?? null, item.date ?? null);
+        const itemId = itemResult.lastInsertRowid as number;
+        if (item.workers && item.workers.length > 0) {
+          for (const worker of item.workers) {
+            insertWorker.run(itemId, worker.name ?? null, worker.hours ?? 0, worker.rate ?? 0);
+          }
+        }
       }
 
       if (discount > 0) {

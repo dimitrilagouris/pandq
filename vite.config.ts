@@ -10,7 +10,6 @@ export default defineConfig({
     react(),
     electron([
       {
-        // Source file for the main process
         entry: path.resolve(__dirname, 'electron/main.ts'),
         vite: {
           build: {
@@ -24,8 +23,7 @@ export default defineConfig({
       {
         entry: path.resolve(__dirname, 'electron/preload.ts'),
         onstart(options) {
-          // Trigger a hot reload in Electron when preload changes
-          options.reload()
+          options.reload();
         },
         vite: {
           build: {
@@ -42,7 +40,6 @@ export default defineConfig({
         },
       },
     ]),
-    // Expose Node.js APIs in React Renderer
     renderer(),
   ],
   resolve: {
@@ -51,7 +48,6 @@ export default defineConfig({
     },
   },
   root: path.resolve(__dirname, './src'),
-  // Env files live at the project root, not inside src/
   envDir: path.resolve(__dirname, './'),
   build: {
     outDir: path.resolve(__dirname, './dist'),

@@ -138,10 +138,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
 
     filteredInvoices.forEach((inv) => {
       const price = Number(inv.price) || 0;
-      const status = inv.status ? inv.status.toLowerCase() : 'draft';
+      const rawStatus = (inv.status || 'draft').split('|')[0].trim().toLowerCase();
 
       let isOverdue = false;
-      if (status !== 'paid' && status !== 'cancelled' && inv.due_date) {
+      if (rawStatus === 'overdue') {
+        isOverdue = true;
+      } else if (rawStatus !== 'paid' && rawStatus !== 'cancelled' && inv.due_date) {
         const dueDate = new Date(inv.due_date);
         if (dueDate < today) {
           isOverdue = true;
@@ -151,10 +153,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       if (isOverdue) {
         totalOverdue += price;
         countOverdue++;
-      } else if (status === 'paid') {
+      } else if (rawStatus === 'paid') {
         totalPaid += price;
         countPaid++;
-      } else if (status === 'sent') {
+      } else if (rawStatus === 'sent') {
         totalSent += price;
         countSent++;
       } else {
@@ -294,7 +296,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   // Get real paid invoices sorted by payment date for chart
   const getChartData = () => {
     const paidInvoices = filteredInvoices
-      .filter((inv) => inv.status?.toLowerCase() === 'paid' && inv.paid_at)
+      .filter((inv) => (inv.status || 'draft').split('|')[0].trim().toLowerCase() === 'paid' && inv.paid_at)
       .sort((a, b) => new Date(a.paid_at!).getTime() - new Date(b.paid_at!).getTime());
 
     if (paidInvoices.length === 0) {
@@ -319,7 +321,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   const chartData = getChartData();
 
   const recentPaidInvoices = filteredInvoices
-    .filter((inv) => inv.status?.toLowerCase() === 'paid')
+    .filter((inv) => (inv.status || 'draft').split('|')[0].trim().toLowerCase() === 'paid')
     .slice(0, 5);
 
   const columns: ColumnDef<Invoice>[] = [
@@ -422,10 +424,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
             </div>
 
             {/* Main Content Section below KPI cards */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 lg:items-stretch lg:flex-grow lg:min-h-0">
-              <div className="lg:col-span-2 min-w-0 flex flex-col gap-6 lg:h-full lg:min-h-0 relative isolate">
-                {/* Section 2: Revenue Trend Chart */}
-                <div className="bg-stone-50 border border-stone-200 rounded-2xl p-5 shadow-sm flex flex-col h-[290px]">
+            <div className="flex flex-col gap-6">
+              {/* Row 1: Payment History & Invoice Statuses side-by-side */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <div className="lg:col-span-2 bg-stone-50 border border-stone-200 rounded-2xl p-5 shadow-sm flex flex-col h-[320px]">
                   <div className="mb-4 flex-shrink-0">
                     <h3 className="text-base text-black font-medium">Payment History</h3>
                     <p className="text-xs text-stone-500 mt-0.5">Revenue collected over time</p>
@@ -449,31 +451,30 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                   </div>
                 </div>
 
-                {/* Section 3: Recent Invoices Table */}
-                <div className="bg-stone-50 border border-stone-200 rounded-2xl p-5 shadow-sm flex flex-col h-[290px] lg:min-h-0">
-                  <div className="flex justify-between items-center mb-4 flex-shrink-0">
-                    <h3 className="text-base text-black font-medium">Recent Invoices</h3>
-                    <span
-                      onClick={() => onNavigate?.('invoices')}
-                      className="text-xs font-semibold text-stone-400 cursor-pointer hover:text-stone-600 transition-colors"
-                    >
-                      View All
-                    </span>
-                  </div>
-                  <div className="flex-1 flex flex-col min-h-0">
-                    <Table
-                      columns={columns}
-                      data={recentPaidInvoices}
-                      keyExtractor={(inv) => inv.id}
-                      emptyMessage="No recent paid invoices."
-                    />
-                  </div>
+                <div className="lg:col-span-1">
+                  <StatusDistributionCard metrics={metrics} className="h-[320px]" />
                 </div>
               </div>
 
-              {/* Right Column: status distribution (spans 1 column) */}
-              <div className="lg:col-span-1 relative isolate">
-                <StatusDistributionCard metrics={metrics} className="h-[290px]" />
+              {/* Row 2: Recent Invoices Table */}
+              <div className="bg-stone-50 border border-stone-200 rounded-2xl p-5 shadow-sm flex flex-col min-h-[260px]">
+                <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                  <h3 className="text-base text-black font-medium">Recent Invoices</h3>
+                  <span
+                    onClick={() => onNavigate?.('invoices')}
+                    className="text-xs font-semibold text-stone-400 cursor-pointer hover:text-stone-600 transition-colors"
+                  >
+                    View All
+                  </span>
+                </div>
+                <div className="flex-1 flex flex-col min-h-0 overflow-x-auto">
+                  <Table
+                    columns={columns}
+                    data={recentPaidInvoices}
+                    keyExtractor={(inv) => inv.id}
+                    emptyMessage="No recent paid invoices."
+                  />
+                </div>
               </div>
             </div>
           </>

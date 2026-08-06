@@ -105,7 +105,7 @@ const ClassicPreview: React.FC<TemplateData> = ({ form, totals, client, org, pay
                 {/* Worker sub-rows */}
                 {workers.map((w) => (
                   <div key={w.id} className="grid gap-4 py-2 border-b border-stone-200 bg-stone-50/50" style={{ gridTemplateColumns: 'minmax(0, 1fr) 80px 60px 100px' }}>
-                    <span className="text-xs text-stone-500 pl-4 min-w-0 break-words">{w.name || 'Worker'}</span>
+                    <span className="text-xs text-stone-500 pl-4 min-w-0 break-words">{w.name || (workers.length === 1 ? 'Labour' : 'Worker')}</span>
                     <span className="text-xs text-stone-500 text-center">{formatCurrency(w.rate)}</span>
                     <span className="text-xs text-stone-500 text-center">{w.hours} hrs</span>
                     <span className="text-xs text-stone-500 text-right">{formatCurrency(w.hours * w.rate)}</span>
@@ -222,7 +222,7 @@ function classicBuildHtml(data: TemplateData): string {
       const itemTotal = workers.reduce((sum, w) => sum + (w.hours * w.rate), 0);
       const workerRows = workers.map(w => `
         <div style="display: grid; grid-template-columns: minmax(0, 1fr) 80px 60px 100px; gap: 16px; padding: 8px 0; border-bottom: 1px solid #e7e5e4; background: rgba(250,250,249,0.5);">
-          <span style="font-size: 12px; color: #78716c; padding-left: 16px; word-break: break-word; overflow-wrap: break-word;">${w.name || 'Worker'}</span>
+          <span style="font-size: 12px; color: #78716c; padding-left: 16px; word-break: break-word; overflow-wrap: break-word;">${w.name || (workers.length === 1 ? 'Labour' : 'Worker')}</span>
           <span style="font-size: 12px; color: #78716c; text-align: center;">${formatCurrency(w.rate)}</span>
           <span style="font-size: 12px; color: #78716c; text-align: center;">${w.hours} hrs</span>
           <span style="font-size: 12px; color: #78716c; text-align: right;">${formatCurrency(w.hours * w.rate)}</span>

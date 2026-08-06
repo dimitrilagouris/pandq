@@ -149,24 +149,26 @@ export default function SettingsPage({ onDirtyChange }: SettingsPageProps): Reac
 
   useEffect(() => {
     onDirtyChange?.(isDirty);
+    return () => {
+      onDirtyChange?.(false);
+    };
   }, [isDirty, onDirtyChange]);
 
-  /** Save current tab's settings to database. */
+  /** Save all settings to database. */
   const handleSave = async (): Promise<void> => {
-    const keysToSave = TAB_KEYS[activeTab];
     const toSave: Record<string, string> = {};
-    for (const key of keysToSave) {
+    (Object.keys(form) as Array<keyof SettingsFormState>).forEach((key: keyof SettingsFormState) => {
       toSave[key] = String(form[key]);
-    }
+    });
 
     try {
       setIsSaving(true);
       await window.electronAPI.saveSettings(toSave);
-      setInitialState(prev => prev ? { ...prev, ...parseSettings(toSave) } : parseSettings(toSave));
+      setInitialState({ ...form });
       setIsSaving(false);
       setSaveSuccess(true);
       window.dispatchEvent(new Event('settings-updated'));
-    } catch (err) {
+    } catch (err: unknown) {
       setIsSaving(false);
       console.error('Failed to save settings:', err);
     }

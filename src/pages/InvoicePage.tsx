@@ -184,6 +184,9 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
   // Update App's dirty state whenever form or initialFormState changes
   useEffect(() => {
     onDirtyChange?.(isFormDirty(form, initialFormState));
+    return () => {
+      onDirtyChange?.(false);
+    };
   }, [form, initialFormState, onDirtyChange, isFormDirty]);
 
   const selectedClient = clients.find(c => c.id === form.clientId) ?? null;

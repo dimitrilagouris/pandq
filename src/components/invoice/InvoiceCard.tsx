@@ -110,29 +110,34 @@ export const InvoiceCard: React.FC<InvoiceCardProps> = ({
           </span>
         </div>
 
-        {/* Bottom Row: Price, Client Address, Flags */}
+        {/* Bottom Row: ID, Client Address, Price & Flags */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 overflow-hidden">
             <span className="font-normal text-stone-600 text-sm leading-none tracking-tight flex-shrink-0">
-              {formatCurrency(invoice.price || 0)}
+              {invoice.invoice_number || `#${invoice.id}`}
             </span>
             <span className="text-xs font-normal text-stone-500 truncate max-w-[160px]">
               {invoice.client_address || ''}
             </span>
           </div>
 
-          {flagColors.length > 0 && (
-            <div className="flex items-center gap-0.5 px-1 py-0.5 rounded border border-stone-200 bg-white shadow-sm ml-2 flex-shrink-0">
-              {flagColors.slice(0, 3).map((color) => (
-                <RiFlagFill key={color} className={`w-[11px] h-[11px] ${color.replace('bg-', 'text-')}`} />
-              ))}
-              {flagColors.length > 3 && (
-                <span className="text-[9px] text-stone-400 font-bold leading-none select-none px-0.5 -mt-0.5">
-                  ...
-                </span>
-              )}
-            </div>
-          )}
+          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+            <span className="font-normal text-stone-600 text-sm leading-none tracking-tight">
+              {formatCurrency(invoice.price || 0)}
+            </span>
+            {flagColors.length > 0 && (
+              <div className="flex items-center gap-0.5 px-1 py-0.5 rounded border border-stone-200 bg-white shadow-sm flex-shrink-0">
+                {flagColors.slice(0, 3).map((color: string) => (
+                  <RiFlagFill key={color} className={`w-[11px] h-[11px] ${color.replace('bg-', 'text-')}`} />
+                ))}
+                {flagColors.length > 3 && (
+                  <span className="text-[9px] text-stone-400 font-bold leading-none select-none px-0.5 -mt-0.5">
+                    ...
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

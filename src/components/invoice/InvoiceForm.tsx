@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { RiAddLine, RiDeleteBinLine, RiPencilLine, RiDraggable, RiUserLine, RiHashtag, RiArrowDownSLine, RiCheckLine, RiCalendarEventLine, RiTimeLine, RiArchiveLine, RiCloseLine, RiTeamLine } from 'react-icons/ri';
+import { RiAddLine, RiDeleteBinLine, RiPencilLine, RiDraggable, RiUser3Line, RiHashtag, RiArrowDownSLine, RiCheckLine, RiCalendarEventLine, RiTimeLine, RiArchiveLine, RiCloseLine, RiGroup3Line } from 'react-icons/ri';
 import {
   DndContext,
   closestCenter,
@@ -179,7 +179,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
                 {(!isOpen && selectedClient) ? (
                   <span className="text-stone-500 font-medium text-sm">{selectedClient.name.charAt(0).toUpperCase()}</span>
                 ) : (
-                  <RiUserLine className="w-5 h-5 text-stone-400" />
+                  <RiUser3Line className="w-5 h-5 text-stone-400" />
                 )}
               </div>
               <div className="flex flex-col flex-1 min-w-0 justify-center">
@@ -669,7 +669,7 @@ const LineItemCard: React.FC<LineItemCardProps> = ({
                        <div key={worker.id} className="flex items-center gap-2 flex-wrap">
                          {hasMultipleWorkers && (
                            <div className="flex items-center gap-1 min-w-[80px]">
-                             <RiUserLine className="w-3.5 h-3.5 text-stone-400 flex-shrink-0" />
+                             <RiUser3Line className="w-3.5 h-3.5 text-stone-400 flex-shrink-0" />
                              <input
                                type="text"
                                value={worker.name}
@@ -723,7 +723,7 @@ const LineItemCard: React.FC<LineItemCardProps> = ({
                    )}
                    {hasMultipleWorkers && (
                      <div className="flex items-center gap-1.5">
-                       <RiTeamLine className="w-3.5 h-3.5 text-stone-400" />
+                       <RiGroup3Line className="w-3.5 h-3.5 text-stone-400" />
                        <span className="font-medium text-stone-600">{workers.length} people</span>
                      </div>
                    )}

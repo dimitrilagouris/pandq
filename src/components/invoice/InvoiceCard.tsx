@@ -122,9 +122,6 @@ export const InvoiceCard: React.FC<InvoiceCardProps> = ({
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-            <span className="font-normal text-stone-600 text-sm leading-none tracking-tight">
-              {formatCurrency(invoice.price || 0)}
-            </span>
             {flagColors.length > 0 && (
               <div className="flex items-center gap-0.5 px-1 py-0.5 rounded border border-stone-200 bg-white shadow-sm flex-shrink-0">
                 {flagColors.slice(0, 3).map((color: string) => (
@@ -137,6 +134,9 @@ export const InvoiceCard: React.FC<InvoiceCardProps> = ({
                 )}
               </div>
             )}
+            <span className="font-normal text-stone-600 text-sm leading-none tracking-tight">
+              {formatCurrency(invoice.price || 0)}
+            </span>
           </div>
         </div>
       </div>

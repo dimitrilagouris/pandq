@@ -1,5 +1,5 @@
 import { InvoiceDetail, PersistedInvoiceItem, PersistedWorker } from '../../types/models';
-import { InvoiceFormState, LabourWorker, LineItem } from './invoiceTypes';
+import { InvoiceFormState, LineItem } from './invoiceTypes';
 
 /**
  * Extracts invoice notes from a status string stored in the "status|notes" database format.

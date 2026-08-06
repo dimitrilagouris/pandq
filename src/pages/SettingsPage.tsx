@@ -72,14 +72,6 @@ const DEFAULT_SETTINGS: SettingsFormState = {
   setting_payment_instructions: 'Please pay within terms.',
 };
 
-/** Key mapping per settings tab for saving. */
-const TAB_KEYS: Record<SettingsTab, Array<keyof SettingsFormState>> = {
-  organisation: ['setting_org_name', 'setting_org_abn', 'setting_org_address', 'setting_org_phone', 'setting_org_email'],
-  personalisation: ['setting_language', 'setting_display_client_name_as'],
-  invoice: ['setting_default_due_days', 'setting_invoice_prefix', 'setting_default_notes', 'setting_default_gst_enabled', 'setting_default_display_due_date', 'setting_default_template_id'],
-  email: ['setting_sender_name', 'setting_email_subject', 'setting_email_body', 'setting_email_auto_update_status'],
-  payment: ['setting_bank_name', 'setting_bsb', 'setting_account_number', 'setting_payment_instructions'],
-};
 
 /** Convert a raw key-value dictionary from DB into a clean `SettingsFormState` object. */
 function parseSettings(settings: Record<string, string>): SettingsFormState {

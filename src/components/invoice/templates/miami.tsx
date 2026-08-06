@@ -50,17 +50,23 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
 
       {/* Top Header Row */}
       <div className="flex justify-between items-start mb-6">
-        <span className="text-xs font-bold text-stone-900 uppercase tracking-widest">TAX INVOICE</span>
+        <span className="text-base font-bold text-stone-900 uppercase tracking-widest">TAX INVOICE</span>
       </div>
 
       {/* Title & Centered Metadata */}
       <div className="flex flex-col items-center text-center mb-10">
-        <h1 className="text-6xl font-normal tracking-wide text-stone-900 max-w-xl leading-tight py-1 select-none" style={{ fontFamily: "'Luxurious Script', cursive" }}>
+        <h1 className="text-7xl font-normal tracking-wide text-stone-900 max-w-xl leading-tight py-1 select-none" style={{ fontFamily: "'Luxurious Script', cursive" }}>
           {org.name}
         </h1>
 
-        <div className="mt-5 grid grid-cols-[auto_auto] gap-x-5 gap-y-1 text-sm text-stone-900 text-left">
-          <span className="font-semibold">Invoice number:</span>
+        <div className="mt-5 grid grid-cols-[auto_auto] gap-x-5 gap-y-0.5 text-sm leading-tight text-stone-900 text-left">
+          {org.abn && (
+            <>
+              <span className="font-semibold">ABN:</span>
+              <span className="text-right font-normal">{org.abn}</span>
+            </>
+          )}
+          <span className="font-semibold">Our REF:</span>
           <span className="text-right font-normal">{form.invoiceNumber || '1001'}</span>
           <span className="font-semibold">Invoice date:</span>
           <span className="text-right font-normal">{formatDateDots(form.dateIssued)}</span>
@@ -68,12 +74,6 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
             <>
               <span className="font-semibold">Due date:</span>
               <span className="text-right font-normal">{formatDateDots(form.dueDate)}</span>
-            </>
-          )}
-          {org.abn && (
-            <>
-              <span className="font-semibold">ABN:</span>
-              <span className="text-right font-normal">{org.abn}</span>
             </>
           )}
         </div>
@@ -301,24 +301,24 @@ function miamiBuildHtml(data: TemplateData): string {
   <div class="card">
     <!-- Top Header -->
     <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
-      <span style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #1c1917;">TAX INVOICE</span>
+      <span style="font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #1c1917;">TAX INVOICE</span>
     </div>
 
     <!-- Title & Centered Metadata -->
     <div style="display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 40px;">
-      <h1 style="font-family: 'Luxurious Script', cursive; font-size: 56px; font-weight: 400; color: #1c1917; letter-spacing: 0.02em; line-height: 1.1; margin-bottom: 24px;">${org.name}</h1>
-      <div style="display: inline-grid; grid-template-columns: auto auto; gap: 4px 20px; font-size: 14px; color: #1c1917; text-align: left;">
-        <span style="font-weight: 700;">Invoice number:</span>
+      <h1 style="font-family: 'Luxurious Script', cursive; font-size: 72px; font-weight: 400; color: #1c1917; letter-spacing: 0.02em; line-height: 1.1; margin-bottom: 24px;">${org.name}</h1>
+      <div style="display: inline-grid; grid-template-columns: auto auto; gap: 1px 20px; font-size: 14px; line-height: 1.25; color: #1c1917; text-align: left;">
+        ${org.abn ? `
+        <span style="font-weight: 700;">ABN:</span>
+        <span style="text-align: right;">${org.abn}</span>
+        ` : ''}
+        <span style="font-weight: 700;">Our REF:</span>
         <span style="text-align: right;">${form.invoiceNumber || '1001'}</span>
         <span style="font-weight: 700;">Invoice date:</span>
         <span style="text-align: right;">${formatDateDots(form.dateIssued)}</span>
         ${form.displayDueDate ? `
         <span style="font-weight: 700;">Due date:</span>
         <span style="text-align: right;">${formatDateDots(form.dueDate)}</span>
-        ` : ''}
-        ${org.abn ? `
-        <span style="font-weight: 700;">ABN:</span>
-        <span style="text-align: right;">${org.abn}</span>
         ` : ''}
       </div>
     </div>

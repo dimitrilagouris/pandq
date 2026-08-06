@@ -143,7 +143,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       let isOverdue = false;
       if (rawStatus === 'overdue') {
         isOverdue = true;
-      } else if (rawStatus !== 'paid' && rawStatus !== 'cancelled' && inv.due_date) {
+      } else if (rawStatus === 'sent' && inv.due_date) {
         const dueDate = new Date(inv.due_date);
         if (dueDate < today) {
           isOverdue = true;
@@ -251,10 +251,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
 
     prevInvoices.forEach((inv) => {
       const price = Number(inv.price) || 0;
-      const status = (inv.status || 'draft').split('|')[0].toLowerCase();
-      if (status === 'paid') {
+      const rawStatus = (inv.status || 'draft').split('|')[0].trim().toLowerCase();
+      let isOverdue = false;
+      if (rawStatus === 'overdue') {
+        isOverdue = true;
+      } else if (rawStatus === 'sent' && inv.due_date) {
+        const dueDate = new Date(inv.due_date);
+        if (dueDate < today) {
+          isOverdue = true;
+        }
+      }
+
+      if (rawStatus === 'paid') {
         prevPaid += price;
-      } else if (status === 'sent' || status === 'overdue') {
+      } else if (rawStatus === 'sent' || isOverdue) {
         prevPending += price;
       }
     });

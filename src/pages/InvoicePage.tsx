@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { RiMailLine, RiFileTextLine, RiSaveLine, RiShareBoxLine, RiAddLine, RiSubtractLine, RiArrowLeftLine } from 'react-icons/ri';
+import { RiMailLine, RiFileTextLine, RiSaveLine, RiShareBoxLine, RiAddLine, RiSubtractLine, RiArrowLeftLine, RiArrowGoBackLine, RiArrowGoForwardLine } from 'react-icons/ri';
 import { Client } from '../types/models';
 import { Button } from '../components/common/Button.tsx';
 import { InvoiceForm } from '../components/invoice/InvoiceForm';
@@ -8,6 +8,7 @@ import { PreviewCanvas, PreviewCanvasHandle } from '../components/invoice/Previe
 import { InvoiceFormState, LineItem } from '../components/invoice/invoiceTypes';
 import type { InvoiceItemPayload } from '../types/electron';
 import { hydrateFormState } from '../components/invoice/invoiceAdapters';
+import { useUndoableState } from '../hooks/useUndoableState';
 import { Page } from '../App';
 
 interface InvoicePageProps {
@@ -47,8 +48,14 @@ function createInitialFormState(): InvoiceFormState {
 /**
  * Two-panel invoice creation page — form on the left, live preview on the right.
  */
+/** Keys that represent text-like fields where typing should be debounced. */
+const DEBOUNCED_KEYS: ReadonlySet<keyof InvoiceFormState> = new Set([
+  'invoiceNumber', 'notes', 'dateIssued', 'dueDate',
+]);
+
 const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirtyChange }) => {
-  const [form, setForm] = useState<InvoiceFormState>(createInitialFormState);
+  const undoable = useUndoableState<InvoiceFormState>(createInitialFormState());
+  const form = undoable.state;
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [initialFormState, setInitialFormState] = useState<InvoiceFormState | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
@@ -91,7 +98,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
       window.electronAPI.getInvoiceById(invoiceId).then(data => {
         if (data) {
           const populatedForm = hydrateFormState(data);
-          setForm(populatedForm);
+          undoable.resetHistory(populatedForm);
           setInitialFormState(populatedForm);
         }
       }).catch(console.error);
@@ -118,12 +125,12 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           notes: defaultNotes,
           templateId: defaultTemplate,
         };
-        setForm(defaultForm);
+        undoable.resetHistory(defaultForm);
         setInitialFormState(defaultForm);
       }).catch(err => {
         console.error('Failed to load default settings:', err);
         const fallbackForm = createInitialFormState();
-        setForm(fallbackForm);
+        undoable.resetHistory(fallbackForm);
         setInitialFormState(fallbackForm);
       });
     }
@@ -191,9 +198,44 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
 
   const selectedClient = clients.find(c => c.id === form.clientId) ?? null;
 
+  /**
+   * Route form patches through the appropriate undo strategy.
+   * Text-like fields are debounced; discrete actions create immediate snapshots.
+   */
   const handleChange = useCallback((patch: Partial<InvoiceFormState>): void => {
-    setForm(prev => ({ ...prev, ...patch }));
-  }, []);
+    const patchKeys = Object.keys(patch) as (keyof InvoiceFormState)[];
+    const isTextOnly = patchKeys.length > 0 && patchKeys.every(k => DEBOUNCED_KEYS.has(k));
+
+    /* Items patches need special handling: if the patch contains only description
+       changes (same item count, same IDs), treat as text input. */
+    const isItemDescriptionOnly = patchKeys.length === 1 && patchKeys[0] === 'items';
+
+    if (isTextOnly) {
+      undoable.setState(prev => ({ ...prev, ...patch }));
+    } else if (isItemDescriptionOnly) {
+      undoable.setState(prev => ({ ...prev, ...patch }));
+    } else {
+      undoable.setStateImmediate(prev => ({ ...prev, ...patch }));
+    }
+  }, [undoable]);
+
+  /* ── Keyboard shortcuts for undo/redo ── */
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      const isMod = e.metaKey || e.ctrlKey;
+      if (!isMod || e.key.toLowerCase() !== 'z') {
+        return;
+      }
+      e.preventDefault();
+      if (e.shiftKey) {
+        undoable.redo();
+      } else {
+        undoable.undo();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [undoable]);
 
   /** Maps form LineItems to the IPC payload shape, including workers. */
   const buildItemsPayload = (items: LineItem[]): InvoiceItemPayload[] => {
@@ -528,6 +570,28 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
             <h1 className="text-xl font-semibold text-stone-900 select-none">
               {invoiceId ? 'Edit Invoice' : 'Create New Invoice'}
             </h1>
+          </div>
+
+          {/* Undo / Redo */}
+          <div className="flex items-center gap-1 ml-1">
+            <button
+              type="button"
+              onClick={undoable.undo}
+              disabled={!undoable.canUndo}
+              className="flex items-center justify-center w-8 h-8 rounded-lg bg-stone-100 hover:bg-stone-200 border border-stone-200/80 text-stone-600 hover:text-stone-900 transition-colors shadow-sm cursor-pointer disabled:opacity-30 disabled:cursor-default disabled:hover:bg-stone-100"
+              title="Undo (⌘Z)"
+            >
+              <RiArrowGoBackLine className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={undoable.redo}
+              disabled={!undoable.canRedo}
+              className="flex items-center justify-center w-8 h-8 rounded-lg bg-stone-100 hover:bg-stone-200 border border-stone-200/80 text-stone-600 hover:text-stone-900 transition-colors shadow-sm cursor-pointer disabled:opacity-30 disabled:cursor-default disabled:hover:bg-stone-100"
+              title="Redo (⌘⇧Z)"
+            >
+              <RiArrowGoForwardLine className="w-4 h-4" />
+            </button>
           </div>
         </div>
 

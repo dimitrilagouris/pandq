@@ -36,7 +36,6 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
   const hasItems = form.items.length > 0;
   const labourItems = form.items.filter(i => i.type === 'labour');
   const materialsItems = form.items.filter(i => i.type === 'materials');
-  const footerParts = [org.name, org.address, org.phone, org.email, org.abn ? `ABN ${org.abn}` : ''].filter(Boolean);
 
   return (
     <div
@@ -199,11 +198,6 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
           <p className="text-sm text-stone-700 whitespace-pre-wrap">{form.notes}</p>
         )}
       </div>
-
-      {/* Footer Line */}
-      <div className="mt-auto pt-6 border-t border-stone-200 text-center text-xs text-stone-400">
-        {footerParts.join('  |  ')}
-      </div>
     </div>
   );
 };
@@ -216,7 +210,6 @@ function miamiBuildHtml(data: TemplateData): string {
   const clientDisplay = client ? (client.business_name || client.name || 'Client Name') : 'Client Name';
   const labourItems = form.items.filter(i => i.type === 'labour');
   const materialsItems = form.items.filter(i => i.type === 'materials');
-  const footerParts = [org.name, org.address, org.phone, org.email, org.abn ? `ABN ${org.abn}` : ''].filter(Boolean);
 
   const labourHtml = labourItems.length > 0 ? `
     <div style="margin-bottom: 24px;">
@@ -376,11 +369,6 @@ function miamiBuildHtml(data: TemplateData): string {
       </div>
       ` : ''}
       ${form.notes.trim() ? `<p style="font-size: 14px; color: #44403c; white-space: pre-wrap;">${form.notes}</p>` : ''}
-    </div>
-
-    <!-- Footer Line -->
-    <div style="margin-top: auto; padding-top: 24px; border-top: 1px solid #e7e5e4; text-align: center; font-size: 12px; color: #a8a29e;">
-      ${footerParts.join(' &nbsp;|&nbsp; ')}
     </div>
   </div>
 </body>

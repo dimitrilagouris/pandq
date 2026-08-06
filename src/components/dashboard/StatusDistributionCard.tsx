@@ -19,6 +19,7 @@ interface StatusDistributionCardProps {
 
 const gradientMap: Record<string, string> = {
   stone: 'bg-gradient-to-t from-stone-500 to-stone-400',
+  gray: 'bg-gradient-to-t from-stone-500 to-stone-400',
   blue: 'bg-gradient-to-t from-blue-500 to-blue-400',
   lime: 'bg-gradient-to-t from-lime-500 to-lime-400',
   amber: 'bg-gradient-to-t from-amber-500 to-amber-400',
@@ -27,6 +28,7 @@ const gradientMap: Record<string, string> = {
   red: 'bg-gradient-to-t from-red-500 to-red-400',
   purple: 'bg-gradient-to-t from-purple-500 to-purple-400',
   orange: 'bg-gradient-to-t from-orange-500 to-orange-400',
+  yellow: 'bg-gradient-to-t from-amber-500 to-amber-400',
 };
 
 /**
@@ -58,7 +60,7 @@ export const StatusDistributionCard: React.FC<StatusDistributionCardProps> = ({ 
                 <div className="absolute left-0 top-0 bottom-0 w-px bg-stone-200" />
 
                 {/* Percentage label */}
-                <span className="text-lime-600 text-xs font-semibold whitespace-nowrap pl-2.5">
+                <span className="text-stone-600 text-xs font-semibold whitespace-nowrap pl-2.5">
                   {m.percentage.toFixed(1)}%
                 </span>
 

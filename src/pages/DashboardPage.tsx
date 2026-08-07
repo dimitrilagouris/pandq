@@ -5,6 +5,7 @@ import { Badge, BadgeVariant } from '../components/common/Badge.tsx';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { RiTimeLine, RiCheckboxCircleLine, RiReceiptLine } from 'react-icons/ri';
 import { DashboardCard } from '../components/dashboard/DashboardCard';
+import { DashboardChartTooltip } from '../components/dashboard/DashboardChartTooltip';
 import { Table, ColumnDef } from '../components/common/Table.tsx';
 import { Page } from '../App';
 import { InvoiceStatusFilterPill, FilterPillOption } from '../components/invoice/InvoiceStatusFilterPill';
@@ -12,23 +13,6 @@ import { InvoiceStatusFilterPill, FilterPillOption } from '../components/invoice
 interface DashboardPageProps {
   onNavigate?: (page: Page) => void;
 }
-
-const CustomTooltip = ({ active, payload }: any) => {
-  if (active && payload && payload.length) {
-    const data = payload[0].payload;
-    return (
-      <div className="bg-stone-800 border border-stone-700/50 rounded-xl px-3 py-2 shadow-lg flex flex-col gap-0.5 select-none">
-        <span className="text-stone-100 text-xs font-regular leading-none">
-          {data.monthYear}
-        </span>
-        <span className="text-white font-mono font-semibold text-sm mt-0.5">
-          ${Number(data.Amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </span>
-      </div>
-    );
-  }
-  return null;
-};
 
 type TimeframeOption = 'all' | '30days' | 'year';
 
@@ -44,11 +28,14 @@ const TAILWIND_HEX_COLORS: Record<string, string> = {
   orange: '#f97316',
 };
 
+/**
+ * Main Dashboard page presenting business metrics, revenue history, and recent invoices.
+ */
 export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [invoiceStatuses, setInvoiceStatuses] = useState<InvoiceStatus[]>([]);
   const [settings, setSettings] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Timeframe selector state
   const [timeFilter, setTimeFilter] = useState<TimeframeOption>('all');
@@ -60,28 +47,28 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   ];
 
   // Compute filtered invoices based on timeframe selection
-  const filteredInvoices = useMemo(() => {
-    const now = new Date();
-    return invoices.filter((inv) => {
+  const filteredInvoices: Invoice[] = useMemo(() => {
+    const now: Date = new Date();
+    return invoices.filter((inv: Invoice) => {
       if (timeFilter === 'all') {
         return true;
       }
       if (!inv.date) {
         return false;
       }
-      const invDate = new Date(inv.date);
+      const invDate: Date = new Date(inv.date);
       if (isNaN(invDate.getTime())) {
         return false;
       }
 
       if (timeFilter === '30days') {
-        const thirtyDaysAgo = new Date();
+        const thirtyDaysAgo: Date = new Date();
         thirtyDaysAgo.setDate(now.getDate() - 30);
         return invDate >= thirtyDaysAgo && invDate <= now;
       }
       if (timeFilter === 'year') {
-        const startOfYear = new Date(now.getFullYear(), 0, 1);
-        const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+        const startOfYear: Date = new Date(now.getFullYear(), 0, 1);
+        const endOfYear: Date = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
         return invDate >= startOfYear && invDate <= endOfYear;
       }
       return true;
@@ -89,7 +76,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   }, [invoices, timeFilter]);
 
   useEffect(() => {
-    async function loadData() {
+    async function loadData(): Promise<void> {
       try {
         const [invData, statusData, settingsData] = await Promise.all([
           window.electronAPI.getInvoices(),
@@ -99,7 +86,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         setInvoices(invData || []);
         setInvoiceStatuses(statusData || []);
         setSettings(settingsData || {});
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Failed to load dashboard data:', err);
       } finally {
         setIsLoading(false);
@@ -108,21 +95,27 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
     loadData();
   }, []);
 
-  const getStatusHexColor = (name: string, fallback: string): string => {
-    const status = invoiceStatuses.find(s => s.name.toLowerCase() === name.toLowerCase());
+  /** Returns hex colour string for status badge matching database settings. */
+  const getStatusHexColor = (name: string, defaultColor: string): string => {
+    const status: InvoiceStatus | undefined = invoiceStatuses.find(
+      (s: InvoiceStatus) => s.name.toLowerCase() === name.toLowerCase()
+    );
     if (status) {
-      return TAILWIND_HEX_COLORS[status.color] || fallback;
+      return TAILWIND_HEX_COLORS[status.color] ?? defaultColor;
     }
-    return fallback;
+    return defaultColor;
   };
 
+  /** Maps status name to corresponding BadgeVariant. */
   const getStatusVariant = (statusName: string): BadgeVariant => {
-    const norm = statusName.toLowerCase();
-    const found = invoiceStatuses.find((s) => s.name.toLowerCase() === norm);
-    return (found?.color as BadgeVariant) || 'gray';
+    const norm: string = statusName.toLowerCase();
+    const found: InvoiceStatus | undefined = invoiceStatuses.find(
+      (s: InvoiceStatus) => s.name.toLowerCase() === norm
+    );
+    return (found?.color as BadgeVariant) ?? 'gray';
   };
 
-  // Compute metrics from invoices
+  /** Computes status distribution metrics from currently filtered invoices. */
   const calculateMetrics = (): StatusMetric[] => {
     let totalDraft = 0;
     let totalSent = 0;
@@ -133,18 +126,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
     let countPaid = 0;
     let countOverdue = 0;
 
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const now: Date = new Date();
+    const today: Date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    filteredInvoices.forEach((inv) => {
-      const price = Number(inv.price) || 0;
-      const rawStatus = (inv.status || 'draft').split('|')[0].trim().toLowerCase();
+    filteredInvoices.forEach((inv: Invoice) => {
+      const price: number = Number(inv.price) || 0;
+      const rawStatus: string = (inv.status || 'draft').split('|')[0].trim().toLowerCase();
 
       let isOverdue = false;
       if (rawStatus === 'overdue') {
         isOverdue = true;
       } else if (rawStatus === 'sent' && inv.due_date) {
-        const dueDate = new Date(inv.due_date);
+        const dueDate: Date = new Date(inv.due_date);
         if (dueDate < today) {
           isOverdue = true;
         }
@@ -165,8 +158,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       }
     });
 
-    const totalCount = countDraft + countSent + countPaid + countOverdue;
-    const safeTotalCount = totalCount === 0 ? 1 : totalCount;
+    const totalCount: number = countDraft + countSent + countPaid + countOverdue;
+    const safeTotalCount: number = totalCount === 0 ? 1 : totalCount;
 
     return [
       {
@@ -208,11 +201,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
     ];
   };
 
-  const metrics = calculateMetrics();
+  const metrics: StatusMetric[] = calculateMetrics();
 
   // Aggregate totals
-  const totalPaidVal = metrics.find(m => m.id === 'paid')?.value || 0;
-  const totalPendingVal = (metrics.find(m => m.id === 'sent')?.value || 0) + (metrics.find(m => m.id === 'overdue')?.value || 0);
+  const totalPaidVal: number = metrics.find(m => m.id === 'paid')?.value || 0;
+  const totalPendingVal: number = (metrics.find(m => m.id === 'sent')?.value || 0) + (metrics.find(m => m.id === 'overdue')?.value || 0);
 
   // Compute metrics for the comparison period (previous 30 days or previous year)
   const comparisonMetrics = useMemo(() => {
@@ -220,7 +213,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       return null;
     }
 
-    const now = new Date();
+    const now: Date = new Date();
+    const today: Date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     let prevStart: Date;
     let prevEnd: Date;
 
@@ -235,11 +229,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
     }
 
     // Filter all invoices that fall into the previous comparison period
-    const prevInvoices = invoices.filter((inv) => {
+    const prevInvoices: Invoice[] = invoices.filter((inv: Invoice) => {
       if (!inv.date) {
         return false;
       }
-      const invDate = new Date(inv.date);
+      const invDate: Date = new Date(inv.date);
       if (isNaN(invDate.getTime())) {
         return false;
       }
@@ -249,14 +243,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
     let prevPaid = 0;
     let prevPending = 0;
 
-    prevInvoices.forEach((inv) => {
-      const price = Number(inv.price) || 0;
-      const rawStatus = (inv.status || 'draft').split('|')[0].trim().toLowerCase();
+    prevInvoices.forEach((inv: Invoice) => {
+      const price: number = Number(inv.price) || 0;
+      const rawStatus: string = (inv.status || 'draft').split('|')[0].trim().toLowerCase();
       let isOverdue = false;
       if (rawStatus === 'overdue') {
         isOverdue = true;
       } else if (rawStatus === 'sent' && inv.due_date) {
-        const dueDate = new Date(inv.due_date);
+        const dueDate: Date = new Date(inv.due_date);
         if (dueDate < today) {
           isOverdue = true;
         }
@@ -278,7 +272,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
     };
   }, [invoices, timeFilter]);
 
-  // Resolve percentage change label and direction
+  /** Calculates percentage change label and direction compared to prior timeframe. */
   const getChangePercent = (current: number, previous: number | undefined): { label: string; isPositive: boolean } => {
     if (previous === undefined || !comparisonMetrics || !comparisonMetrics.hasData) {
       return { label: '—', isPositive: true };
@@ -290,9 +284,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       return { label: '0%', isPositive: true };
     }
 
-    const diff = current - previous;
-    const percent = (diff / previous) * 100;
-    const sign = percent >= 0 ? '+' : '';
+    const diff: number = current - previous;
+    const percent: number = (diff / previous) * 100;
+    const sign: string = percent >= 0 ? '+' : '';
     return {
       label: `${sign}${percent.toFixed(0)}%`,
       isPositive: percent >= 0,
@@ -303,23 +297,22 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   const paidChange = getChangePercent(totalPaidVal, comparisonMetrics?.paid);
   const pendingChange = getChangePercent(totalPendingVal, comparisonMetrics?.pending);
 
-  // Get real paid invoices sorted by payment date for chart
+  /** Transforms paid invoices into formatted chart dataset for payment history chart. */
   const getChartData = () => {
-    const paidInvoices = filteredInvoices
-      .filter((inv) => (inv.status || 'draft').split('|')[0].trim().toLowerCase() === 'paid' && inv.paid_at)
-      .sort((a, b) => new Date(a.paid_at!).getTime() - new Date(b.paid_at!).getTime());
+    const paidInvoices: Invoice[] = filteredInvoices
+      .filter((inv: Invoice) => (inv.status || 'draft').split('|')[0].trim().toLowerCase() === 'paid' && inv.paid_at)
+      .sort((a: Invoice, b: Invoice) => new Date(a.paid_at!).getTime() - new Date(b.paid_at!).getTime());
 
     if (paidInvoices.length === 0) {
       return [{ name: 'No Payments', Amount: 0, monthYear: 'No Payments' }];
     }
 
-    // Limit to the last 10 payments to prevent clutter
-    const recentPaid = paidInvoices.slice(-10);
+    const recentPaid: Invoice[] = paidInvoices.slice(-10);
 
-    return recentPaid.map((inv) => {
-      const d = new Date(inv.paid_at!);
-      const name = d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
-      const monthYear = d.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
+    return recentPaid.map((inv: Invoice) => {
+      const d: Date = new Date(inv.paid_at!);
+      const name: string = d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+      const monthYear: string = d.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' });
       return {
         name,
         Amount: Number(inv.price) || 0,
@@ -330,8 +323,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
 
   const chartData = getChartData();
 
-  const recentPaidInvoices = filteredInvoices
-    .filter((inv) => (inv.status || 'draft').split('|')[0].trim().toLowerCase() === 'paid')
+  const recentPaidInvoices: Invoice[] = filteredInvoices
+    .filter((inv: Invoice) => (inv.status || 'draft').split('|')[0].trim().toLowerCase() === 'paid')
     .slice(0, 5);
 
   const columns: ColumnDef<Invoice>[] = [
@@ -339,14 +332,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       key: 'invoice_number',
       header: 'Invoice',
       width: '1fr',
-      render: (inv) => <span className="text-stone-700">{inv.invoice_number}</span>,
+      render: (inv: Invoice) => <span className="text-stone-700">{inv.invoice_number}</span>,
     },
     {
       key: 'client_name',
       header: 'Client',
       width: '1.5fr',
-      render: (inv) => {
-        const clientName = settings['setting_display_client_name_as'] === 'company' && inv.client_business_name
+      render: (inv: Invoice) => {
+        const clientName: string = settings['setting_display_client_name_as'] === 'company' && inv.client_business_name
           ? inv.client_business_name
           : (inv.client_name || inv.client_business_name || 'No Client');
         return <span className="text-stone-700">{clientName}</span>;
@@ -356,20 +349,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       key: 'date',
       header: 'Date',
       width: '1fr',
-      render: (inv) => <span className="text-stone-500">{inv.date}</span>,
+      render: (inv: Invoice) => <span className="text-stone-500">{inv.date}</span>,
     },
     {
       key: 'price',
       header: 'Amount',
       width: '1fr',
-      render: (inv) => <div className="text-right text-stone-700 w-full pr-4">${(Number(inv.price) || 0).toFixed(2)}</div>,
+      render: (inv: Invoice) => <div className="text-right text-stone-700 w-full pr-4">${(Number(inv.price) || 0).toFixed(2)}</div>,
     },
     {
       key: 'status',
       header: 'Status',
       width: '1fr',
-      render: (inv) => {
-        const status = inv.status ? inv.status.split('|')[0] : 'draft';
+      render: (inv: Invoice) => {
+        const status: string = inv.status ? inv.status.split('|')[0] : 'draft';
         return (
           <div className="flex justify-end pr-2">
             <Badge variant={getStatusVariant(status)}>
@@ -382,9 +375,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   ];
 
   return (
-    <div className="flex flex-col h-full p-6 gap-5 bg-transparent overflow-hidden">
+    <div className="flex flex-col h-full p-6 gap-4 bg-transparent overflow-hidden">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-shrink-0">
         <div>
           <h1 className="text-xl font-semibold text-stone-900">Dashboard</h1>
           <p className="text-sm text-stone-500 mt-0.5">Overview of your business metrics</p>
@@ -398,13 +391,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         />
       </div>
 
-      <main className="flex-1 min-h-0 overflow-y-auto px-2 -mx-2 flex flex-col gap-6">
+      <main className="flex-1 min-h-0 overflow-hidden flex flex-col gap-4">
         {isLoading ? (
           <div className="flex items-center justify-center h-64 text-stone-500">Loading metrics...</div>
         ) : (
           <>
             {/* Section 1: Overview Cards Grid (Full width, 3 cards) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-shrink-0">
               <DashboardCard
                 icon={<RiReceiptLine className="w-4 h-4" />}
                 label="Invoices Created"
@@ -434,11 +427,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
             </div>
 
             {/* Main Content Section below KPI cards */}
-            <div className="flex flex-col gap-6">
+            <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
               {/* Row 1: Payment History & Invoice Statuses side-by-side */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                <div className="lg:col-span-2 bg-stone-50 border border-stone-200 rounded-2xl p-5 shadow-sm flex flex-col h-[320px]">
-                  <div className="mb-4 flex-shrink-0">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-[3] min-h-0">
+                <div className="lg:col-span-2 bg-stone-50 border border-stone-200 rounded-2xl p-4 shadow-sm flex flex-col h-full overflow-hidden">
+                  <div className="mb-3 flex-shrink-0">
                     <h3 className="text-base text-black font-medium">Payment History</h3>
                     <p className="text-xs text-stone-500 mt-0.5">Revenue collected over time</p>
                   </div>
@@ -454,21 +447,21 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                         <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
                         <XAxis dataKey="name" stroke="#a8a29e" fontSize={11} tickLine={false} />
                         <YAxis stroke="#a8a29e" fontSize={11} tickLine={false} />
-                        <Tooltip content={<CustomTooltip />} />
+                        <Tooltip content={<DashboardChartTooltip />} />
                         <Area type="monotone" dataKey="Amount" stroke="#f97316" strokeWidth={2} fillOpacity={1} fill="url(#colorPaid)" />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
-                <div className="lg:col-span-1">
-                  <StatusDistributionCard metrics={metrics} className="h-[320px]" />
+                <div className="lg:col-span-1 h-full overflow-hidden">
+                  <StatusDistributionCard metrics={metrics} className="h-full" />
                 </div>
               </div>
 
               {/* Row 2: Recent Invoices Table */}
-              <div className="bg-stone-50 border border-stone-200 rounded-2xl p-5 shadow-sm flex flex-col min-h-[260px]">
-                <div className="flex justify-between items-center mb-4 flex-shrink-0">
+              <div className="bg-stone-50 border border-stone-200 rounded-2xl p-4 shadow-sm flex flex-col flex-[2] min-h-0 overflow-hidden">
+                <div className="flex justify-between items-center mb-3 flex-shrink-0">
                   <h3 className="text-base text-black font-medium">Recent Invoices</h3>
                   <span
                     onClick={() => onNavigate?.('invoices')}
@@ -477,11 +470,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
                     View All
                   </span>
                 </div>
-                <div className="flex-1 flex flex-col min-h-0 overflow-x-auto">
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                   <Table
                     columns={columns}
                     data={recentPaidInvoices}
-                    keyExtractor={(inv) => inv.id}
+                    keyExtractor={(inv: Invoice) => inv.id}
                     emptyMessage="No recent paid invoices."
                   />
                 </div>

@@ -153,7 +153,7 @@ const ClassicPreview: React.FC<TemplateData> = ({ form, totals, client, org, pay
             </div>
             {form.discount > 0 && (
               <div className="flex justify-between">
-                <span>{form.discountType === 'percentage' ? `DISCOUNT (${form.discount}%)` : 'DISCOUNT'}</span>
+                <span>{form.discountType === 'percentage' ? `${form.discountDescription ? form.discountDescription.toUpperCase() : 'DISCOUNT'} (${form.discount}%)` : (form.discountDescription ? form.discountDescription.toUpperCase() : 'DISCOUNT')}</span>
                 <span className="font-normal" style={{ color: BLUE }}>-{formatCurrency(totals.discount)}</span>
               </div>
             )}
@@ -361,7 +361,7 @@ function classicBuildHtml(data: TemplateData): string {
           </div>
           ${form.discount > 0 ? `
           <div style="display: flex; justify-content: space-between;">
-            <span>${form.discountType === 'percentage' ? `DISCOUNT (${form.discount}%)` : 'DISCOUNT'}</span>
+            <span>${form.discountType === 'percentage' ? `${form.discountDescription ? form.discountDescription.toUpperCase() : 'DISCOUNT'} (${form.discount}%)` : (form.discountDescription ? form.discountDescription.toUpperCase() : 'DISCOUNT')}</span>
             <span style="font-weight: 400; color: ${BLUE};">-${formatCurrency(totals.discount)}</span>
           </div>` : ''}
           ${form.gstEnabled ? `

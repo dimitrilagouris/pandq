@@ -40,6 +40,7 @@ function createInitialFormState(): InvoiceFormState {
     displayDueDate: true,
     discount: 0,
     discountType: 'flat',
+    discountDescription: '',
     notes: '',
     templateId: 'classic',
   };
@@ -50,7 +51,7 @@ function createInitialFormState(): InvoiceFormState {
  */
 /** Keys that represent text-like fields where typing should be debounced. */
 const DEBOUNCED_KEYS: ReadonlySet<keyof InvoiceFormState> = new Set([
-  'invoiceNumber', 'notes', 'dateIssued', 'dueDate',
+  'invoiceNumber', 'notes', 'dateIssued', 'dueDate', 'discountDescription',
 ]);
 
 const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirtyChange }) => {
@@ -150,6 +151,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
       current.gstEnabled !== initial.gstEnabled ||
       current.displayDueDate !== initial.displayDueDate ||
       current.discount !== initial.discount ||
+      current.discountDescription !== initial.discountDescription ||
       current.notes !== initial.notes ||
       current.templateId !== initial.templateId ||
       current.items.length !== initial.items.length
@@ -276,6 +278,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           displayDueDate: form.displayDueDate,
           discount: form.discount,
           discountType: form.discountType,
+          discountDescription: form.discountDescription,
           price: totals.grandTotal,
           items,
           notes: form.notes,
@@ -291,6 +294,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           displayDueDate: form.displayDueDate,
           discount: form.discount,
           discountType: form.discountType,
+          discountDescription: form.discountDescription,
           price: totals.grandTotal,
           items,
           notes: form.notes,
@@ -340,6 +344,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           displayDueDate: form.displayDueDate,
           discount: form.discount,
           discountType: form.discountType,
+          discountDescription: form.discountDescription,
           price: totals.grandTotal,
           items,
           notes: form.notes,
@@ -355,6 +360,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           displayDueDate: form.displayDueDate,
           discount: form.discount,
           discountType: form.discountType,
+          discountDescription: form.discountDescription,
           price: totals.grandTotal,
           items,
           notes: form.notes,
@@ -456,6 +462,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           displayDueDate: form.displayDueDate,
           discount: form.discount,
           discountType: form.discountType,
+          discountDescription: form.discountDescription,
           price: totals.grandTotal,
           items,
           notes: form.notes,
@@ -471,6 +478,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
           displayDueDate: form.displayDueDate,
           discount: form.discount,
           discountType: form.discountType,
+          discountDescription: form.discountDescription,
           price: totals.grandTotal,
           items,
           notes: form.notes,

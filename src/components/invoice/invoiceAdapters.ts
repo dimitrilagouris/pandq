@@ -96,10 +96,12 @@ export function hydrateFormState(detail: InvoiceDetail): InvoiceFormState {
 
   let discount = 0;
   let discountType: 'flat' | 'percentage' = 'flat';
+  let discountDescription = '';
   const firstDiscount = detail.discounts && detail.discounts[0];
 
   if (firstDiscount) {
     discount = firstDiscount.amount;
+    discountDescription = firstDiscount.description || '';
 
     if (firstDiscount.type === 'percentage') {
       discountType = 'percentage';
@@ -122,6 +124,7 @@ export function hydrateFormState(detail: InvoiceDetail): InvoiceFormState {
     displayDueDate,
     discount,
     discountType,
+    discountDescription,
     notes: notesStr,
     templateId,
   };

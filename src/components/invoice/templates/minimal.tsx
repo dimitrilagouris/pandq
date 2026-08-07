@@ -172,7 +172,7 @@ const MinimalPreview: React.FC<TemplateData> = ({ form, totals, client, org, pay
           )}
           {form.discount > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-stone-500">{form.discountType === 'percentage' ? `Discount (${form.discount}%)` : 'Discount'}</span>
+              <span className="text-stone-500">{form.discountType === 'percentage' ? `${form.discountDescription || 'Discount'} (${form.discount}%)` : (form.discountDescription || 'Discount')}</span>
               <span className="text-stone-900">−{formatCurrency(totals.discount)}</span>
             </div>
           )}
@@ -279,7 +279,7 @@ function minimalBuildHtml(data: TemplateData): string {
 
   const discountRow = form.discount > 0 ? `
     <div style="display: flex; justify-content: space-between; font-size: 14px;">
-      <span style="color: #78716c;">${form.discountType === 'percentage' ? `Discount (${form.discount}%)` : 'Discount'}</span>
+      <span style="color: #78716c;">${form.discountType === 'percentage' ? `${form.discountDescription || 'Discount'} (${form.discount}%)` : (form.discountDescription || 'Discount')}</span>
       <span style="color: #1c1917;">−${formatCurrency(totals.discount)}</span>
     </div>` : '';
 

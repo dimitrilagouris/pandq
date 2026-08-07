@@ -423,7 +423,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
       >
         <div className="flex flex-col gap-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
               <Input
                 label={
                   <span className="inline-flex items-center gap-1.5 select-none">
@@ -452,19 +452,29 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
               />
             </div>
 
-            <div className="flex flex-col gap-1 w-full">
-              <label className="text-xs font-medium text-stone-500 tracking-wide select-none">Preferences</label>
-              <div className="flex flex-col rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-                <label className="flex items-center justify-between p-3 border-b border-stone-100 cursor-pointer hover:bg-stone-50 transition-colors">
-                  <span className="text-sm font-medium text-stone-700 select-none">Apply GST (10%)</span>
-                  <Toggle enabled={form.gstEnabled} onChange={(val) => onChange({ gstEnabled: val })} />
-                </label>
-                
-                <label className="flex items-center justify-between p-3 cursor-pointer hover:bg-stone-50 transition-colors">
-                  <span className="text-sm font-medium text-stone-700 select-none">Show Due Date</span>
-                  <Toggle enabled={form.displayDueDate} onChange={(val) => onChange({ displayDueDate: val })} />
-                </label>
-              </div>
+            <div className="flex flex-col gap-3">
+              <Input
+                label="Discount Description"
+                name="discountDescription"
+                value={form.discountDescription}
+                onChange={(val) => onChange({ discountDescription: val })}
+                placeholder="e.g. Loyalty discount"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1 w-full">
+            <label className="text-xs font-medium text-stone-500 tracking-wide select-none">Preferences</label>
+            <div className="flex flex-col rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+              <label className="flex items-center justify-between p-3 border-b border-stone-100 cursor-pointer hover:bg-stone-50 transition-colors">
+                <span className="text-sm font-medium text-stone-700 select-none">Apply GST (10%)</span>
+                <Toggle enabled={form.gstEnabled} onChange={(val) => onChange({ gstEnabled: val })} />
+              </label>
+              
+              <label className="flex items-center justify-between p-3 cursor-pointer hover:bg-stone-50 transition-colors">
+                <span className="text-sm font-medium text-stone-700 select-none">Show Due Date</span>
+                <Toggle enabled={form.displayDueDate} onChange={(val) => onChange({ displayDueDate: val })} />
+              </label>
             </div>
           </div>
           

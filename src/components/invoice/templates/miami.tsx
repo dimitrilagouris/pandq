@@ -174,7 +174,7 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
           )}
           {form.discount > 0 && (
             <>
-              <span className="font-semibold">{form.discountType === 'percentage' ? `Discount (${form.discount}%):` : 'Discount:'}</span>
+              <span className="font-semibold">{form.discountType === 'percentage' ? `${form.discountDescription || 'Discount'} (${form.discount}%):` : `${form.discountDescription || 'Discount'}:`}</span>
               <span className="text-[#C05638]">-{formatCurrency(totals.discount)}</span>
             </>
           )}
@@ -349,7 +349,7 @@ function miamiBuildHtml(data: TemplateData): string {
         <span>${formatCurrency(totals.gst)}</span>
         ` : ''}
         ${form.discount > 0 ? `
-        <span style="font-weight: 600;">${form.discountType === 'percentage' ? `Discount (${form.discount}%):` : 'Discount:'}</span>
+        <span style="font-weight: 600;">${form.discountType === 'percentage' ? `${form.discountDescription || 'Discount'} (${form.discount}%):` : `${form.discountDescription || 'Discount'}:`}</span>
         <span style="color: ${TERRACOTTA};">-${formatCurrency(totals.discount)}</span>
         ` : ''}
         <span style="font-weight: 700; font-size: 16px; padding-top: 6px;">Invoice total:</span>

@@ -31,6 +31,7 @@ export interface InvoiceFormState {
   displayDueDate: boolean;
   discount: number;
   discountType: 'flat' | 'percentage';
+  discountDescription: string;
   notes: string;
   templateId: string;
 }

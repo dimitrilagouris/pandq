@@ -119,7 +119,7 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
                       workers.map((w) => (
                         <div key={w.id} className="flex items-baseline text-sm text-stone-800">
                           <span className="font-medium">{w.name || (workers.length === 1 ? 'Labour' : 'Worker')}</span>
-                          <span className="text-stone-500 ml-1.5">&mdash; {w.hours} hrs</span>
+                          <span className="text-stone-500 ml-1.5">{w.hours} hrs</span>
                           <div className="flex-1 border-b border-dotted border-stone-300 mx-3 self-center opacity-60" />
                           <span className="font-semibold text-stone-900">{formatCurrency(w.hours * w.rate)}</span>
                         </div>
@@ -127,7 +127,7 @@ const MiamiPreview: React.FC<TemplateData> = ({ form, totals, client, org, payme
                     ) : (
                       <div className="flex items-baseline text-sm text-stone-800">
                         <span className="font-medium">Labour</span>
-                        <span className="text-stone-500 ml-1.5">&mdash; {item.hours ?? 0} hrs</span>
+                        <span className="text-stone-500 ml-1.5">{item.hours ?? 0} hrs</span>
                         <div className="flex-1 border-b border-dotted border-stone-300 mx-3 self-center opacity-60" />
                         <span className="font-semibold text-stone-900">{formatCurrency((item.hours ?? 0) * item.unitPrice)}</span>
                       </div>
@@ -222,14 +222,14 @@ function miamiBuildHtml(data: TemplateData): string {
         const workerRowsHtml = hasWorkers ? workers.map(w => `
           <div style="display: flex; align-items: baseline; font-size: 14px; color: #1c1917; margin-top: 4px;">
             <span style="font-weight: 500;">${w.name || (workers.length === 1 ? 'Labour' : 'Worker')}</span>
-            <span style="color: #78716c; margin-left: 6px;">&mdash; ${w.hours} hrs</span>
+            <span style="color: #78716c; margin-left: 6px;">${w.hours} hrs</span>
             <div style="flex: 1; border-bottom: 1px dotted #d6d3d1; margin: 0 12px;"></div>
             <span style="font-weight: 600;">${formatCurrency(w.hours * w.rate)}</span>
           </div>
         `).join('') : `
           <div style="display: flex; align-items: baseline; font-size: 14px; color: #1c1917; margin-top: 4px;">
             <span style="font-weight: 500;">Labour</span>
-            <span style="color: #78716c; margin-left: 6px;">&mdash; ${item.hours ?? 0} hrs</span>
+            <span style="color: #78716c; margin-left: 6px;">${item.hours ?? 0} hrs</span>
             <div style="flex: 1; border-bottom: 1px dotted #d6d3d1; margin: 0 12px;"></div>
             <span style="font-weight: 600;">${formatCurrency((item.hours ?? 0) * item.unitPrice)}</span>
           </div>

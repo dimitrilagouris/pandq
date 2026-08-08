@@ -1,93 +1,124 @@
 import React from 'react';
 import { InvoiceTemplate, TemplateData } from './templateTypes';
 
-/** Format a dollar amount with 2 decimal places and a $ prefix. */
+/** Format a dollar amount with 2 decimal places, a $ prefix, and a non-breaking thin space before thousands. */
 function formatCurrency(amount: number): string {
-  return `$${amount.toFixed(2)}`;
+  const parts = amount.toFixed(2).split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
+  return `$${parts[0]}.${parts[1]}`;
 }
 
-/** Format a date string (YYYY-MM-DD) to a human-readable format. */
+/** Format a date string (YYYY-MM-DD) to DD/MM/YYYY. */
 function formatDate(dateStr: string): string {
   if (!dateStr) {
     return '—';
   }
-  const date = new Date(dateStr + 'T00:00:00');
-  return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateStr;
 }
 
+
 /**
- * Minimal invoice preview — clean, borderless design with a thin accent stripe.
+ * Minimal invoice preview — redesigned to match the clean, typographic "TAX INVOICE" reference layout.
  */
 const MinimalPreview: React.FC<TemplateData> = ({ form, totals, client, org, payment }) => {
   const hasItems = form.items.length > 0;
+  const hasPaymentInfo = !!(payment.bankName || payment.accountNumber || payment.bsb || payment.instructions);
+
+  // Split org name across two lines for the logo block (matches the reference)
+  const orgWords = org.name ? org.name.split(' ') : ['Company'];
+  const orgLine1 = orgWords[0] ?? '';
+  const orgLine2 = orgWords.slice(1).join(' ');
 
   return (
-    <div id="invoice-preview-card" className="w-[210mm] min-h-[297mm] bg-white rounded-none shadow-22 overflow-hidden flex flex-col box-border relative a4-page-breaks">
+    <div
+      id="invoice-preview-card"
+      className="w-[210mm] min-h-[297mm] bg-white rounded-[12px] shadow-22 flex flex-col box-border overflow-hidden"
+      style={{ fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif" }}
+    >
+      <style dangerouslySetInnerHTML={{ __html: `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');` }} />
 
-      {/* Thin accent stripe at the very top */}
-      <div className="h-1 bg-stone-300 w-full" />
+      <div className="px-12 pt-10 pb-10 flex flex-col gap-7 flex-1">
 
-      <div className="px-10 py-8 flex flex-col gap-7 flex-1">
-
-        {/* Top row: Invoice number + dates on left, org info on right */}
-        <div className="flex justify-between items-start">
-          <div>
-            <p className="text-[10px] text-stone-400 uppercase tracking-widest mb-1">Invoice</p>
-            <h1 className="text-xl font-bold text-stone-900 tracking-tight">
-              {form.invoiceNumber || 'INV-001'}
-            </h1>
-            <div className="flex gap-6 mt-3">
-              <div>
-                <p className="text-[10px] text-stone-400 uppercase tracking-wider">Issued</p>
-                <p className="text-xs font-medium text-stone-800 mt-0.5">{formatDate(form.dateIssued)}</p>
-              </div>
-              {form.displayDueDate && (
-                <div>
-                  <p className="text-[10px] text-stone-400 uppercase tracking-wider">Due</p>
-                  <p className="text-xs font-medium text-stone-800 mt-0.5">{formatDate(form.dueDate)}</p>
-                </div>
-              )}
-            </div>
+        {/* ── Header: logo-mark + company name left | TAX INVOICE right ── */}
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col leading-snug">
+            <span className="text-[18px] font-semibold text-stone-900 tracking-tight">{orgLine1}</span>
+            {orgLine2 && <span className="text-[18px] font-semibold text-stone-900 tracking-tight">{orgLine2}</span>}
           </div>
-          <div className="text-right">
-            <p className="text-sm font-semibold text-stone-900">{org.name}</p>
-            {org.abn && <p className="text-[10px] text-stone-400 mt-0.5">ABN {org.abn}</p>}
-            <p className="text-[10px] text-stone-500 mt-1 whitespace-pre-wrap">{org.address}</p>
-            {org.phone && <p className="text-[10px] text-stone-500">{org.phone}</p>}
-            {org.email && <p className="text-[10px] text-stone-500">{org.email}</p>}
+          <h1 className="text-[38px] font-extrabold text-stone-950 tracking-tight leading-none mt-1">
+            TAX INVOICE
+          </h1>
+        </div>
+
+        {/* ── Address row: client bill-to left | org address right ── */}
+        <div className="flex justify-between items-start">
+          <div className="flex flex-col gap-0.5">
+            {client ? (
+              <>
+                <p className="text-[13px] font-bold text-stone-900">{client.business_name || client.name}</p>
+                {client.business_name && client.name && (
+                  <p className="text-[12px] text-stone-600">{client.name}</p>
+                )}
+                {client.address && (
+                  <p className="text-[12px] text-stone-600 whitespace-pre-wrap">{client.address}</p>
+                )}
+                {client.email && (
+                  <p className="text-[12px] text-stone-600">{client.email}</p>
+                )}
+              </>
+            ) : (
+              <p className="text-[12px] text-stone-300 italic">No client selected</p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-0.5 text-right">
+            <p className="text-[13px] font-bold text-stone-900">{org.name}</p>
+            {org.address && (
+              <p className="text-[12px] text-stone-600 whitespace-pre-wrap">{org.address}</p>
+            )}
+            {org.phone && <p className="text-[12px] text-stone-600">{org.phone}</p>}
+            {org.email && <p className="text-[12px] text-stone-600">{org.email}</p>}
+            {org.abn && <p className="text-[12px] text-stone-500">ABN {org.abn}</p>}
           </div>
         </div>
 
-        {/* Client block */}
-        <div className="bg-stone-50 rounded-lg px-4 py-3">
-          <p className="text-[10px] text-stone-400 uppercase tracking-wider mb-1">Bill to</p>
-          {client ? (
-            <>
-              <p className="text-sm font-semibold text-stone-900">{client.business_name || client.name}</p>
-              {client.name && client.business_name && (
-                <p className="text-xs text-stone-500 mt-0.5">{client.name}</p>
-              )}
-              {client.address && <p className="text-xs text-stone-500">{client.address}</p>}
-              {client.email && <p className="text-xs text-stone-500">{client.email}</p>}
-            </>
-          ) : (
-            <p className="text-sm text-stone-300 italic">No client selected</p>
+        {/* ── Invoice meta: right-aligned label/value pairs ── */}
+        <div className="flex flex-col gap-1 ml-auto">
+          <div className="flex items-baseline">
+            <span className="text-[13px] font-bold text-stone-900 w-36 text-right">Invoice number:</span>
+            <span className="text-[13px] text-stone-700 w-24 text-right ml-12">{form.invoiceNumber || '—'}</span>
+          </div>
+          <div className="flex items-baseline">
+            <span className="text-[13px] font-bold text-stone-900 w-36 text-right">Invoice date:</span>
+            <span className="text-[13px] text-stone-700 w-24 text-right ml-12">{formatDate(form.dateIssued)}</span>
+          </div>
+          {form.displayDueDate && (
+            <div className="flex items-baseline">
+              <span className="text-[13px] font-bold text-stone-900 w-36 text-right">Due date:</span>
+              <span className="text-[13px] text-stone-700 w-24 text-right ml-12">{formatDate(form.dueDate)}</span>
+            </div>
           )}
         </div>
 
-        {/* Line items — unified table */}
-        <div className="flex flex-col">
+        {/* ── Line items table card ── */}
+        <div className="rounded-[10px] bg-stone-50 px-5 py-4 flex flex-col">
           {/* Table header */}
           <div
-            className="grid gap-2 pb-2 border-b-2 border-stone-200"
-            style={{ gridTemplateColumns: 'minmax(0, 1fr) 60px 80px 80px' }}
+            className="grid pb-2 border-b border-stone-200"
+            style={{ gridTemplateColumns: 'minmax(0,1.6fr) 90px 70px 70px 80px' }}
           >
-            <span className="text-[10px] font-semibold text-stone-500 uppercase tracking-wider">Description</span>
-            <span className="text-[10px] font-semibold text-stone-500 uppercase tracking-wider text-center">Qty</span>
-            <span className="text-[10px] font-semibold text-stone-500 uppercase tracking-wider text-right">Rate</span>
-            <span className="text-[10px] font-semibold text-stone-500 uppercase tracking-wider text-right">Amount</span>
+            <span className="text-[11px] italic text-stone-500">Product</span>
+            <span className="text-[11px] italic text-stone-500 text-right">Hourly rate</span>
+            <span className="text-[11px] italic text-stone-500 text-center">Quantity</span>
+            <span className="text-[11px] italic text-stone-500 text-center">Tax rate</span>
+            <span className="text-[11px] italic text-stone-500 text-right">Amount</span>
           </div>
 
+          {/* Rows */}
           {form.items.map((item) => {
             const workers = item.workers ?? [];
             const hasMultipleWorkers = item.type === 'labour' && workers.length > 1;
@@ -97,30 +128,30 @@ const MinimalPreview: React.FC<TemplateData> = ({ form, totals, client, org, pay
               return (
                 <React.Fragment key={item.id}>
                   <div
-                    className="grid gap-2 py-2.5 border-b border-stone-100"
-                    style={{ gridTemplateColumns: 'minmax(0, 1fr) 60px 80px 80px' }}
+                    className="grid py-3 border-b border-stone-100"
+                    style={{ gridTemplateColumns: 'minmax(0,1.6fr) 90px 70px 70px 80px' }}
                   >
-                    <span className="text-sm text-stone-800 flex flex-col min-w-0">
-                      <span className="whitespace-pre-wrap break-words">{item.description || <span className="text-stone-300 italic">No description</span>}</span>
-                      {item.date && (
-                        <span className="text-[10px] text-stone-400 mt-0.5">{formatDate(item.date)}</span>
-                      )}
-                      <span className="text-[10px] text-stone-400 capitalize">{item.type}</span>
+                    <span className="text-[13px] text-stone-800 whitespace-pre-wrap break-words">
+                      {item.description || <span className="text-stone-300 italic">No description</span>}
                     </span>
-                    <span className="text-sm text-stone-600 text-center"></span>
-                    <span className="text-sm text-stone-600 text-right"></span>
-                    <span className="text-sm font-medium text-stone-900 text-right">{formatCurrency(itemTotal)}</span>
+                    <span className="text-[13px] text-stone-700 text-right" />
+                    <span className="text-[13px] text-stone-700 text-center" />
+                    <span className="text-[13px] text-stone-700 text-center">
+                      {form.gstEnabled ? '10%' : '—'}
+                    </span>
+                    <span className="text-[13px] text-stone-800 text-right">{formatCurrency(itemTotal)}</span>
                   </div>
                   {workers.map((w) => (
                     <div
                       key={w.id}
-                      className="grid gap-2 py-1.5 border-b border-stone-50 bg-stone-50/50"
-                      style={{ gridTemplateColumns: 'minmax(0, 1fr) 60px 80px 80px' }}
+                      className="grid py-2 border-b border-stone-50"
+                      style={{ gridTemplateColumns: 'minmax(0,1.6fr) 90px 70px 70px 80px' }}
                     >
-                      <span className="text-xs text-stone-500 pl-3 min-w-0 break-words">{w.name || (workers.length === 1 ? 'Labour' : 'Worker')}</span>
-                      <span className="text-xs text-stone-500 text-center">{w.hours} hrs</span>
-                      <span className="text-xs text-stone-500 text-right">{formatCurrency(w.rate)}</span>
-                      <span className="text-xs text-stone-500 text-right">{formatCurrency(w.hours * w.rate)}</span>
+                      <span className="text-[12px] text-stone-500 pl-3 break-words">{w.name || 'Worker'}</span>
+                      <span className="text-[12px] text-stone-500 text-right">{formatCurrency(w.rate)}</span>
+                      <span className="text-[12px] text-stone-500 text-center">{w.hours}</span>
+                      <span className="text-[12px] text-stone-500 text-center">—</span>
+                      <span className="text-[12px] text-stone-500 text-right">{formatCurrency(w.hours * w.rate)}</span>
                     </div>
                   ))}
                 </React.Fragment>
@@ -133,76 +164,82 @@ const MinimalPreview: React.FC<TemplateData> = ({ form, totals, client, org, pay
             const rate = (item.type === 'labour' && workers.length === 1)
               ? workers[0].rate
               : item.unitPrice;
+
             return (
               <div
                 key={item.id}
-                className="grid gap-2 py-2.5 border-b border-stone-100"
-                style={{ gridTemplateColumns: 'minmax(0, 1fr) 60px 80px 80px' }}
+                className="grid py-3 border-b border-stone-100 last:border-0"
+                style={{ gridTemplateColumns: 'minmax(0,1.6fr) 90px 70px 70px 80px' }}
               >
-                <span className="text-sm text-stone-800 flex flex-col min-w-0">
-                  <span className="whitespace-pre-wrap break-words">{item.description || <span className="text-stone-300 italic">No description</span>}</span>
-                  {item.date && (
-                    <span className="text-[10px] text-stone-400 mt-0.5">{formatDate(item.date)}</span>
-                  )}
-                  <span className="text-[10px] text-stone-400 capitalize">{item.type}</span>
+                <span className="text-[13px] text-stone-800 whitespace-pre-wrap break-words">
+                  {item.description || <span className="text-stone-300 italic">No description</span>}
                 </span>
-                <span className="text-sm text-stone-600 text-center">{qty}</span>
-                <span className="text-sm text-stone-600 text-right">{formatCurrency(rate)}</span>
-                <span className="text-sm font-medium text-stone-900 text-right">{formatCurrency(qty * rate)}</span>
+                <span className="text-[13px] text-stone-700 text-right">{formatCurrency(rate)}</span>
+                <span className="text-[13px] text-stone-700 text-center">{qty}</span>
+                <span className="text-[13px] text-stone-700 text-center">
+                  {form.gstEnabled ? '10%' : '—'}
+                </span>
+                <span className="text-[13px] text-stone-800 text-right">{formatCurrency(qty * rate)}</span>
               </div>
             );
           })}
 
           {!hasItems && (
-            <p className="text-sm text-stone-300 italic py-6 text-center">No items added yet</p>
+            <p className="text-[12px] text-stone-300 italic py-5 text-center">No items added yet</p>
           )}
         </div>
 
-        {/* Totals */}
-        <div className="flex flex-col gap-1 ml-auto w-56">
-          <div className="flex justify-between text-sm">
-            <span className="text-stone-500">Subtotal</span>
-            <span className="text-stone-900">{formatCurrency(totals.subtotal)}</span>
+        {/* ── Totals ── */}
+        <div className="flex flex-col gap-0.5 ml-auto min-w-52">
+          <div className="flex justify-between gap-12 text-[13px]">
+            <span className="font-bold text-stone-900">Subtotal:</span>
+            <span className="text-stone-800">{formatCurrency(totals.subtotal)}</span>
           </div>
           {form.gstEnabled && (
-            <div className="flex justify-between text-sm">
-              <span className="text-stone-500">GST (10%)</span>
-              <span className="text-stone-900">{formatCurrency(totals.gst)}</span>
+            <div className="flex justify-between gap-12 text-[13px]">
+              <span className="font-bold text-stone-900">Tax:</span>
+              <span className="text-stone-800">{formatCurrency(totals.gst)}</span>
             </div>
           )}
           {form.discount > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-stone-500">{form.discountType === 'percentage' ? `${form.discountDescription || 'Discount'} (${form.discount}%)` : (form.discountDescription || 'Discount')}</span>
-              <span className="text-stone-900">−{formatCurrency(totals.discount)}</span>
+            <div className="flex justify-between gap-12 text-[13px]">
+              <span className="font-bold text-stone-900">
+                {form.discountType === 'percentage'
+                  ? `${form.discountDescription || 'Discount'} (${form.discount}%):`
+                  : `${form.discountDescription || 'Discount'}:`}
+              </span>
+              <span className="text-stone-800">−{formatCurrency(totals.discount)}</span>
             </div>
           )}
-          <div className="h-px bg-stone-300 my-1.5" />
-          <div className="flex justify-between">
-            <span className="text-sm font-bold text-stone-900">Total</span>
-            <span className="text-lg font-bold text-stone-900">{formatCurrency(totals.grandTotal)}</span>
+          <div className="flex justify-between gap-12 text-[13px] mt-0.5">
+            <span className="font-bold text-stone-900">Invoice total:</span>
+            <span className="font-bold text-stone-900">{formatCurrency(totals.grandTotal)}</span>
           </div>
         </div>
 
-        {/* Notes */}
-        {form.notes.trim() && (
-          <div className="border-t border-stone-100 pt-4">
-            <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-wider mb-1.5">Notes</p>
-            <p className="text-xs text-stone-600 whitespace-pre-wrap leading-relaxed">{form.notes}</p>
+        {/* ── Footer: notes left / payment right ── */}
+        <div className="mt-auto border-t border-stone-200 pt-6 flex justify-between items-start gap-8">
+          {/* Custom note replaces the signature placeholder */}
+          <div className="flex flex-col gap-0.5 flex-1">
+            {form.notes.trim() && (
+              <p className="text-[12px] text-stone-600 whitespace-pre-wrap leading-relaxed">{form.notes}</p>
+            )}
           </div>
-        )}
 
-        {/* Payment Details */}
-        {(payment.bankName || payment.bsb || payment.accountNumber || payment.instructions) && (
-          <div className="border-t border-stone-100 pt-4">
-            <p className="text-[10px] font-semibold text-stone-400 uppercase tracking-wider mb-1.5">Payment Details</p>
-            <div className="flex flex-col gap-0.5 text-xs text-stone-600">
-              {payment.bankName && <p><span className="font-semibold text-stone-700">Bank:</span> {payment.bankName}</p>}
-              {payment.bsb && <p><span className="font-semibold text-stone-700">BSB:</span> {payment.bsb}</p>}
-              {payment.accountNumber && <p><span className="font-semibold text-stone-700">Account:</span> {payment.accountNumber}</p>}
-              {payment.instructions && <p className="mt-1 italic text-stone-500 whitespace-pre-wrap">{payment.instructions}</p>}
+          {/* Payment info */}
+          {hasPaymentInfo && (
+            <div className="flex flex-col gap-0.5 text-right">
+              <p className="text-[13px] font-bold text-stone-900 mb-1">Please make payment to</p>
+              {payment.bankName && <p className="text-[12px] text-stone-700">{payment.bankName}</p>}
+              {payment.accountNumber && <p className="text-[12px] text-stone-700">{payment.accountNumber}</p>}
+              {payment.bsb && <p className="text-[12px] text-stone-700">BSB: {payment.bsb}</p>}
+              {payment.instructions && (
+                <p className="text-[12px] text-stone-500 italic whitespace-pre-wrap">{payment.instructions}</p>
+              )}
             </div>
-          </div>
-        )}
+          )}
+        </div>
+
       </div>
     </div>
   );
@@ -214,13 +251,25 @@ const MinimalPreview: React.FC<TemplateData> = ({ form, totals, client, org, pay
 function minimalBuildHtml(data: TemplateData): string {
   const { form, totals, client, org, payment } = data;
 
-  const clientDisplay = client ? (client.business_name || client.name || 'No client') : 'No client';
-  const clientNameLine = client && client.business_name && client.name
-    ? `<p style="font-size: 11px; color: #78716c; margin-top: 2px;">${client.name}</p>` : '';
-  const clientAddressLine = client?.address
-    ? `<p style="font-size: 11px; color: #78716c;">${client.address}</p>` : '';
-  const clientEmailLine = client?.email
-    ? `<p style="font-size: 11px; color: #78716c;">${client.email}</p>` : '';
+  const clientName = client ? (client.business_name || client.name || '') : '';
+  const clientSubName = (client && client.business_name && client.name)
+    ? `<p style="font-size:12px;color:#57534e;margin:1px 0;">${client.name}</p>` : '';
+  const clientAddress = client?.address
+    ? `<p style="font-size:12px;color:#57534e;white-space:pre-wrap;margin:1px 0;">${client.address}</p>` : '';
+  const clientEmail = client?.email
+    ? `<p style="font-size:12px;color:#57534e;margin:1px 0;">${client.email}</p>` : '';
+  const noClient = !client
+    ? `<p style="font-size:12px;color:#d4d4d4;font-style:italic;">No client selected</p>` : '';
+
+  const orgWords = org.name ? org.name.split(' ') : ['Company'];
+  const orgLine1 = orgWords[0] ?? '';
+  const orgLine2 = orgWords.slice(1).join(' ');
+
+  const dueDateRow = form.displayDueDate ? `
+    <div style="display:flex;align-items:baseline;">
+      <span style="font-size:13px;font-weight:700;color:#1c1917;width:144px;text-align:right;">Due date:</span>
+      <span style="font-size:13px;color:#44403c;width:96px;text-align:right;margin-left:48px;">${formatDate(form.dueDate)}</span>
+    </div>` : '';
 
   const itemRows = form.items.map(item => {
     const workers = item.workers ?? [];
@@ -229,24 +278,22 @@ function minimalBuildHtml(data: TemplateData): string {
     if (hasMultipleWorkers) {
       const itemTotal = workers.reduce((sum, w) => sum + (w.hours * w.rate), 0);
       const workerRows = workers.map(w => `
-      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 60px 80px 80px; gap: 8px; padding: 6px 0; border-bottom: 1px solid #fafaf9; background: rgba(250,250,249,0.5);">
-        <span style="font-size: 12px; color: #78716c; padding-left: 12px; word-break: break-word; overflow-wrap: break-word;">${w.name || (workers.length === 1 ? 'Labour' : 'Worker')}</span>
-        <span style="font-size: 12px; color: #78716c; text-align: center;">${w.hours} hrs</span>
-        <span style="font-size: 12px; color: #78716c; text-align: right;">${formatCurrency(w.rate)}</span>
-        <span style="font-size: 12px; color: #78716c; text-align: right;">${formatCurrency(w.hours * w.rate)}</span>
-      </div>`).join('');
+        <div style="display:grid;grid-template-columns:minmax(0,1.6fr) 90px 70px 70px 80px;padding:8px 0;border-bottom:1px solid #fafaf9;">
+          <span style="font-size:12px;color:#78716c;padding-left:12px;">${w.name || 'Worker'}</span>
+          <span style="font-size:12px;color:#78716c;text-align:right;">${formatCurrency(w.rate)}</span>
+          <span style="font-size:12px;color:#78716c;text-align:center;">${w.hours}</span>
+          <span style="font-size:12px;color:#78716c;text-align:center;">—</span>
+          <span style="font-size:12px;color:#78716c;text-align:right;">${formatCurrency(w.hours * w.rate)}</span>
+        </div>`).join('');
       return `
-      <div style="display: grid; grid-template-columns: minmax(0, 1fr) 60px 80px 80px; gap: 8px; padding: 10px 0; border-bottom: 1px solid #f5f5f4;">
-        <span style="font-size: 14px; color: #292524; min-width: 0; white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word;">
-          ${item.description || 'No description'}
-          ${item.date ? `<span style="font-size: 10px; color: #a8a29e; margin-top: 2px; display: block;">${formatDate(item.date)}</span>` : ''}
-          <span style="font-size: 10px; color: #a8a29e; text-transform: capitalize; display: block;">${item.type}</span>
-        </span>
-        <span style="font-size: 14px; color: #57534e; text-align: center;"></span>
-        <span style="font-size: 14px; color: #57534e; text-align: right;"></span>
-        <span style="font-size: 14px; font-weight: 500; color: #1c1917; text-align: right;">${formatCurrency(itemTotal)}</span>
-      </div>
-      ${workerRows}`;
+        <div style="display:grid;grid-template-columns:minmax(0,1.6fr) 90px 70px 70px 80px;padding:12px 0;border-bottom:1px solid #f5f5f4;">
+          <span style="font-size:13px;color:#292524;white-space:pre-wrap;word-break:break-word;">${item.description || 'No description'}</span>
+          <span style="font-size:13px;color:#44403c;text-align:right;"></span>
+          <span style="font-size:13px;color:#44403c;text-align:center;"></span>
+          <span style="font-size:13px;color:#44403c;text-align:center;">${form.gstEnabled ? '10%' : '—'}</span>
+          <span style="font-size:13px;color:#292524;text-align:right;">${formatCurrency(itemTotal)}</span>
+        </div>
+        ${workerRows}`;
     }
 
     const qty = (item.type === 'labour' && workers.length === 1)
@@ -255,49 +302,39 @@ function minimalBuildHtml(data: TemplateData): string {
     const rate = (item.type === 'labour' && workers.length === 1)
       ? workers[0].rate
       : item.unitPrice;
-    const dateLine = item.date
-      ? `<span style="font-size: 10px; color: #a8a29e; margin-top: 2px; display: block;">${formatDate(item.date)}</span>`
-      : '';
     return `
-    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 60px 80px 80px; gap: 8px; padding: 10px 0; border-bottom: 1px solid #f5f5f4;">
-      <span style="font-size: 14px; color: #292524; min-width: 0; white-space: pre-wrap; word-break: break-word; overflow-wrap: break-word;">
-        ${item.description || 'No description'}
-        ${dateLine}
-        <span style="font-size: 10px; color: #a8a29e; text-transform: capitalize; display: block;">${item.type}</span>
-      </span>
-      <span style="font-size: 14px; color: #57534e; text-align: center;">${qty}</span>
-      <span style="font-size: 14px; color: #57534e; text-align: right;">${formatCurrency(rate)}</span>
-      <span style="font-size: 14px; font-weight: 500; color: #1c1917; text-align: right;">${formatCurrency(qty * rate)}</span>
-    </div>`;
+      <div style="display:grid;grid-template-columns:minmax(0,1.6fr) 90px 70px 70px 80px;padding:12px 0;border-bottom:1px solid #f5f5f4;">
+        <span style="font-size:13px;color:#292524;white-space:pre-wrap;word-break:break-word;">${item.description || 'No description'}</span>
+        <span style="font-size:13px;color:#44403c;text-align:right;">${formatCurrency(rate)}</span>
+        <span style="font-size:13px;color:#44403c;text-align:center;">${qty}</span>
+        <span style="font-size:13px;color:#44403c;text-align:center;">${form.gstEnabled ? '10%' : '—'}</span>
+        <span style="font-size:13px;color:#292524;text-align:right;">${formatCurrency(qty * rate)}</span>
+      </div>`;
   }).join('');
 
   const gstRow = form.gstEnabled ? `
-    <div style="display: flex; justify-content: space-between; font-size: 14px;">
-      <span style="color: #78716c;">GST (10%)</span>
-      <span style="color: #1c1917;">${formatCurrency(totals.gst)}</span>
+    <div style="display:flex;justify-content:space-between;gap:48px;font-size:13px;">
+      <span style="font-weight:700;color:#1c1917;">Tax:</span>
+      <span style="color:#44403c;">${formatCurrency(totals.gst)}</span>
     </div>` : '';
 
+  const discountLabel = form.discountType === 'percentage'
+    ? `${form.discountDescription || 'Discount'} (${form.discount}%):`
+    : `${form.discountDescription || 'Discount'}:`;
   const discountRow = form.discount > 0 ? `
-    <div style="display: flex; justify-content: space-between; font-size: 14px;">
-      <span style="color: #78716c;">${form.discountType === 'percentage' ? `${form.discountDescription || 'Discount'} (${form.discount}%)` : (form.discountDescription || 'Discount')}</span>
-      <span style="color: #1c1917;">−${formatCurrency(totals.discount)}</span>
+    <div style="display:flex;justify-content:space-between;gap:48px;font-size:13px;">
+      <span style="font-weight:700;color:#1c1917;">${discountLabel}</span>
+      <span style="color:#44403c;">−${formatCurrency(totals.discount)}</span>
     </div>` : '';
 
-  const notesBlock = form.notes.trim() ? `
-    <div style="border-top: 1px solid #f5f5f4; padding-top: 16px;">
-      <p style="font-size: 10px; font-weight: 600; color: #a8a29e; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Notes</p>
-      <p style="font-size: 11px; color: #57534e; white-space: pre-wrap; line-height: 1.6;">${form.notes}</p>
-    </div>` : '';
-
-  const paymentBlock = (payment.bankName || payment.bsb || payment.accountNumber || payment.instructions) ? `
-    <div style="border-top: 1px solid #f5f5f4; padding-top: 16px;">
-      <p style="font-size: 10px; font-weight: 600; color: #a8a29e; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Payment Details</p>
-      <div style="display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: #57534e;">
-        ${payment.bankName ? `<p><span style="font-weight: 600; color: #44403c;">Bank:</span> ${payment.bankName}</p>` : ''}
-        ${payment.bsb ? `<p><span style="font-weight: 600; color: #44403c;">BSB:</span> ${payment.bsb}</p>` : ''}
-        ${payment.accountNumber ? `<p><span style="font-weight: 600; color: #44403c;">Account:</span> ${payment.accountNumber}</p>` : ''}
-        ${payment.instructions ? `<p style="margin-top: 4px; font-style: italic; color: #78716c; white-space: pre-wrap;">${payment.instructions}</p>` : ''}
-      </div>
+  const hasPaymentInfo = !!(payment.bankName || payment.accountNumber || payment.bsb || payment.instructions);
+  const paymentBlock = hasPaymentInfo ? `
+    <div style="text-align:right;">
+      <p style="font-size:13px;font-weight:700;color:#1c1917;margin-bottom:4px;">Please make payment to</p>
+      ${payment.bankName ? `<p style="font-size:12px;color:#44403c;margin:2px 0;">${payment.bankName}</p>` : ''}
+      ${payment.accountNumber ? `<p style="font-size:12px;color:#44403c;margin:2px 0;">${payment.accountNumber}</p>` : ''}
+      ${payment.bsb ? `<p style="font-size:12px;color:#44403c;margin:2px 0;">BSB: ${payment.bsb}</p>` : ''}
+      ${payment.instructions ? `<p style="font-size:12px;color:#78716c;font-style:italic;white-space:pre-wrap;margin-top:4px;">${payment.instructions}</p>` : ''}
     </div>` : '';
 
   return `<!DOCTYPE html>
@@ -305,101 +342,114 @@ function minimalBuildHtml(data: TemplateData): string {
 <head>
   <meta charset="utf-8">
   <title>Invoice ${form.invoiceNumber}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     @page { size: A4; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       background: white;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
-    .card {
-      width: 210mm;
-      min-height: 297mm;
-    }
+    .card { width: 210mm; min-height: 297mm; }
   </style>
 </head>
 <body>
   <div class="card">
-    <!-- Accent stripe -->
-    <div style="height: 4px; background: #d6d3d1; width: 100%;"></div>
+    <div style="padding:40px 48px;display:flex;flex-direction:column;gap:28px;">
 
-    <div style="padding: 32px 40px; display: flex; flex-direction: column; gap: 28px;">
-      <!-- Top row -->
-      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div>
-          <p style="font-size: 10px; color: #a8a29e; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px;">Invoice</p>
-          <h1 style="font-size: 20px; font-weight: 700; color: #1c1917; letter-spacing: -0.01em;">${form.invoiceNumber}</h1>
-          <div style="display: flex; gap: 24px; margin-top: 12px;">
-            <div>
-              <p style="font-size: 10px; color: #a8a29e; text-transform: uppercase; letter-spacing: 0.05em;">Issued</p>
-              <p style="font-size: 11px; font-weight: 500; color: #292524; margin-top: 2px;">${formatDate(form.dateIssued)}</p>
-            </div>
-            ${form.displayDueDate ? `
-            <div>
-              <p style="font-size: 10px; color: #a8a29e; text-transform: uppercase; letter-spacing: 0.05em;">Due</p>
-              <p style="font-size: 11px; font-weight: 500; color: #292524; margin-top: 2px;">${formatDate(form.dueDate)}</p>
-            </div>` : ''}
+      <!-- Header -->
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="display:flex;flex-direction:column;line-height:1.25;">
+            <span style="font-size:18px;font-weight:600;color:#1c1917;letter-spacing:-0.01em;">${orgLine1}</span>
+            ${orgLine2 ? `<span style="font-size:18px;font-weight:600;color:#1c1917;letter-spacing:-0.01em;">${orgLine2}</span>` : ''}
           </div>
         </div>
-        <div style="text-align: right;">
-          <p style="font-size: 14px; font-weight: 600; color: #1c1917;">${org.name}</p>
-          ${org.abn ? `<p style="font-size: 10px; color: #a8a29e; margin-top: 2px;">ABN ${org.abn}</p>` : ''}
-          <p style="font-size: 10px; color: #78716c; margin-top: 4px; white-space: pre-wrap;">${org.address}</p>
-          ${org.phone ? `<p style="font-size: 10px; color: #78716c;">${org.phone}</p>` : ''}
-          ${org.email ? `<p style="font-size: 10px; color: #78716c;">${org.email}</p>` : ''}
+        <h1 style="font-size:38px;font-weight:800;color:#0c0a09;letter-spacing:-0.02em;line-height:1;margin-top:4px;">TAX INVOICE</h1>
+      </div>
+
+      <!-- Address row -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:8px;">
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          ${clientName ? `<p style="font-size:13px;font-weight:700;color:#1c1917;margin:0;">${clientName}</p>` : ''}
+          ${clientSubName}
+          ${clientAddress}
+          ${clientEmail}
+          ${noClient}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;text-align:right;">
+          <p style="font-size:13px;font-weight:700;color:#1c1917;margin:0;">${org.name}</p>
+          ${org.address ? `<p style="font-size:12px;color:#57534e;white-space:pre-wrap;margin:1px 0;">${org.address}</p>` : ''}
+          ${org.phone ? `<p style="font-size:12px;color:#57534e;margin:1px 0;">${org.phone}</p>` : ''}
+          ${org.email ? `<p style="font-size:12px;color:#57534e;margin:1px 0;">${org.email}</p>` : ''}
+          ${org.abn ? `<p style="font-size:12px;color:#78716c;margin:1px 0;">ABN ${org.abn}</p>` : ''}
         </div>
       </div>
 
-      <!-- Client block -->
-      <div style="background: #fafaf9; border-radius: 8px; padding: 12px 16px;">
-        <p style="font-size: 10px; color: #a8a29e; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Bill to</p>
-        <p style="font-size: 14px; font-weight: 600; color: #1c1917;">${clientDisplay}</p>
-        ${clientNameLine}
-        ${clientAddressLine}
-        ${clientEmailLine}
+      <!-- Invoice meta -->
+      <div style="display:flex;flex-direction:column;gap:4px;margin-left:auto;">
+        <div style="display:flex;align-items:baseline;">
+          <span style="font-size:13px;font-weight:700;color:#1c1917;width:144px;text-align:right;">Invoice number:</span>
+          <span style="font-size:13px;color:#44403c;width:96px;text-align:right;margin-left:48px;">${form.invoiceNumber || '—'}</span>
+        </div>
+        <div style="display:flex;align-items:baseline;">
+          <span style="font-size:13px;font-weight:700;color:#1c1917;width:144px;text-align:right;">Invoice date:</span>
+          <span style="font-size:13px;color:#44403c;width:96px;text-align:right;margin-left:48px;">${formatDate(form.dateIssued)}</span>
+        </div>
+        ${dueDateRow}
       </div>
 
-      <!-- Line items table -->
-      <div>
-        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 60px 80px 80px; gap: 8px; padding-bottom: 8px; border-bottom: 2px solid #e7e5e4;">
-          <span style="font-size: 10px; font-weight: 600; color: #78716c; text-transform: uppercase; letter-spacing: 0.05em;">Description</span>
-          <span style="font-size: 10px; font-weight: 600; color: #78716c; text-transform: uppercase; letter-spacing: 0.05em; text-align: center;">Qty</span>
-          <span style="font-size: 10px; font-weight: 600; color: #78716c; text-transform: uppercase; letter-spacing: 0.05em; text-align: right;">Rate</span>
-          <span style="font-size: 10px; font-weight: 600; color: #78716c; text-transform: uppercase; letter-spacing: 0.05em; text-align: right;">Amount</span>
+      <!-- Items table card -->
+      <div style="background:#fafaf9;border-radius:10px;padding:16px 20px;">
+        <div style="display:grid;grid-template-columns:minmax(0,1.6fr) 90px 70px 70px 80px;padding-bottom:8px;border-bottom:1px solid #e7e5e4;">
+          <span style="font-size:11px;font-style:italic;color:#78716c;">Product</span>
+          <span style="font-size:11px;font-style:italic;color:#78716c;text-align:right;">Hourly rate</span>
+          <span style="font-size:11px;font-style:italic;color:#78716c;text-align:center;">Quantity</span>
+          <span style="font-size:11px;font-style:italic;color:#78716c;text-align:center;">Tax rate</span>
+          <span style="font-size:11px;font-style:italic;color:#78716c;text-align:right;">Amount</span>
         </div>
-        ${itemRows}
+        ${itemRows || '<p style="font-size:12px;color:#d4d4d4;font-style:italic;padding:20px 0;text-align:center;">No items added yet</p>'}
       </div>
 
       <!-- Totals -->
-      <div style="margin-left: auto; width: 224px; display: flex; flex-direction: column; gap: 4px;">
-        <div style="display: flex; justify-content: space-between; font-size: 14px;">
-          <span style="color: #78716c;">Subtotal</span>
-          <span style="color: #1c1917;">${formatCurrency(totals.subtotal)}</span>
+      <div style="display:flex;flex-direction:column;gap:2px;margin-left:auto;min-width:208px;">
+        <div style="display:flex;justify-content:space-between;gap:48px;font-size:13px;">
+          <span style="font-weight:700;color:#1c1917;">Subtotal:</span>
+          <span style="color:#44403c;">${formatCurrency(totals.subtotal)}</span>
         </div>
         ${gstRow}
         ${discountRow}
-        <div style="height: 1px; background: #d6d3d1; margin: 6px 0;"></div>
-        <div style="display: flex; justify-content: space-between;">
-          <span style="font-size: 14px; font-weight: 700; color: #1c1917;">Total</span>
-          <span style="font-size: 18px; font-weight: 700; color: #1c1917;">${formatCurrency(totals.grandTotal)}</span>
+        <div style="display:flex;justify-content:space-between;gap:48px;font-size:13px;margin-top:2px;">
+          <span style="font-weight:700;color:#1c1917;">Invoice total:</span>
+          <span style="font-weight:700;color:#1c1917;">${formatCurrency(totals.grandTotal)}</span>
         </div>
       </div>
 
-      ${notesBlock}
-      ${paymentBlock}
+      <!-- Footer: notes left / payment right -->
+      <div style="margin-top:auto;border-top:1px solid #e7e5e4;padding-top:24px;display:flex;justify-content:space-between;align-items:flex-start;gap:32px;">
+        <div style="flex:1;">
+          ${form.notes.trim()
+            ? `<p style="font-size:12px;color:#57534e;white-space:pre-wrap;line-height:1.6;">${form.notes}</p>`
+            : ''
+          }
+        </div>
+        ${paymentBlock}
+      </div>
+
     </div>
   </div>
 </body>
 </html>`;
 }
 
-/** Minimal invoice template — clean, borderless design with a thin accent stripe. */
+/** Minimal invoice template — redesigned to match the clean TAX INVOICE reference layout. */
 export const minimalTemplate: InvoiceTemplate = {
   id: 'minimal',
   name: 'Minimal',
-  description: 'Clean, light design with no header band',
+  description: 'Clean, typographic TAX INVOICE layout with logo mark and payment footer',
   Preview: MinimalPreview,
   buildHtml: minimalBuildHtml,
 };

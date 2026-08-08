@@ -52,6 +52,7 @@ export interface CreateInvoicePayload {
   displayDueDate: boolean;
   discount: number;
   discountType: string;
+  discountDescription?: string;
   price: number;
   items: InvoiceItemPayload[];
   notes: string;

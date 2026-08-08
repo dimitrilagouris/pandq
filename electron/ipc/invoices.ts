@@ -96,7 +96,7 @@ export function registerInvoiceHandlers(): void {
   });
 
   ipcMain.handle('db-update-invoice', (_event, payload: UpdateInvoicePayload): void => {
-    const { invoiceId, clientId, invoiceNumber, date, dueDate, gstEnabled, displayDueDate, discount, discountType, price, items, notes, templateId } = payload;
+    const { invoiceId, clientId, invoiceNumber, date, dueDate, gstEnabled, displayDueDate, discount, discountType, discountDescription, price, items, notes, templateId } = payload;
     const db = getDb();
 
     const oldInv = db.prepare('SELECT * FROM invoices WHERE id = ?').get(invoiceId) as any;
@@ -139,7 +139,7 @@ export function registerInvoiceHandlers(): void {
       deleteDiscounts.run(invoiceId);
 
       if (discount > 0) {
-        insertDiscount.run(invoiceId, 'Discount', discount, discountType ?? null);
+        insertDiscount.run(invoiceId, discountDescription || 'Discount', discount, discountType ?? null);
       }
 
       const notesVal = notes.trim() ? `draft|${notes.trim()}` : 'draft';
@@ -244,7 +244,7 @@ export function registerInvoiceHandlers(): void {
   });
 
   ipcMain.handle('db-create-invoice', (_event, payload: CreateInvoicePayload): number => {
-    const { clientId, invoiceNumber, date, dueDate, gstEnabled, displayDueDate, discount, discountType, price, items, notes, templateId } = payload;
+    const { clientId, invoiceNumber, date, dueDate, gstEnabled, displayDueDate, discount, discountType, discountDescription, price, items, notes, templateId } = payload;
     const db = getDb();
 
     const insertInvoice = db.prepare(
@@ -279,7 +279,7 @@ export function registerInvoiceHandlers(): void {
       }
 
       if (discount > 0) {
-        insertDiscount.run(invoiceId, 'Discount', discount, discountType ?? null);
+        insertDiscount.run(invoiceId, discountDescription || 'Discount', discount, discountType ?? null);
       }
 
       if (notes.trim()) {

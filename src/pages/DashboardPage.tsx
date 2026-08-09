@@ -115,8 +115,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
     return (found?.color as BadgeVariant) ?? 'gray';
   };
 
-  /** Computes status distribution metrics from currently filtered invoices. */
-  const calculateMetrics = (): StatusMetric[] => {
+  const metrics: StatusMetric[] = useMemo(() => {
     let totalDraft = 0;
     let totalSent = 0;
     let totalPaid = 0;
@@ -199,9 +198,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         percentage: (countOverdue / safeTotalCount) * 100,
       }
     ];
-  };
-
-  const metrics: StatusMetric[] = calculateMetrics();
+  }, [filteredInvoices, invoiceStatuses]);
 
   // Aggregate totals
   const totalPaidVal: number = metrics.find(m => m.id === 'paid')?.value || 0;
@@ -298,7 +295,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   const pendingChange = getChangePercent(totalPendingVal, comparisonMetrics?.pending);
 
   /** Transforms paid invoices into formatted chart dataset for payment history chart. */
-  const getChartData = () => {
+  const chartData = useMemo(() => {
     const paidInvoices: Invoice[] = filteredInvoices
       .filter((inv: Invoice) => (inv.status || 'draft').split('|')[0].trim().toLowerCase() === 'paid' && inv.paid_at)
       .sort((a: Invoice, b: Invoice) => new Date(a.paid_at!).getTime() - new Date(b.paid_at!).getTime());
@@ -319,60 +316,65 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         monthYear,
       };
     });
-  };
+  }, [filteredInvoices]);
 
-  const chartData = getChartData();
+  const recentPaidInvoices: Invoice[] = useMemo(
+    () =>
+      filteredInvoices
+        .filter((inv: Invoice) => (inv.status || 'draft').split('|')[0].trim().toLowerCase() === 'paid')
+        .slice(0, 5),
+    [filteredInvoices]
+  );
 
-  const recentPaidInvoices: Invoice[] = filteredInvoices
-    .filter((inv: Invoice) => (inv.status || 'draft').split('|')[0].trim().toLowerCase() === 'paid')
-    .slice(0, 5);
-
-  const columns: ColumnDef<Invoice>[] = [
-    {
-      key: 'invoice_number',
-      header: 'Invoice',
-      width: '1fr',
-      render: (inv: Invoice) => <span className="text-stone-700">{inv.invoice_number}</span>,
-    },
-    {
-      key: 'client_name',
-      header: 'Client',
-      width: '1.5fr',
-      render: (inv: Invoice) => {
-        const clientName: string = settings['setting_display_client_name_as'] === 'company' && inv.client_business_name
-          ? inv.client_business_name
-          : (inv.client_name || inv.client_business_name || 'No Client');
-        return <span className="text-stone-700">{clientName}</span>;
+  const columns: ColumnDef<Invoice>[] = useMemo(
+    () => [
+      {
+        key: 'invoice_number',
+        header: 'Invoice',
+        width: '1fr',
+        render: (inv: Invoice) => <span className="text-stone-700">{inv.invoice_number}</span>,
       },
-    },
-    {
-      key: 'date',
-      header: 'Date',
-      width: '1fr',
-      render: (inv: Invoice) => <span className="text-stone-500">{inv.date}</span>,
-    },
-    {
-      key: 'price',
-      header: 'Amount',
-      width: '1fr',
-      render: (inv: Invoice) => <div className="text-right text-stone-700 w-full pr-4">${(Number(inv.price) || 0).toFixed(2)}</div>,
-    },
-    {
-      key: 'status',
-      header: 'Status',
-      width: '1fr',
-      render: (inv: Invoice) => {
-        const status: string = inv.status ? inv.status.split('|')[0] : 'draft';
-        return (
-          <div className="flex justify-end pr-2">
-            <Badge variant={getStatusVariant(status)}>
-              {status}
-            </Badge>
-          </div>
-        );
+      {
+        key: 'client_name',
+        header: 'Client',
+        width: '1.5fr',
+        render: (inv: Invoice) => {
+          const clientName: string = settings['setting_display_client_name_as'] === 'company' && inv.client_business_name
+            ? inv.client_business_name
+            : (inv.client_name || inv.client_business_name || 'No Client');
+          return <span className="text-stone-700">{clientName}</span>;
+        },
       },
-    },
-  ];
+      {
+        key: 'date',
+        header: 'Date',
+        width: '1fr',
+        render: (inv: Invoice) => <span className="text-stone-500">{inv.date}</span>,
+      },
+      {
+        key: 'price',
+        header: 'Amount',
+        width: '1fr',
+        render: (inv: Invoice) => <div className="text-right text-stone-700 w-full pr-4">${(Number(inv.price) || 0).toFixed(2)}</div>,
+      },
+      {
+        key: 'status',
+        header: 'Status',
+        width: '1fr',
+        render: (inv: Invoice) => {
+          const status: string = inv.status ? inv.status.split('|')[0] : 'draft';
+          return (
+            <div className="flex justify-end pr-2">
+              <Badge variant={getStatusVariant(status)}>
+                {status}
+              </Badge>
+            </div>
+          );
+        },
+      },
+    ],
+    [settings, invoiceStatuses]
+  );
 
   return (
     <div className="flex flex-col h-full p-6 gap-4 bg-transparent overflow-hidden">

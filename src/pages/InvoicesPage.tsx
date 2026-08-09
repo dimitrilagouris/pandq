@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   RiAddLine,
   RiSubtractLine,
@@ -122,10 +122,16 @@ export default function InvoicesPage({ onNavigate, onEditInvoice }: InvoicesPage
   }, [isSelectionMode]);
 
   /* ── Selection logic ── */
-  const selectedInvoices = invoices.filter((inv) => selectedIds.has(inv.id));
-  const allSameClient =
-    selectedInvoices.length > 0 &&
-    selectedInvoices.every((inv) => inv.client_id === selectedInvoices[0].client_id);
+  const selectedInvoices = useMemo(
+    () => invoices.filter((inv) => selectedIds.has(inv.id)),
+    [invoices, selectedIds]
+  );
+  const allSameClient = useMemo(
+    () =>
+      selectedInvoices.length > 0 &&
+      selectedInvoices.every((inv) => inv.client_id === selectedInvoices[0].client_id),
+    [selectedInvoices]
+  );
   const canSendBatch = selectedInvoices.length > 0 && allSameClient;
 
   const handleToggleSelection = (id: number) => {
@@ -139,38 +145,40 @@ export default function InvoicesPage({ onNavigate, onEditInvoice }: InvoicesPage
   };
 
   /* ── Filter logic ── */
-  const filtered = invoices.filter((inv) => {
-    const statusParts = inv.status.split('|');
-    const invStatus = statusParts[0] || 'draft';
-    const invNotes = statusParts.slice(1).join('|');
-    const searchLower = search.toLowerCase();
+  const filtered = useMemo(() => {
+    return invoices.filter((inv) => {
+      const statusParts = inv.status.split('|');
+      const invStatus = statusParts[0] || 'draft';
+      const invNotes = statusParts.slice(1).join('|');
+      const searchLower = search.toLowerCase();
 
-    const matchesNumber = inv.invoice_number.toLowerCase().includes(searchLower);
-    const matchesClient =
-      (inv.client_name && inv.client_name.toLowerCase().includes(searchLower)) ||
-      (inv.client_business_name && inv.client_business_name.toLowerCase().includes(searchLower));
-    const matchesAddress = inv.client_address && inv.client_address.toLowerCase().includes(searchLower);
-    const matchesNotes = invNotes.toLowerCase().includes(searchLower);
-    const matchesItems = inv.items_description && inv.items_description.toLowerCase().includes(searchLower);
+      const matchesNumber = inv.invoice_number.toLowerCase().includes(searchLower);
+      const matchesClient =
+        (inv.client_name && inv.client_name.toLowerCase().includes(searchLower)) ||
+        (inv.client_business_name && inv.client_business_name.toLowerCase().includes(searchLower));
+      const matchesAddress = inv.client_address && inv.client_address.toLowerCase().includes(searchLower);
+      const matchesNotes = invNotes.toLowerCase().includes(searchLower);
+      const matchesItems = inv.items_description && inv.items_description.toLowerCase().includes(searchLower);
 
-    const matchesSearch = matchesNumber || matchesClient || matchesAddress || matchesNotes || matchesItems;
+      const matchesSearch = matchesNumber || matchesClient || matchesAddress || matchesNotes || matchesItems;
 
-    let matchesFlag = true;
-    if (flagFilter !== null) {
-      const selectedFlag = flags.find((f) => Number(f.id) === Number(flagFilter));
-      if (selectedFlag) {
-        const invoiceFlagsStr = typeof inv.flags === 'string' ? inv.flags : '';
-        matchesFlag = invoiceFlagsStr.includes(selectedFlag.color);
-      } else {
-        matchesFlag = false;
+      let matchesFlag = true;
+      if (flagFilter !== null) {
+        const selectedFlag = flags.find((f) => Number(f.id) === Number(flagFilter));
+        if (selectedFlag) {
+          const invoiceFlagsStr = typeof inv.flags === 'string' ? inv.flags : '';
+          matchesFlag = invoiceFlagsStr.includes(selectedFlag.color);
+        } else {
+          matchesFlag = false;
+        }
       }
-    }
 
-    if (statusFilter === 'all') {
-      return matchesSearch && matchesFlag;
-    }
-    return invStatus === statusFilter && matchesSearch && matchesFlag;
-  });
+      if (statusFilter === 'all') {
+        return matchesSearch && matchesFlag;
+      }
+      return invStatus === statusFilter && matchesSearch && matchesFlag;
+    });
+  }, [invoices, search, statusFilter, flagFilter, flags]);
 
   const handleCardClick = async (inv: Invoice, e?: React.MouseEvent) => {
     if (e?.shiftKey) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { RiArrowDownSLine } from 'react-icons/ri';
 import { ActivityLog } from '../types/models';
 import { Table, ColumnDef } from '../components/common/Table.tsx';
@@ -153,60 +153,66 @@ export default function ActivitiesPage(): React.JSX.Element {
   }, [loadLogs]);
 
   // Get unique invoice numbers for dropdown filter
-  const uniqueInvoices = Array.from(
-    new Set(
-      logs
-        .map((l) => l.invoice_number)
-        .filter((num): num is string => typeof num === 'string' && num.trim() !== '')
-    )
-  ).sort();
+  const uniqueInvoices = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          logs
+            .map((l) => l.invoice_number)
+            .filter((num): num is string => typeof num === 'string' && num.trim() !== '')
+        )
+      ).sort(),
+    [logs]
+  );
 
-  const filtered = logs.filter((log) => {
-    // 1. Activity Type filter match
-    if (activityType !== 'all') {
-      if (activityType === 'created' && !log.action_code?.includes('created')) {
-        return false;
-      }
-      if (activityType === 'updated' && !log.action_code?.includes('updated') && !log.action_code?.includes('toggled')) {
-        return false;
-      }
-      if (activityType === 'sent' && !log.action_code?.includes('sent')) {
-        return false;
-      }
-      if (activityType === 'status_updated' && !log.action_code?.includes('status_updated')) {
-        return false;
-      }
-      if (activityType === 'deleted' && !log.action_code?.includes('deleted') && !log.action_code?.includes('removed')) {
-        return false;
-      }
-    }
-
-    // 2. Invoice dropdown filter match
-    if (selectedInvoice !== 'all' && log.invoice_number !== selectedInvoice) {
-      return false;
-    }
-
-    // 3. Date range match
-    if (startDate || endDate) {
-      const logDate = new Date(log.timestamp.replace(' ', 'T') + 'Z');
-      const timeMs = logDate.getTime();
-
-      if (startDate) {
-        const start = new Date(startDate + 'T00:00:00');
-        if (timeMs < start.getTime()) {
+  const filtered = useMemo(() => {
+    return logs.filter((log) => {
+      // 1. Activity Type filter match
+      if (activityType !== 'all') {
+        if (activityType === 'created' && !log.action_code?.includes('created')) {
+          return false;
+        }
+        if (activityType === 'updated' && !log.action_code?.includes('updated') && !log.action_code?.includes('toggled')) {
+          return false;
+        }
+        if (activityType === 'sent' && !log.action_code?.includes('sent')) {
+          return false;
+        }
+        if (activityType === 'status_updated' && !log.action_code?.includes('status_updated')) {
+          return false;
+        }
+        if (activityType === 'deleted' && !log.action_code?.includes('deleted') && !log.action_code?.includes('removed')) {
           return false;
         }
       }
-      if (endDate) {
-        const end = new Date(endDate + 'T23:59:59.999');
-        if (timeMs > end.getTime()) {
-          return false;
+
+      // 2. Invoice dropdown filter match
+      if (selectedInvoice !== 'all' && log.invoice_number !== selectedInvoice) {
+        return false;
+      }
+
+      // 3. Date range match
+      if (startDate || endDate) {
+        const logDate = new Date(log.timestamp.replace(' ', 'T') + 'Z');
+        const timeMs = logDate.getTime();
+
+        if (startDate) {
+          const start = new Date(startDate + 'T00:00:00');
+          if (timeMs < start.getTime()) {
+            return false;
+          }
+        }
+        if (endDate) {
+          const end = new Date(endDate + 'T23:59:59.999');
+          if (timeMs > end.getTime()) {
+            return false;
+          }
         }
       }
-    }
 
-    return true;
-  });
+      return true;
+    });
+  }, [logs, activityType, selectedInvoice, startDate, endDate]);
 
   const activityTypeOptions: DropdownOption[] = [
     { value: 'all', label: 'All Activities' },

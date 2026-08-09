@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { OnboardingWizard } from './components/onboarding/OnboardingWizard';
 import { Sidebar } from './layout/Sidebar';
 import { Button } from './components/common/Button.tsx';
-import ClientsPage from './pages/ClientsPage';
-import InvoicePage from './pages/InvoicePage';
 import InvoicesPage from './pages/InvoicesPage';
-import SettingsPage from './pages/SettingsPage';
-import ActivitiesPage from './pages/ActivitiesPage';
-import { DashboardPage } from './pages/DashboardPage';
 import type { PageKey } from './routes/routes';
+
+const ClientsPage = lazy(() => import('./pages/ClientsPage'));
+const InvoicePage = lazy(() => import('./pages/InvoicePage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const ActivitiesPage = lazy(() => import('./pages/ActivitiesPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 
 /** Re-export so existing consumers importing `Page` from App.tsx still work. */
 export type Page = PageKey;
@@ -54,13 +55,11 @@ export default function App(): React.JSX.Element {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showDiscardModal]);
 
-  const handleNavigate = (page: Page, force = false) => {
+  const handleNavigate = useCallback((page: Page, force = false) => {
     if (page === activePage) {
       if (page === 'invoice-editor' && editingInvoiceId !== null) {
         // transitioning from editing to new invoice
-      }
-
-      else {
+      } else {
         return;
       }
     }
@@ -68,9 +67,7 @@ export default function App(): React.JSX.Element {
     if (hasUnsavedChanges && !force) {
       setPendingPage(page);
       setShowDiscardModal(true);
-    }
-
-    else {
+    } else {
       setHasUnsavedChanges(false);
 
       if (page === 'invoice-editor' && page !== activePage) {
@@ -79,7 +76,12 @@ export default function App(): React.JSX.Element {
 
       setActivePage(page);
     }
-  };
+  }, [activePage, editingInvoiceId, hasUnsavedChanges]);
+
+  const handleEditInvoice = useCallback((id: number) => {
+    setEditingInvoiceId(id);
+    setActivePage('invoice-editor');
+  }, []);
 
   const renderPage = (): React.ReactNode => {
     switch (activePage) {
@@ -93,10 +95,7 @@ export default function App(): React.JSX.Element {
         return (
           <InvoicesPage
             onNavigate={handleNavigate}
-            onEditInvoice={(id) => {
-              setEditingInvoiceId(id);
-              setActivePage('invoice-editor');
-            }}
+            onEditInvoice={handleEditInvoice}
           />
         );
 
@@ -132,7 +131,15 @@ export default function App(): React.JSX.Element {
         onNavigate={handleNavigate}
       />
       <main className="flex-1 overflow-hidden h-full">
-        {renderPage()}
+        <Suspense
+          fallback={
+            <div className="flex-1 h-full flex items-center justify-center">
+              <p className="text-sm text-stone-400">Loading page…</p>
+            </div>
+          }
+        >
+          {renderPage()}
+        </Suspense>
       </main>
 
       {/* Unsaved Changes Confirmation Modal (no blur, no click-outside close) */}

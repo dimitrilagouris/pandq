@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { RiAddLine, RiSearchLine, RiDeleteBinLine, RiPencilLine, RiUser3Line } from 'react-icons/ri';
 import { Client, Invoice } from '../types/models';
 import { Table, ColumnDef } from '../components/common/Table.tsx';
@@ -69,10 +69,15 @@ export default function ClientsPage(): React.JSX.Element {
     await loadData();
   };
 
-  const filtered = clients.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.email.toLowerCase().includes(search.toLowerCase()) ||
-    c.phone.toLowerCase().includes(search.toLowerCase())
+  const filtered = useMemo(
+    () =>
+      clients.filter(
+        (c) =>
+          c.name.toLowerCase().includes(search.toLowerCase()) ||
+          c.email.toLowerCase().includes(search.toLowerCase()) ||
+          c.phone.toLowerCase().includes(search.toLowerCase())
+      ),
+    [clients, search]
   );
 
   const columns: ColumnDef<Client>[] = [

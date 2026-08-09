@@ -1,27 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import * as Icons from 'react-icons/ri';
+import {
+  RiEqualizerLine as EqIcon,
+  RiTimeLine as TimeIcon,
+  RiSettings3Line as SetIcon,
+  RiLayoutLeftLine as LayoutLeftIcon,
+  RiAddLine as AddIcon,
+  RiLogoutBoxLine as LogoutIcon,
+  RiMagicLine as MagicIcon,
+} from 'react-icons/ri';
 import { Button } from '../components/common/Button.tsx';
 import { Page } from '../App';
 import { HorizontalProgress } from '../components/common/HorizontalProgress.tsx';
 import { TactileIconBox } from '../components/common/TactileIconBox.tsx';
 import { getSidebarGroups, getRoutesByGroup } from '../routes/routes';
 
-const {
-  RiEqualizerLine: EqIcon,
-  RiTimeLine: TimeIcon,
-  RiSettings3Line: SetIcon,
-  RiLayoutLeftLine: LayoutLeftIcon,
-  RiAddLine: AddIcon,
-  RiLogoutBoxLine: LogoutIcon,
-  RiMagicLine: MagicIcon,
-} = Icons;
-
 interface SidebarProps {
   activePage: Page;
   onNavigate: (page: Page) => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
+export const Sidebar: React.FC<SidebarProps> = React.memo(({ activePage, onNavigate }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [orgName, setOrgName] = useState('My business');
   const [completedSteps, setCompletedSteps] = useState(0);
@@ -210,7 +208,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
       </div>
     </aside>
   );
-};
+});
+Sidebar.displayName = 'Sidebar';
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -220,7 +219,7 @@ interface NavItemProps {
   isCollapsed?: boolean;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick, isCollapsed }) => {
+const NavItem: React.FC<NavItemProps> = React.memo(({ icon, label, active, onClick, isCollapsed }) => {
   return (
     <button
       onClick={onClick}
@@ -241,4 +240,5 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, active, onClick, isColla
       </span>
     </button>
   );
-};
+});
+NavItem.displayName = 'NavItem';

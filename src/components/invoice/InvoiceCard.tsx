@@ -33,7 +33,7 @@ function getStatusVariant(statusName: string, invoiceStatuses: InvoiceStatus[]):
 /**
  * Single invoice card component rendered in the invoices list column.
  */
-export const InvoiceCard: React.FC<InvoiceCardProps> = ({
+export const InvoiceCard: React.FC<InvoiceCardProps> = React.memo(({
   invoice,
   invoiceStatuses,
   settings,
@@ -142,4 +142,6 @@ export const InvoiceCard: React.FC<InvoiceCardProps> = ({
       </div>
     </div>
   );
-};
+});
+
+InvoiceCard.displayName = 'InvoiceCard';

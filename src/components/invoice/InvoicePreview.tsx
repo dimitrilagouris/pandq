@@ -61,9 +61,11 @@ interface InvoicePreviewProps {
  * Invoice document card — resolves the active template from the registry
  * and renders its Preview component. Zoom and pan are handled by PreviewCanvas.
  */
-export const InvoicePreview: React.FC<InvoicePreviewProps> = ({ form, client, settings = {} }) => {
+export const InvoicePreview: React.FC<InvoicePreviewProps> = React.memo(({ form, client, settings = {} }) => {
   const template = getTemplate(form.templateId);
   const data = buildTemplateData(form, client, settings);
 
   return <template.Preview {...data} />;
-};
+});
+
+InvoicePreview.displayName = 'InvoicePreview';

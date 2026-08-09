@@ -1,14 +1,12 @@
 import React from 'react';
-import * as Icons from 'react-icons/ri';
-
-const {
+import {
   RiReceiptLine,
   RiDashboardLine,
   RiGroup3Line,
   RiPulseLine,
   RiSettings3Line,
   RiFileLine,
-} = Icons;
+} from 'react-icons/ri';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

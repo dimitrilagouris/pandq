@@ -17,7 +17,7 @@ interface PreviewCanvasProps {
  * Interactive canvas container wrapping the invoice preview.
  * Provides smooth 60fps pan/zoom gestures, mouse drag navigation, and automatic horizontal centering.
  */
-export const PreviewCanvas = forwardRef<PreviewCanvasHandle, PreviewCanvasProps>(({
+export const PreviewCanvas = React.memo(forwardRef<PreviewCanvasHandle, PreviewCanvasProps>(({
   scale,
   onScaleChange,
   children,
@@ -220,6 +220,6 @@ export const PreviewCanvas = forwardRef<PreviewCanvasHandle, PreviewCanvasProps>
       </div>
     </div>
   );
-});
+}));
 
 PreviewCanvas.displayName = 'PreviewCanvas';

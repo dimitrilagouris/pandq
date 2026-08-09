@@ -298,6 +298,22 @@ export function initDatabase(basePath: string): void {
       }
     }
 
+    // Version 11: Add performance indexes for foreign key lookups
+    if (currentVersion < 11) {
+      try {
+        db.exec(`
+          CREATE INDEX IF NOT EXISTS idx_invoices_client_id ON invoices(client_id);
+          CREATE INDEX IF NOT EXISTS idx_invoice_items_invoice_id ON invoice_items(invoice_id);
+          CREATE INDEX IF NOT EXISTS idx_invoice_flags_invoice_id ON invoice_flags(invoice_id);
+          CREATE INDEX IF NOT EXISTS idx_invoice_item_workers_item_id ON invoice_item_workers(item_id);
+          CREATE INDEX IF NOT EXISTS idx_activity_logs_invoice_id ON activity_logs(invoice_id);
+        `);
+        db.pragma('user_version = 11');
+      } catch (err) {
+        console.error('Failed to run Version 11 migration (database indexes):', err);
+      }
+    }
+
   } catch (err) {
     console.error('Failed to run schema migrations:', err);
   }
@@ -337,9 +353,6 @@ export function initDatabase(basePath: string): void {
     }
   } catch (err: any) {
     console.error('Failed to seed flags:', err);
-    try {
-      require('fs').writeFileSync('/Users/dimitrilagouris/Desktop/Personal Projects/By myself/mikovoice/seed_error.json', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
-    } catch (e) {}
   }
 
   // Pre-populate activity_actions

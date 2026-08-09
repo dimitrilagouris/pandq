@@ -1,5 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { RiAddLine, RiDeleteBinLine, RiPencilLine, RiDraggable, RiUser3Line, RiHashtag, RiArrowDownSLine, RiCheckLine, RiCalendarEventLine, RiTimeLine, RiArchiveLine, RiCloseLine, RiGroup3Line } from 'react-icons/ri';
+import {
+  RiAddLine,
+  RiUser3Line,
+  RiHashtag,
+  RiArrowDownSLine,
+  RiCloseLine,
+} from 'react-icons/ri';
 import {
   DndContext,
   closestCenter,
@@ -14,9 +20,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-  useSortable
 } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 
 import { Client } from '../../types/models';
 import { Input } from '../common/Input.tsx';
@@ -25,8 +29,9 @@ import { Button } from '../common/Button.tsx';
 import { HelpBadge } from '../common/HelpBadge.tsx';
 import { Toggle } from '../common/Toggle.tsx';
 import { CollapsibleSection } from './CollapsibleSection.tsx';
-import { InvoiceFormState, LabourWorker, LineItem } from './invoiceTypes';
+import { InvoiceFormState, LineItem } from './invoiceTypes';
 import { TemplateSelector } from './TemplateSelector';
+import { SortableLineItemCard } from './SortableLineItemCard';
 
 interface InvoiceFormProps {
   form: InvoiceFormState;
@@ -56,7 +61,7 @@ function formatShortDate(dateStr: string): string {
  * Left-panel form for composing a new invoice.
  * All state lives in the parent; this component is purely presentational.
  */
-export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChange }) => {
+export const InvoiceForm: React.FC<InvoiceFormProps> = React.memo(({ form, clients, onChange }) => {
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
   const selectedClient = clients.find(c => c.id === form.clientId) ?? null;
 
@@ -531,279 +536,6 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = ({ form, clients, onChang
           </div>
         </div>
       )}
-    </div>
-  );
-};
-
-/* ─── Line Item Card ─── */
-
-interface SortableLineItemCardProps {
-  item: LineItem;
-  isEditing: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
-  onUpdate: (patch: Partial<LineItem>) => void;
-}
-
-const SortableLineItemCard: React.FC<SortableLineItemCardProps> = (props) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: props.item.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 50 : 'auto',
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} className={isDragging ? 'opacity-50' : ''}>
-      <LineItemCard {...props} dragHandleProps={{ ...attributes, ...listeners }} isDragging={isDragging} />
-    </div>
-  );
-};
-
-interface LineItemCardProps extends SortableLineItemCardProps {
-  dragHandleProps: any;
-  isDragging: boolean;
-}
-
-/**
- * Compact card for a line item. Shows a summary row by default;
- * expands inline editing fields when the edit button is clicked.
- */
-const LineItemCard: React.FC<LineItemCardProps> = ({
-  item, isEditing, onEdit, onDelete, onUpdate, dragHandleProps, isDragging
-}) => {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const workers = item.workers ?? [];
-  const hasMultipleWorkers = workers.length > 1;
-
-  useEffect(() => {
-    if (isEditing && textareaRef.current) {
-      const textarea = textareaRef.current;
-      textarea.style.height = 'auto';
-      textarea.style.height = `${textarea.scrollHeight}px`;
-    }
-  }, [isEditing, item.description]);
-
-  /** Compute total from workers if present, otherwise use legacy fields. */
-  const total = (item.type === 'labour' && workers.length > 0)
-    ? workers.reduce((sum, w) => sum + (w.hours * w.rate), 0)
-    : item.type === 'labour'
-      ? (item.hours ?? item.quantity ?? 0) * item.unitPrice
-      : item.quantity * item.unitPrice;
-
-  /** Total hours across all workers. */
-  const totalHours = workers.reduce((sum, w) => sum + w.hours, 0);
-
-  /** Add a new empty worker to this labour item. */
-  const addWorker = (): void => {
-    const newWorker: LabourWorker = { id: crypto.randomUUID(), name: '', hours: 1, rate: workers[0]?.rate ?? 0 };
-    onUpdate({ workers: [...workers, newWorker] });
-  };
-
-  /** Remove a worker by id. Prevents removing the last one. */
-  const removeWorker = (workerId: string): void => {
-    if (workers.length <= 1) {
-      return;
-    }
-    onUpdate({ workers: workers.filter(w => w.id !== workerId) });
-  };
-
-  /** Update a single worker's fields. */
-  const updateWorker = (workerId: string, patch: Partial<LabourWorker>): void => {
-    onUpdate({
-      workers: workers.map(w => w.id === workerId ? { ...w, ...patch } : w),
-    });
-  };
-
-  return (
-    <div
-      className={`group rounded-xl border bg-white transition-all duration-150 ${isDragging ? 'border-stone-400 shadow-md' : 'shadow-sm'} ${isEditing && !isDragging ? 'border-stone-400 ring-2 ring-stone-400 ring-offset-1' : 'border-stone-200/80 hover:border-stone-300'}`}
-    >
-      <div className="flex items-start gap-2 p-3">
-        {/* Drag handle */}
-        <div
-          {...dragHandleProps}
-          className="mt-0.5 flex-shrink-0 cursor-grab active:cursor-grabbing text-stone-300 hover:text-stone-500 transition-colors focus:outline-none"
-        >
-          <RiDraggable className="w-4 h-4" />
-        </div>
-
-        {/* Content area */}
-        <div className={`flex-1 flex flex-col gap-1.5 min-w-0 ${!isEditing ? 'cursor-pointer' : ''}`} onClick={!isEditing ? onEdit : undefined}>
-          
-          {/* Top row: Description */}
-          <div className="flex items-start gap-2">
-            {isEditing ? (
-              <textarea
-                ref={textareaRef}
-                value={item.description}
-                onChange={(e) => onUpdate({ description: e.target.value })}
-                placeholder={item.type === 'labour' ? "Labour description" : "Material description"}
-                className="font-medium text-sm text-stone-900 bg-transparent outline-none flex-1 placeholder-stone-300 resize-none overflow-hidden min-h-[24px] leading-tight break-words"
-                rows={1}
-                autoFocus
-              />
-            ) : (
-              <span className="font-medium text-sm text-stone-900 line-clamp-2 flex-1 leading-tight break-words whitespace-pre-wrap">
-                {item.description || 'Untitled'}
-              </span>
-            )}
-          </div>
-
-          {/* Bottom row: Details */}
-          <div className="flex flex-col gap-2 text-xs text-stone-500 mt-0.5">
-             {item.type === 'labour' ? (
-               isEditing ? (
-                 <div className="flex flex-col gap-2">
-                   {/* Date picker row */}
-                   <div className="flex items-center gap-1.5">
-                     <RiCalendarEventLine className="w-3.5 h-3.5 text-stone-400" />
-                     <DatePicker 
-                       variant="inline" 
-                       value={item.date || ''} 
-                       onChange={(val) => onUpdate({date: val})} 
-                     />
-                   </div>
-
-                   {/* Worker rows */}
-                   <div className="flex flex-col gap-1.5">
-                     {workers.map((worker, idx) => (
-                       <div key={worker.id} className="flex items-center gap-2 flex-wrap">
-                         {hasMultipleWorkers && (
-                           <div className="flex items-center gap-1 min-w-[80px]">
-                             <RiUser3Line className="w-3.5 h-3.5 text-stone-400 flex-shrink-0" />
-                             <input
-                               type="text"
-                               value={worker.name}
-                               onChange={e => updateWorker(worker.id, { name: e.target.value })}
-                               className="bg-transparent outline-none text-stone-600 w-[70px] border-b border-dashed border-stone-300 focus:border-stone-400 font-medium"
-                               placeholder={`Person ${idx + 1}`}
-                             />
-                           </div>
-                         )}
-                         <div className="flex items-center gap-1">
-                           <RiTimeLine className="w-3.5 h-3.5 text-stone-400" />
-                           <input type="number" value={worker.hours || ''} onChange={e => updateWorker(worker.id, { hours: Number(e.target.value) || 0 })} className="bg-transparent outline-none text-stone-600 w-10 border-b border-dashed border-stone-300 focus:border-stone-400 font-medium" placeholder="0" />
-                           <span>hrs</span>
-                         </div>
-                         <div className="flex items-center gap-1">
-                           <span className="text-stone-400 font-medium">$</span>
-                           <input type="number" value={worker.rate || ''} onChange={e => updateWorker(worker.id, { rate: Number(e.target.value) || 0 })} className="bg-transparent outline-none text-stone-600 w-12 border-b border-dashed border-stone-300 focus:border-stone-400 font-medium" placeholder="0.00" />
-                           <span>/hr</span>
-                         </div>
-                         {hasMultipleWorkers && (
-                           <button
-                             type="button"
-                             onClick={() => removeWorker(worker.id)}
-                             className="p-0.5 text-stone-300 hover:text-red-500 transition-colors rounded"
-                             title="Remove person"
-                           >
-                             <RiCloseLine className="w-3.5 h-3.5" />
-                           </button>
-                         )}
-                       </div>
-                     ))}
-                   </div>
-
-                   {/* Add person button */}
-                   <button
-                     type="button"
-                     onClick={addWorker}
-                     className="flex items-center gap-1 text-[11px] text-stone-400 hover:text-stone-600 transition-colors w-fit mt-0.5"
-                   >
-                     <RiAddLine className="w-3 h-3" />
-                     <span>Add Person</span>
-                   </button>
-                 </div>
-               ) : (
-                 <div className="flex items-center gap-6">
-                   {item.date && (
-                     <div className="flex items-center gap-1.5">
-                       <RiCalendarEventLine className="w-3.5 h-3.5 text-stone-400" />
-                       <span className="font-medium text-stone-600">{formatShortDate(item.date)}</span>
-                     </div>
-                   )}
-                   {hasMultipleWorkers && (
-                     <div className="flex items-center gap-1.5">
-                       <RiGroup3Line className="w-3.5 h-3.5 text-stone-400" />
-                       <span className="font-medium text-stone-600">{workers.length} people</span>
-                     </div>
-                   )}
-                   <div className="flex items-center gap-1.5">
-                     <RiTimeLine className="w-3.5 h-3.5 text-stone-400" />
-                     <span className="font-medium text-stone-600">{totalHours} hrs</span>
-                   </div>
-                   {!hasMultipleWorkers && workers.length === 1 && (
-                     <div className="flex items-center gap-1.5">
-                       <span className="text-stone-400 font-medium">$</span>
-                       <span className="font-medium text-stone-600">{workers[0].rate}/hr</span>
-                     </div>
-                   )}
-                 </div>
-               )
-             ) : (
-               /* Materials */
-               isEditing ? (
-                 <div className="flex items-center gap-6 flex-wrap">
-                   <div className="flex items-center gap-1.5">
-                     <RiArchiveLine className="w-3.5 h-3.5 text-stone-400" />
-                     <input type="number" value={item.quantity || ''} onChange={e => onUpdate({quantity: Number(e.target.value) || 0})} className="bg-transparent outline-none text-stone-600 w-10 border-b border-dashed border-stone-300 focus:border-stone-400 font-medium" placeholder="1" />
-                     <span>qty</span>
-                   </div>
-                   <div className="flex items-center gap-1">
-                     <span className="text-stone-400 font-medium">$</span>
-                     <input type="number" value={item.unitPrice || ''} onChange={e => onUpdate({unitPrice: Number(e.target.value) || 0})} className="bg-transparent outline-none text-stone-600 w-12 border-b border-dashed border-stone-300 focus:border-stone-400 font-medium" placeholder="0.00" />
-                     <span>ea</span>
-                   </div>
-                 </div>
-               ) : (
-                 <div className="flex items-center gap-6">
-                   <div className="flex items-center gap-1.5">
-                     <RiArchiveLine className="w-3.5 h-3.5 text-stone-400" />
-                     <span className="font-medium text-stone-600">{item.quantity} qty</span>
-                   </div>
-                   <div className="flex items-center gap-1.5">
-                     <span className="text-stone-400 font-medium">$</span>
-                     <span className="font-medium text-stone-600">{item.unitPrice} ea</span>
-                   </div>
-                 </div>
-               )
-             )}
-          </div>
-        </div>
-
-        {/* Total and Actions */}
-        <div className="flex flex-col items-end justify-between self-stretch ml-2">
-           <div className={`flex items-center gap-0.5 transition-opacity duration-150 ${isEditing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-              {isEditing ? (
-                <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(); }} className="p-1 text-stone-400 hover:text-lime-600 hover:bg-lime-50 rounded-md transition-colors" title="Done">
-                  <RiCheckLine className="w-4 h-4" />
-                </button>
-              ) : (
-                <button type="button" onClick={(e) => { e.stopPropagation(); onEdit(); }} className="p-1 text-stone-400 hover:text-stone-700 hover:bg-stone-100 rounded-md transition-colors" title="Edit">
-                  <RiPencilLine className="w-4 h-4" />
-                </button>
-              )}
-              <button type="button" onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-1 text-stone-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors" title="Delete">
-                <RiDeleteBinLine className="w-4 h-4" />
-              </button>
-           </div>
-           {total > 0 ? (
-             <span className="text-sm font-medium text-stone-800 mt-2">
-               {formatCurrency(total)}
-             </span>
-           ) : <div />}
-        </div>
-
-      </div>
     </div>
   );
 };

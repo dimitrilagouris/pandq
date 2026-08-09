@@ -1,4 +1,5 @@
 import { InvoiceDetail, PersistedInvoiceItem, PersistedWorker } from '../../types/models';
+import { CreateInvoicePayload, InvoiceItemPayload } from '../../types/electron';
 import { InvoiceFormState, LineItem } from './invoiceTypes';
 
 /**
@@ -129,3 +130,87 @@ export function hydrateFormState(detail: InvoiceDetail): InvoiceFormState {
     templateId,
   };
 }
+
+/** Maps form LineItems to IPC payload item shapes. */
+export function buildItemsPayload(items: LineItem[]): InvoiceItemPayload[] {
+  return items.map(item => ({
+    type: item.type,
+    description: item.description,
+    hours: item.type === 'labour' ? (item.hours ?? item.quantity ?? 0) : null,
+    rate: item.unitPrice,
+    quantity: item.type === 'materials' ? (item.quantity ?? 0) : null,
+    date: item.type === 'labour' ? (item.date ?? '') : null,
+    workers: item.workers?.map(w => ({ name: w.name, hours: w.hours, rate: w.rate })),
+  }));
+}
+
+/** Constructs complete save payload for IPC create/update calls. */
+export function buildSavePayload(
+  form: InvoiceFormState,
+  grandTotal: number
+): CreateInvoicePayload {
+  return {
+    clientId: form.clientId!,
+    invoiceNumber: form.invoiceNumber,
+    date: form.dateIssued,
+    dueDate: form.dueDate,
+    gstEnabled: form.gstEnabled,
+    displayDueDate: form.displayDueDate,
+    discount: form.discount,
+    discountType: form.discountType,
+    discountDescription: form.discountDescription,
+    price: grandTotal,
+    items: buildItemsPayload(form.items),
+    notes: form.notes,
+    templateId: form.templateId,
+  };
+}
+
+/** Wraps raw invoice preview HTML with standalone print and PDF stylesheet. */
+export function buildPrintableHtml(invoiceNumber: string, cardHtml: string): string {
+  const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+    .map(el => el.outerHTML)
+    .join('\n');
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Invoice ${invoiceNumber}</title>
+        ${styles}
+        <style>
+          @page {
+            size: A4;
+            margin: 0;
+          }
+          body {
+            background: white !important;
+            margin: 0;
+            padding: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          #invoice-preview-card {
+            width: 210mm !important;
+            max-width: 210mm !important;
+            min-height: 297mm !important;
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+            padding: 10mm !important;
+            box-sizing: border-box !important;
+          }
+          .a4-page-breaks::before {
+            display: none !important;
+            background-image: none !important;
+          }
+        </style>
+      </head>
+      <body>
+        ${cardHtml}
+      </body>
+    </html>
+  `;
+}
+

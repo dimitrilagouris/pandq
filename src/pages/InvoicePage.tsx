@@ -7,7 +7,7 @@ import { InvoicePreview, computeTotals } from '../components/invoice/InvoicePrev
 import { PreviewCanvas, PreviewCanvasHandle } from '../components/invoice/PreviewCanvas';
 import { InvoiceFormState, LineItem } from '../components/invoice/invoiceTypes';
 import type { InvoiceItemPayload } from '../types/electron';
-import { hydrateFormState } from '../components/invoice/invoiceAdapters';
+import { hydrateFormState, buildSavePayload, buildPrintableHtml } from '../components/invoice/invoiceAdapters';
 import { useUndoableState } from '../hooks/useUndoableState';
 import { Page } from '../App';
 
@@ -91,31 +91,20 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
 
   useEffect(() => {
     window.electronAPI.getClients().then(setClients).catch(console.error);
-    window.electronAPI.getSettings().then(setSettings).catch(console.error);
-  }, []);
-
-  useEffect(() => {
-    if (invoiceId) {
-      window.electronAPI.getInvoiceById(invoiceId).then(data => {
-        if (data) {
-          const populatedForm = hydrateFormState(data);
-          undoable.resetHistory(populatedForm);
-          setInitialFormState(populatedForm);
-        }
-      }).catch(console.error);
-    } else {
-      window.electronAPI.getSettings().then((settings) => {
-        const defaultDueDays = settings['setting_default_due_days'] || '14';
+    window.electronAPI.getSettings().then((loadedSettings) => {
+      setSettings(loadedSettings);
+      if (!invoiceId) {
+        const defaultDueDays = loadedSettings['setting_default_due_days'] || '14';
         const days = parseInt(defaultDueDays, 10) || 14;
         const d = new Date();
         d.setDate(d.getDate() + days);
         const computedDueDate = d.toISOString().slice(0, 10);
 
-        const prefix = settings['setting_invoice_prefix'] || 'INV-';
-        const defaultNotes = settings['setting_default_notes'] || '';
-        const defaultGst = settings['setting_default_gst_enabled'] === 'true';
-        const defaultDisplayDue = settings['setting_default_display_due_date'] !== 'false';
-        const defaultTemplate = settings['setting_default_template_id'] || 'classic';
+        const prefix = loadedSettings['setting_invoice_prefix'] || 'INV-';
+        const defaultNotes = loadedSettings['setting_default_notes'] || '';
+        const defaultGst = loadedSettings['setting_default_gst_enabled'] === 'true';
+        const defaultDisplayDue = loadedSettings['setting_default_display_due_date'] !== 'false';
+        const defaultTemplate = loadedSettings['setting_default_template_id'] || 'classic';
 
         const defaultForm = {
           ...createInitialFormState(),
@@ -128,12 +117,19 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
         };
         undoable.resetHistory(defaultForm);
         setInitialFormState(defaultForm);
-      }).catch(err => {
-        console.error('Failed to load default settings:', err);
-        const fallbackForm = createInitialFormState();
-        undoable.resetHistory(fallbackForm);
-        setInitialFormState(fallbackForm);
-      });
+      }
+    }).catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    if (invoiceId) {
+      window.electronAPI.getInvoiceById(invoiceId).then(data => {
+        if (data) {
+          const populatedForm = hydrateFormState(data);
+          undoable.resetHistory(populatedForm);
+          setInitialFormState(populatedForm);
+        }
+      }).catch(console.error);
     }
     setError('');
   }, [invoiceId]);
@@ -241,15 +237,15 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
 
   /** Maps form LineItems to the IPC payload shape, including workers. */
   const buildItemsPayload = (items: LineItem[]): InvoiceItemPayload[] => {
-    return items.map(item => ({
-      type: item.type,
-      description: item.description,
-      hours: item.type === 'labour' ? (item.hours ?? item.quantity ?? 0) : null,
-      rate: item.unitPrice,
-      quantity: item.type === 'materials' ? (item.quantity ?? 0) : null,
-      date: item.type === 'labour' ? (item.date ?? '') : null,
-      workers: item.workers?.map(w => ({ name: w.name, hours: w.hours, rate: w.rate })),
-    }));
+  const saveInvoiceState = async (): Promise<number> => {
+    const totals = computeTotals(form);
+    const payload = buildSavePayload(form, totals.grandTotal);
+    if (invoiceId) {
+      await window.electronAPI.updateInvoice({ ...payload, invoiceId });
+      return invoiceId;
+    }
+    const newId = await window.electronAPI.createInvoice(payload);
+    return Number(newId);
   };
 
   const handleSave = async (_status: 'draft' | 'sent'): Promise<void> => {
@@ -264,43 +260,7 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
     setError('');
     try {
       setIsSaving(true);
-      const totals = computeTotals(form);
-      const items = buildItemsPayload(form.items);
-
-      if (invoiceId) {
-        await window.electronAPI.updateInvoice({
-          invoiceId,
-          clientId: form.clientId,
-          invoiceNumber: form.invoiceNumber,
-          date: form.dateIssued,
-          dueDate: form.dueDate,
-          gstEnabled: form.gstEnabled,
-          displayDueDate: form.displayDueDate,
-          discount: form.discount,
-          discountType: form.discountType,
-          discountDescription: form.discountDescription,
-          price: totals.grandTotal,
-          items,
-          notes: form.notes,
-          templateId: form.templateId,
-        });
-      } else {
-        await window.electronAPI.createInvoice({
-          clientId: form.clientId,
-          invoiceNumber: form.invoiceNumber,
-          date: form.dateIssued,
-          dueDate: form.dueDate,
-          gstEnabled: form.gstEnabled,
-          displayDueDate: form.displayDueDate,
-          discount: form.discount,
-          discountType: form.discountType,
-          discountDescription: form.discountDescription,
-          price: totals.grandTotal,
-          items,
-          notes: form.notes,
-          templateId: form.templateId,
-        });
-      }
+      await saveInvoiceState();
       onNavigate('invoices', true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to save invoice.');
@@ -328,93 +288,8 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
     setError('');
     try {
       setIsSaving(true);
-
-      const totals = computeTotals(form);
-      const items = buildItemsPayload(form.items);
-
-      // 1. Auto-save state to database first
-      if (invoiceId) {
-        await window.electronAPI.updateInvoice({
-          invoiceId,
-          clientId: form.clientId,
-          invoiceNumber: form.invoiceNumber,
-          date: form.dateIssued,
-          dueDate: form.dueDate,
-          gstEnabled: form.gstEnabled,
-          displayDueDate: form.displayDueDate,
-          discount: form.discount,
-          discountType: form.discountType,
-          discountDescription: form.discountDescription,
-          price: totals.grandTotal,
-          items,
-          notes: form.notes,
-          templateId: form.templateId,
-        });
-      } else {
-        await window.electronAPI.createInvoice({
-          clientId: form.clientId,
-          invoiceNumber: form.invoiceNumber,
-          date: form.dateIssued,
-          dueDate: form.dueDate,
-          gstEnabled: form.gstEnabled,
-          displayDueDate: form.displayDueDate,
-          discount: form.discount,
-          discountType: form.discountType,
-          discountDescription: form.discountDescription,
-          price: totals.grandTotal,
-          items,
-          notes: form.notes,
-          templateId: form.templateId,
-        });
-      }
-
-      // 2. Build high fidelity printable document with styling
-      const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-        .map(el => el.outerHTML)
-        .join('\n');
-
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8">
-            <title>Invoice ${form.invoiceNumber}</title>
-            ${styles}
-            <style>
-              @page {
-                size: A4;
-                margin: 0;
-              }
-              body {
-                background: white !important;
-                margin: 0;
-                padding: 0;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-              }
-              #invoice-preview-card {
-                width: 210mm !important;
-                max-width: 210mm !important;
-                min-height: 297mm !important;
-                box-shadow: none !important;
-                border: none !important;
-                border-radius: 0 !important;
-                padding: 10mm !important;
-                box-sizing: border-box !important;
-              }
-              .a4-page-breaks::before {
-                display: none !important;
-                background-image: none !important;
-              }
-            </style>
-          </head>
-          <body>
-            ${cardEl.outerHTML}
-          </body>
-        </html>
-      `;
-
-      // 3. Trigger print to PDF dialog
+      await saveInvoiceState();
+      const htmlContent = buildPrintableHtml(form.invoiceNumber, cardEl.outerHTML);
       const success = await window.electronAPI.printToPDF(form.invoiceNumber, htmlContent);
       if (success) {
         onNavigate('invoices', true);
@@ -445,95 +320,10 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
     setError('');
     try {
       setIsSaving(true);
-
       const totals = computeTotals(form);
-      const items = buildItemsPayload(form.items);
+      const currentInvoiceId = await saveInvoiceState();
+      const htmlContent = buildPrintableHtml(form.invoiceNumber, cardEl.outerHTML);
 
-      // 1. Auto-save state to database first
-      let currentInvoiceId = invoiceId;
-      if (currentInvoiceId) {
-        await window.electronAPI.updateInvoice({
-          invoiceId: currentInvoiceId,
-          clientId: form.clientId,
-          invoiceNumber: form.invoiceNumber,
-          date: form.dateIssued,
-          dueDate: form.dueDate,
-          gstEnabled: form.gstEnabled,
-          displayDueDate: form.displayDueDate,
-          discount: form.discount,
-          discountType: form.discountType,
-          discountDescription: form.discountDescription,
-          price: totals.grandTotal,
-          items,
-          notes: form.notes,
-          templateId: form.templateId,
-        });
-      } else {
-        const newId = await window.electronAPI.createInvoice({
-          clientId: form.clientId,
-          invoiceNumber: form.invoiceNumber,
-          date: form.dateIssued,
-          dueDate: form.dueDate,
-          gstEnabled: form.gstEnabled,
-          displayDueDate: form.displayDueDate,
-          discount: form.discount,
-          discountType: form.discountType,
-          discountDescription: form.discountDescription,
-          price: totals.grandTotal,
-          items,
-          notes: form.notes,
-          templateId: form.templateId,
-        });
-        currentInvoiceId = Number(newId);
-      }
-
-      // 2. Build high fidelity printable document with styling
-      const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-        .map(el => el.outerHTML)
-        .join('\n');
-
-      const htmlContent = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8">
-            <title>Invoice ${form.invoiceNumber}</title>
-            ${styles}
-            <style>
-              @page {
-                size: A4;
-                margin: 0;
-              }
-              body {
-                background: white !important;
-                margin: 0;
-                padding: 0;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-              }
-              #invoice-preview-card {
-                width: 210mm !important;
-                max-width: 210mm !important;
-                min-height: 297mm !important;
-                box-shadow: none !important;
-                border: none !important;
-                border-radius: 0 !important;
-                padding: 10mm !important;
-                box-sizing: border-box !important;
-              }
-              .a4-page-breaks::before {
-                display: none !important;
-                background-image: none !important;
-              }
-            </style>
-          </head>
-          <body>
-            ${cardEl.outerHTML}
-          </body>
-        </html>
-      `;
-
-      // 3. Trigger email creation with attachment
       const clientName = selectedClient ? (selectedClient.business_name || selectedClient.name) : '';
       await window.electronAPI.emailInvoice(
         form.invoiceNumber,

@@ -39,23 +39,6 @@ interface InvoiceFormProps {
   onChange: (next: Partial<InvoiceFormState>) => void;
 }
 
-/** Format a currency value for display in the summary badge. */
-function formatCurrency(amount: number): string {
-  return `$${amount.toFixed(2)}`;
-}
-
-/** Format an ISO date string to a short display format (e.g. "8 Jul"). */
-function formatShortDate(dateStr: string): string {
-  if (!dateStr) {
-    return '';
-  }
-  const parts = dateStr.split('-');
-  if (parts.length !== 3) {
-    return dateStr;
-  }
-  const date = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-  return date.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
-}
 
 /**
  * Left-panel form for composing a new invoice.

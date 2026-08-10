@@ -1,6 +1,31 @@
 # PandQ
 
-A desktop invoicing app built with Electron, React, and Vite.
+A modern, high-performance desktop invoicing application built with Electron, React 18, Vite, TailwindCSS, and SQLite.
+
+---
+
+## Features
+
+- **Invoice Management**: Create, edit, duplicate, and organise invoices with custom status tags, flag categories, and discounts.
+- **Interactive Live Preview**: Real-time rendering of invoice templates with hardware-accelerated zoom, pan, and A4 print guidelines.
+- **Template System**: Choice of customizable templates (`Classic`, `Miami`, `Minimal`) with flexible branding options.
+- **PDF Export & Batch Email**: Built-in A4 PDF rendering via Electron printToPDF and native macOS Mail.app AppleScript batch integration.
+- **Client & Activity Tracking**: Dedicated client registry and complete audit logging for invoice creation, updates, and dispatches.
+- **Undo / Redo Memento Engine**: Debounced and immediate state snapshot history support for form editing.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Framework** | [Electron](https://www.electronjs.org/) (Manifest V3 IPC Bridge) |
+| **Frontend** | [React 18](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) |
+| **Bundler** | [Vite 5](https://vitejs.dev/) + `@vitejs/plugin-react` |
+| **Styling** | [TailwindCSS](https://tailwindcss.com/) + Custom CSS variables |
+| **Database** | [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) (Embedded SQLite with schema migrations) |
+| **Drag & Drop** | [@dnd-kit](https://dnd-kit.com/) (Sortable line item ordering) |
+| **Icons** | [Remix Icons](https://remixicon.com/) (`react-icons/ri` tree-shaken named imports) |
 
 ---
 
@@ -10,24 +35,27 @@ A desktop invoicing app built with Electron, React, and Vite.
 
 - Node.js ≥ 18
 - npm ≥ 9
+- macOS (for AppleScript Mail.app integration)
 
-### Install dependencies
+### Installation
 
 ```sh
+git clone https://github.com/dimitrilagouris/pandq.git
+cd pandq
 npm install
 ```
 
-### Set up your local environment
+### Environment Setup
 
-Environment variables are not committed. Copy the example file and adjust as needed:
+Copy the development environment template:
 
 ```sh
 cp .env.development.example .env.development
 ```
 
-See [`.env.development.example`](.env.development.example) for all available variables and what they do.
+See [`.env.development.example`](.env.development.example) for variable descriptions.
 
-### Run in development
+### Run in Development
 
 ```sh
 npm run dev
@@ -37,24 +65,11 @@ npm run dev
 
 ## Environment Variables
 
-All `VITE_*` variables are statically inlined by Vite at **build time**. They are never present as runtime files for end users — the values are baked directly into the compiled bundle.
+All `VITE_*` variables are statically inlined by Vite at **build time**.
 
 | Variable | Default | Description |
 |---|---|---|
-| `VITE_SHOW_ONBOARDING` | `false` | Force the onboarding wizard to show on every launch. Useful when working on the onboarding UI. Has no effect in production builds. |
-
----
-
-## Debug Flags
-
-### Onboarding Wizard
-
-Set `VITE_SHOW_ONBOARDING=true` in your `.env.development` to show the onboarding wizard on every app launch, regardless of whether the user has already completed it. Flip it back to `false` when you're done.
-
-```sh
-# .env.development
-VITE_SHOW_ONBOARDING=true
-```
+| `VITE_SHOW_ONBOARDING` | `false` | Force the onboarding wizard on launch during development. |
 
 ---
 
@@ -62,24 +77,42 @@ VITE_SHOW_ONBOARDING=true
 
 ```
 pandq/
-├── electron/          # Main process + preload scripts
+├── electron/                  # Main process, preload bridge, and database
+│   ├── database/              # SQLite core init, migrations (v1-v11), and indexes
+│   ├── ipc/                   # IPC handlers (invoices, clients, activity, settings, system)
+│   ├── main.ts                # Electron window coordinator & Content Security Policy
+│   └── preload.ts             # Safe contextBridge definitions
 ├── src/
-│   ├── components/    # Reusable UI components
-│   ├── layout/        # App shell (Sidebar etc.)
-│   ├── pages/         # Top-level page components
-│   ├── routes/        # Route key definitions
-│   ├── types/         # Shared TypeScript types
-│   └── utils/         # Helper utilities
-├── .env.development.example   # Copy to .env.development
+│   ├── components/            # UI Component Library
+│   │   ├── clients/           # Client modal and details drawer
+│   │   ├── common/            # Reusable primitives (Button, Input, DatePicker, Table, etc.)
+│   │   ├── dashboard/         # Analytics cards and chart tooltips
+│   │   ├── invoice/           # Form, LineItemCard, PreviewCanvas, Templates, History
+│   │   └── onboarding/        # First-launch onboarding wizard
+│   ├── hooks/                 # Custom React hooks (useUndoableState)
+│   ├── layout/                # App shell (Sidebar)
+│   ├── pages/                 # Top-level page views (Dashboard, Invoices, Clients, Settings, Activities)
+│   ├── routes/                # Navigation route definitions
+│   └── types/                 # TypeScript entity models and Electron IPC declarations
+├── tailwind.config.js
 └── vite.config.ts
 ```
 
 ---
 
-## Building
+## Performance Optimisations
+
+- **Code Splitting**: Non-default route pages (`DashboardPage`, `ClientsPage`, `SettingsPage`, `ActivitiesPage`, `InvoicePage`) are lazily loaded with `React.lazy` and `Suspense` to shrink the initial bundle size.
+- **Memoisation Hierarchy**: Key presentational components (`InvoiceForm`, `LineItemCard`, `SortableLineItemCard`, `InvoicePreview`, `InvoiceCard`, `PreviewCanvas`, `Sidebar`) use `React.memo` to prevent unnecessary re-render cascades.
+- **Derived State Caching**: Expensive list filters and metrics aggregations are memoised via `useMemo`.
+- **Database Indexing**: SQLite schema migration v11 automatically creates indexes on `client_id`, `invoice_id`, `item_id`, and `flag_id` columns.
+
+---
+
+## Building for Production
 
 ```sh
 npm run build
 ```
 
-The production bundle is written to `dist/`. `VITE_*` debug flags in `.env.development` are **not** included in production builds.
+The production output will be generated by `electron-builder` in the `dist/` directory.

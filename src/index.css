@@ -1,21 +1,33 @@
+@import './shadows.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* Base variables using px values */
 :root {
-  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  --bg-main: #0f172a;
+  --font-family: 'TASA Orbiter', system-ui, -apple-system, sans-serif;
+  --bg-main: #FFFFFF;
   --border-radius: 12px;
   --spacing-small: 8px;
   --spacing-medium: 16px;
   --spacing-large: 24px;
+  --bg-sidebar: #eeedec;
 }
 
 body {
   font-family: var(--font-family);
   background-color: var(--bg-main);
   margin: 0px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* Glassmorphism card container custom styling */
@@ -25,4 +37,248 @@ body {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--border-radius);
+}
+
+/* Settings save: slow-fast-slow text slide using ease-in-out-cubic */
+@keyframes slide-out-right {
+  0% {
+    width: 0px;
+    opacity: 0;
+    transform: translateX(12px);
+  }
+
+  100% {
+    width: 122px;
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Settings save: SVG checkmark self-draw */
+@keyframes draw-check {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Settings save: bouncy pop-in for the tick circle */
+@keyframes pop-in {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  70% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-slide-out-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  animation: slide-out-right 1.2s cubic-bezier(0.5, 0, 0.25, 1) forwards;
+}
+
+.animate-draw-check {
+  stroke-dasharray: 20;
+  stroke-dashoffset: 20;
+  animation: draw-check 0.45s cubic-bezier(0.25, 1, 0.5, 1) 0.35s forwards;
+}
+
+.animate-pop-in {
+  animation: pop-in 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* Smooth scale pop-up animation for dropdown menus and floating overlays */
+@keyframes dropdown-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-dropdown-pop {
+  transform-origin: top center;
+  animation: dropdown-pop 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* A4 Page Break guidelines for live preview */
+.a4-page-breaks {
+  position: relative;
+}
+
+.a4-page-breaks::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(to bottom,
+      transparent,
+      transparent calc(297mm - 1px),
+      #cbd5e1 calc(297mm - 1px),
+      #cbd5e1 297mm);
+  background-size: 100% 297mm;
+  z-index: 20;
+}
+
+/* Preview canvas: infinite scrollable zoom+pan surface */
+.preview-canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: grab;
+  background-color: #fafaf9;
+  background-image: radial-gradient(circle, #a8a29e 0.6px, transparent 0.6px);
+  background-size: 20px 20px;
+}
+
+.preview-canvas:active {
+  cursor: grabbing;
+}
+
+.preview-canvas__content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+/* Scroll-driven card entrance and exit animations */
+@keyframes card-scroll-in-out {
+  0% {
+    transform: scale(0.94);
+    opacity: 0.5;
+  }
+
+  12%,
+  96% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0.94);
+    opacity: 0.5;
+  }
+}
+
+.scroll-animate-card {
+  animation: card-scroll-in-out linear both;
+  animation-timeline: view();
+  animation-range: entry 0% exit 100%;
+  will-change: transform, opacity;
+}
+
+/* Ensure the card containing the open dropdown sits on top and renders at full quality without GPU transforms */
+.scroll-animate-card:has(.dropdown-menu-open) {
+  z-index: 60 !important;
+  animation: none !important;
+  transform: none !important;
+  will-change: auto !important;
+  opacity: 1 !important;
+}
+
+/* Scroll-driven row entrance and exit animations (tuned for shorter elements) */
+@keyframes row-scroll-in-out {
+  0% {
+    transform: scale(0.96);
+    opacity: 0.5;
+  }
+
+  8%,
+  95% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0.96);
+    opacity: 0.5;
+  }
+}
+
+.scroll-animate-row {
+  animation: row-scroll-in-out linear both;
+  animation-timeline: view();
+  animation-range: entry 0% exit 100%;
+  will-change: transform, opacity;
+}
+
+/* Smooth expand and collapse slide animation for accordion sections */
+.accordion-grid {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  pointer-events: none;
+  transition: grid-template-rows 300ms cubic-bezier(0.4, 0, 0.2, 1), opacity 250ms ease-in-out;
+}
+
+.accordion-grid.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.accordion-inner {
+  overflow: hidden;
+}
+
+.accordion-grid.is-open .accordion-inner {
+  overflow: visible;
+}
+
+/* Onboarding wizard slide transitions */
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes onboarding-fade-in {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.animate-slide-forward {
+  animation: slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-slide-backward {
+  animation: slide-in-left 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-onboarding-in {
+  animation: onboarding-fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes onboarding-fade-out {
+  from { opacity: 1; transform: scale(1) translateY(0); }
+  to   { opacity: 0; transform: scale(1.04) translateY(-6px); }
+}
+
+.animate-onboarding-out {
+  animation: onboarding-fade-out 0.35s cubic-bezier(0.4, 0, 1, 1) both;
+  pointer-events: none;
 }

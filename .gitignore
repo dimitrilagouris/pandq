@@ -36,9 +36,15 @@ out/
 *.sln
 *.sw?
 
-# Local environment variables
+# Local environment variables (never commit these)
 .env
+.env.development
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Development artefacts (not for version control)
+debug_flags.json
+seed_error.json
+walkthrough.md

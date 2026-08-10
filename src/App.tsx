@@ -1,115 +1,194 @@
-import React, { useState, useEffect } from 'react';
-import { Item } from './types';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import { OnboardingWizard } from './components/onboarding/OnboardingWizard';
+import { Sidebar } from './layout/Sidebar';
+import { Button } from './components/common/Button.tsx';
+import InvoicesPage from './pages/InvoicesPage';
+import type { PageKey } from './routes/routes';
+
+const ClientsPage = lazy(() => import('./pages/ClientsPage'));
+const InvoicePage = lazy(() => import('./pages/InvoicePage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const ActivitiesPage = lazy(() => import('./pages/ActivitiesPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+
+/** Re-export so existing consumers importing `Page` from App.tsx still work. */
+export type Page = PageKey;
+
+/** localStorage key — persists first-launch state across app sessions. */
+const ONBOARDING_KEY = 'miko_onboarding_complete';
 
 /**
- * Main application component containing a SQLite database demonstration interface.
+ * Main application component — manages active page and layout.
  */
-export default function App(): React.JSX.Element {
-  const [items, setItems] = useState<Item[]>([]);
-  const [nameInput, setNameInput] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [errorMsg, setErrorMsg] = useState<string>('');
 
-  /**
-   * Fetch all records from the SQLite database.
-   */
-  const loadDatabaseItems = async (): Promise<void> => {
-    try {
-      setIsLoading(true);
-      const fetchedItems: Item[] = await window.electronAPI.getItems();
-      setItems(fetchedItems);
-      setErrorMsg('');
-    } catch (err: unknown) {
-      setErrorMsg(err instanceof Error ? err.message : 'Failed to query database');
-    } finally {
-      setIsLoading(false);
-    }
+export default function App(): React.JSX.Element {
+  const [activePage, setActivePage] = useState<Page>('invoices');
+  const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
+  const [pendingPage, setPendingPage] = useState<Page | null>(null);
+  const [showDiscardModal, setShowDiscardModal] = useState<boolean>(false);
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(
+    // VITE_SHOW_ONBOARDING=true in .env.development.local forces the wizard on every launch for debugging.
+    () => import.meta.env.VITE_SHOW_ONBOARDING === 'true' || localStorage.getItem(ONBOARDING_KEY) !== 'true'
+  );
+
+  /** Mark onboarding done so it never appears again. */
+  const handleOnboardingComplete = (): void => {
+    localStorage.setItem(ONBOARDING_KEY, 'true');
+    setShowOnboarding(false);
   };
 
-  /**
-   * Handle form submission to create a new item.
-   */
-  const handleAddNewItem = async (e: React.FormEvent): Promise<void> => {
-    e.preventDefault();
-    if (!nameInput.trim()) {
+  // Handle Escape key to close the discard confirmation modal
+  useEffect(() => {
+    if (!showDiscardModal) {
       return;
     }
 
-    try {
-      await window.electronAPI.addItem(nameInput.trim());
-      setNameInput('');
-      await loadDatabaseItems();
-    } catch (err: unknown) {
-      setErrorMsg(err instanceof Error ? err.message : 'Failed to insert row');
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowDiscardModal(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showDiscardModal]);
+
+  const handleNavigate = useCallback((page: Page, force = false) => {
+    if (page === activePage) {
+      if (page === 'invoice-editor' && editingInvoiceId !== null) {
+        // transitioning from editing to new invoice
+      } else {
+        return;
+      }
+    }
+
+    if (hasUnsavedChanges && !force) {
+      setPendingPage(page);
+      setShowDiscardModal(true);
+    } else {
+      setHasUnsavedChanges(false);
+
+      if (page === 'invoice-editor' && page !== activePage) {
+        setEditingInvoiceId(null);
+      }
+
+      setActivePage(page);
+    }
+  }, [activePage, editingInvoiceId, hasUnsavedChanges]);
+
+  const handleEditInvoice = useCallback((id: number) => {
+    setEditingInvoiceId(id);
+    setActivePage('invoice-editor');
+  }, []);
+
+  const renderPage = (): React.ReactNode => {
+    switch (activePage) {
+      case 'dashboard':
+        return <DashboardPage onNavigate={handleNavigate} />;
+
+      case 'clients':
+        return <ClientsPage />;
+
+      case 'invoices':
+        return (
+          <InvoicesPage
+            onNavigate={handleNavigate}
+            onEditInvoice={handleEditInvoice}
+          />
+        );
+
+      case 'invoice-editor':
+        return (
+          <InvoicePage 
+            onNavigate={handleNavigate} 
+            invoiceId={editingInvoiceId} 
+            onDirtyChange={setHasUnsavedChanges} 
+          />
+        );
+
+      case 'settings':
+        return <SettingsPage onDirtyChange={setHasUnsavedChanges} />;
+
+      case 'activities':
+        return <ActivitiesPage />;
+
+      default:
+        return (
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-stone-400 text-sm">This page is coming soon.</p>
+          </div>
+        );
     }
   };
 
-  useEffect((): void => {
-    loadDatabaseItems();
-  }, []);
-
   return (
-    <div className="flex flex-col items-center justify-center p-12 min-h-screen">
-      <div className="w-full max-w-xl glass-panel p-8 shadow-2xl">
-        <header className="mb-8">
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-teal-400 to-indigo-500 bg-clip-text text-transparent">
-            Mikovoice Boilerplate
-          </h1>
-          <p className="text-slate-400 text-sm mt-2">
-            Electron + React + TypeScript + SQLite + Tailwind CSS
-          </p>
-        </header>
-
-        {errorMsg && (
-          <div className="mb-6 p-4 rounded bg-red-950/40 border border-red-500/20 text-red-300 text-sm">
-            {errorMsg}
-          </div>
-        )}
-
-        <form onSubmit={handleAddNewItem} className="flex gap-3 mb-8">
-          <input
-            type="text"
-            value={nameInput}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setNameInput(e.target.value)}
-            placeholder="Enter an item name..."
-            className="flex-1 px-4 py-2 rounded bg-slate-900/80 border border-slate-700/50 focus:border-teal-500 focus:outline-none transition-colors text-slate-100 placeholder-slate-500"
-          />
-          <button
-            type="submit"
-            className="px-6 py-2 bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-400 hover:to-indigo-500 rounded font-semibold text-slate-950 shadow-md hover:shadow-teal-500/20 transition-all duration-200 active:scale-[0.98]"
-          >
-            Add Record
-          </button>
-        </form>
-
-        <section>
-          <h2 className="text-lg font-semibold mb-4 text-slate-200">
-            SQLite Database Records
-          </h2>
-
-          {isLoading ? (
-            <p className="text-slate-500 text-sm">Loading records...</p>
-          ) : items.length === 0 ? (
-            <div className="text-center py-6 border border-dashed border-slate-800 rounded">
-              <p className="text-slate-500 text-sm">No records found. Try adding one above!</p>
+    <div className="flex h-screen w-full bg-stone-100 overflow-hidden font-sans">
+      {showOnboarding && <OnboardingWizard onComplete={handleOnboardingComplete} />}
+      <Sidebar
+        activePage={activePage}
+        onNavigate={handleNavigate}
+      />
+      <main className="flex-1 overflow-hidden h-full">
+        <Suspense
+          fallback={
+            <div className="flex-1 h-full flex items-center justify-center">
+              <p className="text-sm text-stone-400">Loading page…</p>
             </div>
-          ) : (
-            <ul className="space-y-2">
-              {items.map((item: Item) => (
-                <li
-                  key={item.id}
-                  className="flex justify-between items-center px-4 py-3 rounded bg-slate-800/40 border border-slate-700/20 hover:bg-slate-800/60 transition-colors"
-                >
-                  <span className="font-medium text-slate-300">{item.name}</span>
-                  <span className="text-xs text-slate-500">
-                    {new Date(item.created_at).toLocaleTimeString()}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
+          }
+        >
+          {renderPage()}
+        </Suspense>
+      </main>
+
+      {/* Unsaved Changes Confirmation Modal (no blur, no click-outside close) */}
+      {showDiscardModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/40">
+          <div
+            className="w-full max-w-sm bg-stone-100 border border-stone-200/80 rounded-2xl shadow-22 mx-4 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150 text-[14px]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 flex flex-col gap-2">
+              <h3 className="text-[20px] font-semibold text-stone-900">Unsaved Changes</h3>
+              <p className="text-[14px] text-stone-500 leading-relaxed">
+                {activePage === 'settings'
+                  ? 'You have unsaved changes in your settings. If you leave now, your changes will be discarded.'
+                  : 'You have unsaved changes on this invoice. If you leave now, your changes will be discarded.'}
+              </p>
+            </div>
+            <div className="px-6 pb-6 pt-2 flex justify-end gap-3">
+              <Button
+                variant="secondary"
+                type="button"
+                size="sm"
+                onClick={() => setShowDiscardModal(false)}
+              >
+                Keep Editing
+              </Button>
+              <Button
+                variant="danger"
+                type="button"
+                size="sm"
+                onClick={() => {
+                  setHasUnsavedChanges(false);
+                  setShowDiscardModal(false);
+
+                  if (pendingPage) {
+                    if (pendingPage === 'invoice-editor') {
+                      setEditingInvoiceId(null);
+                    }
+
+                    setActivePage(pendingPage);
+                  }
+                }}
+              >
+                Discard & Leave
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

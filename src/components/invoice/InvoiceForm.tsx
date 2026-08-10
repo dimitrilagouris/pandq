@@ -538,4 +538,6 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = React.memo(({ form, clien
       )}
     </div>
   );
-};
+});
+
+InvoiceForm.displayName = 'InvoiceForm';

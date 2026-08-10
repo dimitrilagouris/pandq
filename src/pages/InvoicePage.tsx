@@ -5,8 +5,7 @@ import { Button } from '../components/common/Button.tsx';
 import { InvoiceForm } from '../components/invoice/InvoiceForm';
 import { InvoicePreview, computeTotals } from '../components/invoice/InvoicePreview';
 import { PreviewCanvas, PreviewCanvasHandle } from '../components/invoice/PreviewCanvas';
-import { InvoiceFormState, LineItem } from '../components/invoice/invoiceTypes';
-import type { InvoiceItemPayload } from '../types/electron';
+import { InvoiceFormState } from '../components/invoice/invoiceTypes';
 import { hydrateFormState, buildSavePayload, buildPrintableHtml } from '../components/invoice/invoiceAdapters';
 import { useUndoableState } from '../hooks/useUndoableState';
 import { Page } from '../App';
@@ -235,8 +234,6 @@ const InvoicePage: React.FC<InvoicePageProps> = ({ onNavigate, invoiceId, onDirt
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [undoable]);
 
-  /** Maps form LineItems to the IPC payload shape, including workers. */
-  const buildItemsPayload = (items: LineItem[]): InvoiceItemPayload[] => {
   const saveInvoiceState = async (): Promise<number> => {
     const totals = computeTotals(form);
     const payload = buildSavePayload(form, totals.grandTotal);
